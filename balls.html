@@ -10,7 +10,8 @@
         #ui-container {
             position: absolute; top: 10px; left: 10px; z-index: 100;
             background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 8px;
-            color: white; display: flex; flex-direction: column; max-width: 180px;
+            color: white; display: flex; flex-direction: column; max-width: 250px;
+            max-height: calc(100vh - 20px);
             transition: all 0.3s ease;
         }
         #ui-container.collapsed {
@@ -18,6 +19,12 @@
         }
         #ui-container.collapsed .ui-content {
             display: none;
+        }
+        .ui-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #888 #333;
         }
         .ui-title { font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #555; padding-bottom: 5px;}
         button, label {
@@ -116,16 +123,22 @@
         <button id="toggle-menu-btn">☰</button>
         <div class="ui-content">
             <div class="ui-title">Add Pieces</div>
-            <button id="add-start-btn">Add Start Platform</button>
-            <button id="add-straight-btn">Add Straight</button>
-            <button id="add-curve-btn">Add Curve</button>
-            <button id="add-end-btn">Add End Platform</button>
-            <button id="add-ball-btn-piece">Add Ball (Pinned)</button>
-            <button id="add-pyramid-btn">Add Pyramid</button>
-            <button id="add-cylinder-btn">Add Cylinder</button>
-            <button id="add-pipe-btn">Add Pipe</button>
-            <button id="add-cube-btn">Add Cube</button>
-            <button id="add-prism-btn">Add Prism</button>
+            <select id="piece-type-selector" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px;">
+                <option value="">Select piece type...</option>
+                <option value="start">Start Platform</option>
+                <option value="straight">Straight</option>
+                <option value="curve">Curve</option>
+                <option value="end">End Platform</option>
+                <option value="ball">Ball (Pinned)</option>
+                <option value="pyramid">Pyramid</option>
+                <option value="cylinder">Cylinder</option>
+                <option value="pipe">Pipe</option>
+                <option value="cube">Cube</option>
+                <option value="prism">Prism</option>
+                <option value="quarter-bowl">Quarter Bowl</option>
+                <option value="half-pipe">Half Pipe</option>
+            </select>
+            <button id="add-selected-piece-btn" style="width: 100%; margin-bottom: 10px;">Add Selected Piece</button>
             <label for="add-custom-input">Add Custom (.obj)</label>
             <input type="file" id="add-custom-input" accept=".obj">
             <div class="ui-title" style="margin-top:15px;">Editor Tools (W,E,R)</div>
@@ -142,6 +155,7 @@
             <button id="skybox-btn">Skybox</button>
             <button id="camera-mode-btn">Camera: <span id="camera-mode-display">Panning</span></button>
             <button id="ball-maker-btn">Ball Maker</button>
+            <button id="spotify-btn">Spotify</button>
             <button id="start-race-btn">Start Race!</button>
             <button id="restart-race-btn" style="display: none; background: #ffc107; border-color: #ffc107; color: #212529;">Restart Race</button>
             <button id="edit-track-btn" style="display: none; background: #6c757d; border-color: #6c757d;">Edit Track</button>
@@ -153,8 +167,32 @@
                 <label>Ball Roster</label>
                 <button id="ball-roster-btn" style="background: #17a2b8; border-color: #17a2b8;">Manage Roster</button>
             </div>
+            <div class="ui-title" style="margin-top:15px;">Tournament Mode</div>
+            <button id="open-tournament-btn">Open Tournament</button>
+            <div class="ui-title" style="margin-top:15px;">Lighting</div>
+            <div class="speed-control">
+                <label for="ambient-light-slider">Ambient Intensity: <span id="ambient-light-value">0.8</span></label>
+                <input type="range" id="ambient-light-slider" min="0" max="2" step="0.1" value="0.8">
+            </div>
+            <div class="speed-control">
+                <label for="directional-light-slider">Directional Intensity: <span id="directional-light-value">1.5</span></label>
+                <input type="range" id="directional-light-slider" min="0" max="5" step="0.1" value="1.5">
+                <label for="directional-light-color" style="margin-top: 5px;">Directional Color:</label>
+                <input type="color" id="directional-light-color" value="#ffffff" style="width: 100%; height: 30px; padding: 0; border-radius: 4px;">
+            </div>
         </div>
     </div>
+
+    <div id="spotify-panel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px; z-index: 200; display: none; text-align: left; min-width: 400px;">
+        <h2>🎵 Spotify Embed 🎵</h2>
+        <p>Paste a Spotify URL (track, playlist, album, etc.) below:</p>
+        <input type="text" id="spotify-url" placeholder="https://open.spotify.com/..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #666; background: #2a2a2a; color: white;">
+        <button id="embed-spotify-btn" style="margin-top: 10px; padding: 10px 20px; background: #1DB954; border: none; color: white; border-radius: 5px; cursor: pointer;">Embed</button>
+        <button id="close-spotify-btn" style="margin-top: 10px; margin-left: 10px; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+        <div id="spotify-embed-container" style="margin-top: 20px;"></div>
+    </div>
+
+    <div id="spotify-mini-player" style="position: absolute; top: 10px; right: 10px; z-index: 100; display: none;"></div>
 
     <div id="race-results">
         <h2>🏁 Race Results 🏁</h2>
@@ -244,6 +282,77 @@
         </div>
     </div>
 
+    <div id="ball-roster">
+        <h2>🏁 Ball Roster 🏁</h2>
+        
+        <div class="roster-section">
+            <h3>Add Random Balls</h3>
+            <div class="random-controls">
+                <label>Count: <span id="random-count-display">5</span></label>
+                <input type="range" id="random-count-slider" min="1" max="20" step="1" value="5">
+                <button id="add-random-balls-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">Add Random</button>
+            </div>
+        </div>
+        
+        <div class="roster-section">
+            <h3>Race Roster: <span id="roster-count">0</span> balls</h3>
+            <div class="race-roster" id="race-roster-list"></div>
+            <div style="margin-top: 10px;">
+                <button id="clear-roster-btn" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">Clear All</button>
+                <button id="add-custom-to-roster-btn" style="padding: 8px 16px; background: #17a2b8; border: none; color: white; border-radius: 4px; cursor: pointer;">Add from Custom</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Done</button>
+        </div>
+    </div>
+
+    <div id="tournament-panel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px; z-index: 200; display: none; text-align: left; min-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <h2>🏆 Tournament Mode 🏆</h2>
+        <div class="roster-section">
+            <h3>Track List</h3>
+            <label for="add-tournament-track-input" style="display: block; padding: 10px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; text-align: center; margin: 10px 0;">
+                Add Track
+            </label>
+            <input type="file" id="add-tournament-track-input" accept=".json" style="display: none;">
+            <button onclick="clearTournamentTracks()" style="display: block; width: 100%; padding: 10px; background: #dc3545; border: none; color: white; border-radius: 5px; cursor: pointer; margin: 10px 0;">
+                Clear All Tracks
+            </button>
+            <div id="tournament-track-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #444; padding: 5px;">No tracks loaded.</div>
+        </div>
+
+        <div class="roster-section">
+            <h3>Tournament Roster</h3>
+            <div id="tournament-roster-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #444; padding: 5px;">No balls in tournament.</div>
+            <button id="start-tournament-race-btn" style="margin-top: 10px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Start Tournament Race</button>
+        </div>
+
+        <div class="roster-section">
+            <h3>Tournament Results</h3>
+            <div id="tournament-results-display" style="max-height: 200px; overflow-y: auto; border: 1px solid #444; padding: 5px;">No results yet.</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="close-tournament-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <div id="tournament-over-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); color: white; display: none; z-index: 300; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="text-align: center; max-width: 600px; padding: 40px;">
+            <h1 style="font-size: 3em; margin-bottom: 30px;">🏆 Tournament Complete! 🏆</h1>
+            <div id="final-results" style="font-size: 1.5em; margin-bottom: 30px;">
+                <!-- Final results will be inserted here -->
+            </div>
+            <button onclick="closeTournamentOverScreen()" style="padding: 15px 30px; background: #28a745; border: none; color: white; border-radius: 10px; cursor: pointer; font-size: 1.2em; margin: 10px;">
+                Return to Editor
+            </button>
+            <button onclick="startNewTournament()" style="padding: 15px 30px; background: #007bff; border: none; color: white; border-radius: 10px; cursor: pointer; font-size: 1.2em; margin: 10px;">
+                New Tournament
+            </button>
+        </div>
+    </div>
+
     <div id="material-editor">
         <h2>🎨 Material Editor 🎨</h2>
         
@@ -265,6 +374,11 @@
         <div class="material-option">
             <label for="piece-roughness">Roughness: <span id="piece-roughness-value">0.8</span></label>
             <input type="range" id="piece-roughness" min="0" max="1" step="0.1" value="0.8">
+        </div>
+        
+        <div class="material-option">
+            <label for="piece-bounciness">Bounciness: <span id="piece-bounciness-value">0.3</span></label>
+            <input type="range" id="piece-bounciness" min="0" max="1" step="0.1" value="0.3">
         </div>
         
         <div class="material-option">
@@ -378,9 +492,16 @@
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+        
+        // Simple CSG operations using BufferGeometryUtils
+        function createCSGGeometry(operation, geomA, geomB) {
+            // For now, we'll create composite geometries manually
+            // This is a simplified approach without full CSG
+            return BufferGeometryUtils.mergeGeometries([geomA, geomB]);
+        }
         import * as CANNON from 'cannon-es';
 
-        let scene, camera, renderer, orbitControls, transformControls, world, clock;
+        let scene, camera, renderer, orbitControls, transformControls, world, clock, ambientLight, directionalLight;
         let trackPieces = [];
         let marbles = [];
         const raycaster = new THREE.Raycaster();
@@ -400,6 +521,9 @@
         let previousLeadMarble = null;
         let cameraTransitionTime = 0;
         let transitionDuration = 1.0; // seconds
+        let tournamentTracks = [];
+        let tournamentResults = {};
+        let currentTournamentTrackIndex = 0;
 
         var WALL_HEIGHT = 1.5;
 
@@ -437,6 +561,7 @@
             transformControls = new TransformControls(camera, renderer.domElement);
             transformControls.enabled = false;
             transformControls.visible = false;
+            
             scene.add(transformControls);
 
             world = new CANNON.World({ gravity: new CANNON.Vec3(0, -30, 0) });
@@ -451,12 +576,21 @@
         }
 
         function setupLighting() {
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const light = new THREE.DirectionalLight(0xffffff, 1.5);
-            light.position.set(20, 40, 20);
-            light.castShadow = true;
-            light.shadow.mapSize.set(2048, 2048);
-            scene.add(light);
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(20, 40, 20);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.set(2048, 2048);
+            scene.add(directionalLight);
+        }
+        
+        function updateLighting() {
+            ambientLight.intensity = parseFloat(document.getElementById('ambient-light-slider').value);
+            directionalLight.intensity = parseFloat(document.getElementById('directional-light-slider').value);
+            directionalLight.color.set(document.getElementById('directional-light-color').value);
+            document.getElementById('ambient-light-value').textContent = ambientLight.intensity.toFixed(1);
+            document.getElementById('directional-light-value').textContent = directionalLight.intensity.toFixed(1);
         }
         
         function setupPhysicsMaterials() {
@@ -478,7 +612,15 @@
             }
             if (!config) return;
 
-            const newPos = transform?.position || new THREE.Vector3(0, 5, 0);
+            // Auto-place new pieces next to the last placed piece
+            let defaultPos = new THREE.Vector3(0, 5, 0);
+            if (!transform?.position && trackPieces.length > 0) {
+                const lastPiece = trackPieces[trackPieces.length - 1];
+                const lastPos = lastPiece.group.position;
+                // Place new piece 10 units to the right of the last piece
+                defaultPos = new THREE.Vector3(lastPos.x + 10, lastPos.y, lastPos.z);
+            }
+            const newPos = transform?.position || defaultPos;
             const newQuat = transform?.quaternion || new THREE.Quaternion();
             const newScale = transform?.scale || new THREE.Vector3(1, 1, 1);
             
@@ -495,12 +637,15 @@
             if (type === 'pipe') color = 0x607D8B; // Blue Grey for pipe
             if (type === 'cube') color = 0x795548; // Brown for cube
             if (type === 'prism') color = 0xE91E63; // Pink for prism
+            if (type === 'quarter-bowl') color = 0x00BCD4; // Cyan for quarter bowl
+            if (type === 'half-pipe') color = 0x8BC34A; // Light green for half pipe
             
             const materialData = {
                 color: `#${color.toString(16).padStart(6, '0')}`,
                 transparency: 0,
                 metalness: 0,
                 roughness: 0.8,
+                bounciness: 0.3,
                 emissive: 0,
                 emissiveColor: '#ffffff',
                 textureType: 'none',
@@ -568,15 +713,54 @@
             
             // Check if this piece should be pinned (like a ball obstacle)
             const isPinned = piece.type === 'ball';
+            const isFinish = piece.type === 'end';
+            
+            // Create individual material for this piece with custom bounciness
+            const pieceCannonMaterial = new CANNON.Material('piece');
+            const bounciness = piece.materialData?.bounciness || 0.3;
+            
+            // For finish pieces, make them sensor (no collision)
             const body = new CANNON.Body({ 
                 mass: isPinned ? 0 : 0, // All track pieces are static for now
                 shape: shape, 
-                material: trackCannonMaterial 
+                material: pieceCannonMaterial,
+                isTrigger: isFinish // Make finish pieces triggers
             });
+            
+            if (!isFinish) {
+                // Only add contact material for non-finish pieces
+                world.addContactMaterial(new CANNON.ContactMaterial(pieceCannonMaterial, marbleCannonMaterial, { 
+                    friction: 0.1, 
+                    restitution: bounciness 
+                }));
+            }
             
             // Since we applied the world transformation to the geometry, the physics body stays at origin
             body.position.set(0, 0, 0);
             body.quaternion.set(0, 0, 0, 1);
+            
+            // Add finish trigger handling
+            if (isFinish) {
+                body.addEventListener('collide', (event) => {
+                    const contactBody = event.target === body ? event.contact.bi : event.contact.bj;
+                    const otherBody = contactBody === body ? (event.contact.bi === body ? event.contact.bj : event.contact.bi) : contactBody;
+                    
+                    // Check if it's a marble that hit the finish
+                    if (otherBody.userData && otherBody.userData.isMarble && !otherBody.userData.finished) {
+                        const marble = otherBody.userData;
+                        marble.finished = true;
+                        raceFinishers.push(marble);
+                        console.log(`${marble.name} finished in position ${raceFinishers.length}!`);
+                        
+                        // Show results immediately on first finish
+                        if (raceFinishers.length === 1) {
+                            showRaceResults();
+                        } else {
+                            updateRaceResults();
+                        }
+                    }
+                });
+            }
             
             console.log(`${piece.type} piece: Using exact rendered geometry as collision mesh`);
             
@@ -620,17 +804,137 @@
                 case "cylinder":
                     return { geometry: new THREE.CylinderGeometry(2, 2, 6, 16) };
                 case "pipe":
-                    // Create a hollow tube/pipe geometry using TubeGeometry
-                    const pipePath = new THREE.LineCurve3(
-                        new THREE.Vector3(0, -4, 0),
-                        new THREE.Vector3(0, 4, 0)
-                    );
-                    const pipeGeometry = new THREE.TubeGeometry(pipePath, 20, 1.5, 8, false);
+                    // Create a truly hollow pipe using RingGeometry for caps and CylinderGeometry for walls
+                    const outerRadius = 1.5;
+                    const innerRadius = 1.0;
+                    const height = 8;
+                    const radialSegments = 16;
+                    
+                    // Create the outer wall
+                    const outerWall = new THREE.CylinderGeometry(outerRadius, outerRadius, height, radialSegments, 1, true);
+                    
+                    // Create the inner wall (inverted normals)
+                    const innerWall = new THREE.CylinderGeometry(innerRadius, innerRadius, height, radialSegments, 1, true);
+                    innerWall.scale(-1, 1, 1); // Flip normals to face outward
+                    
+                    // Create end caps (rings) - properly oriented
+                    const topCap = new THREE.RingGeometry(innerRadius, outerRadius, radialSegments);
+                    topCap.rotateX(-Math.PI/2); // Rotate first
+                    topCap.translate(0, height/2, 0); // Then translate
+                    
+                    const bottomCap = new THREE.RingGeometry(innerRadius, outerRadius, radialSegments);
+                    bottomCap.rotateX(Math.PI/2); // Rotate first
+                    bottomCap.translate(0, -height/2, 0); // Then translate
+                    
+                    // Merge all geometries
+                    const geometries = [outerWall, innerWall, topCap, bottomCap];
+                    const pipeGeometry = new THREE.BufferGeometry();
+                    
+                    // Calculate total vertices and indices
+                    let totalVertices = 0;
+                    let totalIndices = 0;
+                    
+                    geometries.forEach(geom => {
+                        totalVertices += geom.attributes.position.count;
+                        totalIndices += geom.index ? geom.index.count : geom.attributes.position.count;
+                    });
+                    
+                    // Create combined arrays
+                    const positions = new Float32Array(totalVertices * 3);
+                    const normals = new Float32Array(totalVertices * 3);
+                    const uvs = new Float32Array(totalVertices * 2);
+                    const indices = new Uint32Array(totalIndices);
+                    
+                    let vertexOffset = 0;
+                    let indexOffset = 0;
+                    let currentVertexCount = 0;
+                    
+                    // Merge each geometry
+                    geometries.forEach(geom => {
+                        const posArray = geom.attributes.position.array;
+                        const normArray = geom.attributes.normal.array;
+                        const uvArray = geom.attributes.uv.array;
+                        
+                        positions.set(posArray, vertexOffset);
+                        normals.set(normArray, vertexOffset);
+                        uvs.set(uvArray, vertexOffset * 2 / 3);
+                        
+                        // Handle indices
+                        if (geom.index) {
+                            const indexArray = geom.index.array;
+                            for (let i = 0; i < indexArray.length; i++) {
+                                indices[indexOffset + i] = indexArray[i] + currentVertexCount;
+                            }
+                            indexOffset += indexArray.length;
+                        } else {
+                            // Create indices for non-indexed geometry
+                            for (let i = 0; i < geom.attributes.position.count; i++) {
+                                indices[indexOffset + i] = currentVertexCount + i;
+                            }
+                            indexOffset += geom.attributes.position.count;
+                        }
+                        
+                        vertexOffset += posArray.length;
+                        currentVertexCount += geom.attributes.position.count;
+                    });
+                    
+                    pipeGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    pipeGeometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+                    pipeGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                    pipeGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
+                    
                     return { geometry: pipeGeometry };
                 case "cube":
                     return { geometry: new THREE.BoxGeometry(4, 4, 4) };
                 case "prism":
                     return { geometry: new THREE.CylinderGeometry(3, 3, 6, 6) };
+                case "quarter-bowl":
+                    // Create a proper quarter bowl using composite geometry
+                    const size = 4;
+                    const segments = 16;
+                    
+                    // Create the L-shaped base structure
+                    const baseGeometry = new THREE.BoxGeometry(size, 0.5, size);
+                    baseGeometry.translate(size/2, 0.25, size/2);
+                    
+                    // Create back wall
+                    const backWallGeometry = new THREE.BoxGeometry(size, size, 0.5);
+                    backWallGeometry.translate(size/2, size/2, 0.25);
+                    
+                    // Create side wall
+                    const sideWallGeometry = new THREE.BoxGeometry(0.5, size, size);
+                    sideWallGeometry.translate(0.25, size/2, size/2);
+                    
+                    // Create the bowl surface (inverted quarter sphere)
+                    const bowlGeometry = new THREE.SphereGeometry(size/3, segments, segments, 0, Math.PI/2, 0, Math.PI/2);
+                    bowlGeometry.scale(1, -1, 1); // Invert to make concave
+                    bowlGeometry.translate(size/3, size/3, size/3);
+                    
+                    // Create top rim pieces
+                    const topRimBack = new THREE.BoxGeometry(size, 0.3, 0.3);
+                    topRimBack.translate(size/2, size - 0.15, 0.15);
+                    
+                    const topRimSide = new THREE.BoxGeometry(0.3, 0.3, size);
+                    topRimSide.translate(0.15, size - 0.15, size/2);
+                    
+                    // Merge all components
+                    const quarterBowlGeometry = BufferGeometryUtils.mergeGeometries([
+                        baseGeometry, backWallGeometry, sideWallGeometry, 
+                        bowlGeometry, topRimBack, topRimSide
+                    ]);
+                    
+                    return { geometry: quarterBowlGeometry };
+                case "half-pipe":
+                    // Create a simple half pipe - just the curved surface
+                    const radius = 3;
+                    const length = 8;
+                    const hpSegments = 16;
+                    
+                    // Main curved surface (half cylinder)
+                    const curvedSurface = new THREE.CylinderGeometry(radius, radius, length, hpSegments, 1, true, 0, Math.PI);
+                    curvedSurface.rotateZ(Math.PI); // Flip so opening faces up
+                    
+                    return { geometry: curvedSurface };
             }
             return null;
         }
@@ -795,6 +1099,11 @@
             document.getElementById('skybox-btn').addEventListener('click', openSkyboxSelector);
             document.getElementById('camera-mode-btn').addEventListener('click', toggleCameraMode);
             document.getElementById('ball-maker-btn').addEventListener('click', openBallMaker);
+            document.getElementById('spotify-btn').addEventListener('click', openSpotifyPanel);
+            document.getElementById('embed-spotify-btn').addEventListener('click', embedSpotify);
+            document.getElementById('close-spotify-btn').addEventListener('click', () => {
+                document.getElementById('spotify-panel').style.display = 'none';
+            });
             document.getElementById('close-ball-maker-btn').addEventListener('click', () => {
                 document.getElementById('ball-maker').style.display = 'none';
             });
@@ -841,18 +1150,38 @@
             document.getElementById('add-random-balls-btn').addEventListener('click', addRandomBalls);
             document.getElementById('clear-roster-btn').addEventListener('click', clearRoster);
             document.getElementById('add-custom-to-roster-btn').addEventListener('click', addCustomToRoster);
+            document.getElementById('open-tournament-btn').addEventListener('click', openTournamentPanel);
+            document.getElementById('close-tournament-btn').addEventListener('click', () => {
+                document.getElementById('tournament-panel').style.display = 'none';
+            });
+            document.getElementById('add-tournament-track-input').addEventListener('change', addTournamentTrack);
+            document.getElementById('start-tournament-race-btn').addEventListener('click', startTournamentRace);
+            document.getElementById('ambient-light-slider').addEventListener('input', updateLighting);
+            document.getElementById('directional-light-slider').addEventListener('input', updateLighting);
+            document.getElementById('directional-light-color').addEventListener('input', updateLighting);
             document.getElementById('save-track-btn').addEventListener('click', saveTrack);
             document.getElementById('load-track-input').addEventListener('change', loadTrack);
-            document.getElementById('add-start-btn').addEventListener('click', () => addPiece("start"));
-            document.getElementById('add-straight-btn').addEventListener('click', () => addPiece("straight"));
-            document.getElementById('add-curve-btn').addEventListener('click', () => addPiece("curve"));
-            document.getElementById('add-end-btn').addEventListener('click', () => addPiece("end"));
-            document.getElementById('add-ball-btn-piece').addEventListener('click', () => addPiece("ball"));
-            document.getElementById('add-pyramid-btn').addEventListener('click', () => addPiece("pyramid"));
-            document.getElementById('add-cylinder-btn').addEventListener('click', () => addPiece("cylinder"));
-            document.getElementById('add-pipe-btn').addEventListener('click', () => addPiece("pipe"));
-            document.getElementById('add-cube-btn').addEventListener('click', () => addPiece("cube"));
-            document.getElementById('add-prism-btn').addEventListener('click', () => addPiece("prism"));
+            // Auto-add piece when selected in dropdown
+            document.getElementById('piece-type-selector').addEventListener('change', (e) => {
+                const selectedType = e.target.value;
+                if (selectedType) {
+                    addPiece(selectedType);
+                    // Reset dropdown to default
+                    e.target.value = '';
+                }
+            });
+            
+            // Keep the manual add button as backup
+            document.getElementById('add-selected-piece-btn').addEventListener('click', () => {
+                const selector = document.getElementById('piece-type-selector');
+                const selectedType = selector.value;
+                if (selectedType) {
+                    addPiece(selectedType);
+                    selector.value = '';
+                } else {
+                    alert('Please select a piece type first!');
+                }
+            });
             document.getElementById('add-custom-input').addEventListener('change', loadCustomObject);
             document.getElementById('toggle-transform-btn').addEventListener('click', (e) => {
                 transformControls.enabled = !transformControls.enabled;
@@ -899,7 +1228,7 @@
             document.getElementById('texture-upload').addEventListener('change', handleTextureUpload);
             
             // Material editor value display updates
-            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-emissive'].forEach(id => {
+            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive'].forEach(id => {
                 document.getElementById(id).addEventListener('input', (e) => {
                     document.getElementById(id.replace('piece-', '') + '-value').textContent = e.target.value;
                 });
@@ -923,6 +1252,22 @@
                         case 'r': transformControls.setMode('scale'); break;
                     }
                 }
+                
+                // Handle shift key for snapping
+                if (e.key === 'Shift') {
+                    transformControls.translationSnap = 1;
+                    transformControls.rotationSnap = THREE.MathUtils.degToRad(15);
+                    transformControls.scaleSnap = 0.1;
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                // Disable snapping when shift is released
+                if (e.key === 'Shift') {
+                    transformControls.translationSnap = null;
+                    transformControls.rotationSnap = null;
+                    transformControls.scaleSnap = null;
+                }
             });
         }
         
@@ -937,7 +1282,8 @@
                 })),
                 customBalls: customBalls,
                 raceRoster: raceRoster,
-                skyboxData: currentSkyboxData
+                skyboxData: currentSkyboxData,
+                spotifyUrl: document.getElementById('spotify-url').value
             };
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(trackData, null, 2)], {type: 'application/json'}));
@@ -951,8 +1297,7 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = e => {
-                trackPieces.forEach(p => { scene.remove(p.group); p.physicsBodies.forEach(b => world.removeBody(b)); });
-                trackPieces = [];
+                // Don't clear existing track pieces - add to existing circuit
                 transformControls.detach();
                 
                 const data = JSON.parse(e.target.result);
@@ -1004,6 +1349,11 @@
                     if (data.skyboxData) {
                         currentSkyboxData = data.skyboxData;
                         loadSkybox(data.skyboxData);
+                    }
+
+                    if (data.spotifyUrl) {
+                        document.getElementById('spotify-url').value = data.spotifyUrl;
+                        embedSpotify();
                     }
                 }
             };
@@ -1096,15 +1446,15 @@
                 }
             }
             
-            // Randomize the order of balls for each race
-            const shuffledRoster = [...raceRoster].sort(() => Math.random() - 0.5);
+            // Use the raceRoster directly, no randomization here
+            const ballsToSpawn = [...raceRoster];
             
-            for (let i = 0; i < shuffledRoster.length; i++) {
-                const laneOffset = (i - (shuffledRoster.length - 1) / 2) * 1.0;
+            for (let i = 0; i < ballsToSpawn.length; i++) {
+                const laneOffset = (i - (ballsToSpawn.length - 1) / 2) * 1.0;
                 const localPos = new THREE.Vector3(laneOffset, WALL_HEIGHT, -10/2 + 2);
                 const worldPos = startPiece.group.localToWorld(localPos);
 
-                const ballConfig = shuffledRoster[i];
+                const ballConfig = ballsToSpawn[i];
                 const material = createBallMaterial(ballConfig);
                 
                 const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), material);
@@ -1116,6 +1466,7 @@
                 scene.add(nameplate);
                 
                 const body = new CANNON.Body({ mass: 1.2, shape: new CANNON.Sphere(0.4), position: worldPos, material: marbleCannonMaterial });
+                body.userData = { isMarble: true, name: ballConfig.name, finished: false };
                 world.addBody(body);
                 marbles.push({ mesh, body, name: ballConfig.name, color: ballConfig.color, finished: false, nameplate });
             }
@@ -1176,19 +1527,23 @@
             const restartBtn = document.getElementById('restart-race-btn');
             const editBtn = document.getElementById('edit-track-btn');
             const speedControl = document.getElementById('camera-speed-control');
+            const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #add-custom-input, #toggle-transform-btn, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #save-track-btn, #load-track-input, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
+            const editorLabels = document.querySelectorAll('label[for="add-custom-input"], label[for="load-track-input"]');
 
             if (isRaceMode) {
-                uiContainer.style.display = 'block';
                 startBtn.style.display = 'none';
                 restartBtn.style.display = 'block';
                 editBtn.style.display = 'block';
                 speedControl.style.display = 'block';
+                editorButtons.forEach(b => b.style.display = 'none');
+                editorLabels.forEach(l => l.style.display = 'none');
             } else {
-                uiContainer.style.display = 'block';
                 startBtn.style.display = 'block';
                 restartBtn.style.display = 'none';
                 editBtn.style.display = 'none';
                 speedControl.style.display = 'none';
+                editorButtons.forEach(b => b.style.display = 'block');
+                editorLabels.forEach(l => l.style.display = 'block');
             }
         }
 
@@ -1206,43 +1561,8 @@
         }
 
         function checkFinishLine() {
-            if (raceFinished) return;
-            
-            const endPieces = trackPieces.filter(p => p.type === 'end');
-            if (endPieces.length === 0) return;
-            
-            marbles.forEach(marble => {
-                if (marble.finished) return;
-                
-                endPieces.forEach(endPiece => {
-                    const endPos = endPiece.group.position;
-                    const marblePos = marble.mesh.position;
-                    const prevPos = marble.prevPosition || marblePos.clone();
-                    
-                    // Check both current position and if marble crossed the finish line this frame
-                    const currentDistance = marblePos.distanceTo(endPos);
-                    const prevDistance = prevPos.distanceTo(endPos);
-                    
-                    // Finish if close enough OR if marble crossed through the finish area this frame
-                    const crossedFinish = (prevDistance > 3 && currentDistance <= 3) || currentDistance < 3;
-                    
-                    if (crossedFinish) {
-                        marble.finished = true;
-                        raceFinishers.push(marble);
-                        console.log(`${marble.name} finished in position ${raceFinishers.length}!`);
-                        
-                        // Show results immediately on first finish, update as more finish
-                        if (raceFinishers.length === 1) {
-                            showRaceResults(); // Show dialog immediately
-                        } else {
-                            updateRaceResults(); // Update existing dialog
-                        }
-                    }
-                });
-                
-                // Store previous position for next frame
-                marble.prevPosition = marble.mesh.position.clone();
-            });
+            // Finish line detection now handled by collision triggers in finish pieces
+            // See updatePhysicsForPiece() function for collision-based finish detection
         }
 
         function showRaceResults() {
@@ -1313,6 +1633,31 @@
             document.getElementById('ball-maker').style.display = 'block';
             updateBallPreview();
             updateCustomBallsList();
+        }
+
+        function openSpotifyPanel() {
+            document.getElementById('spotify-panel').style.display = 'block';
+        }
+
+        function embedSpotify() {
+            const spotifyUrl = document.getElementById('spotify-url').value;
+            if (!spotifyUrl || !spotifyUrl.includes('open.spotify.com')) {
+                alert('Please enter a valid Spotify URL.');
+                return;
+            }
+
+            const embedContainer = document.getElementById('spotify-embed-container');
+            const embedUrl = spotifyUrl.replace('open.spotify.com', 'open.spotify.com/embed');
+            embedContainer.innerHTML = `<iframe src="${embedUrl}" width="100%" height="380" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
+
+            const miniPlayer = document.getElementById('spotify-mini-player');
+            miniPlayer.innerHTML = `<iframe src="${embedUrl}" width="300" height="80" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
+            miniPlayer.style.display = 'block';
+
+            // Save the Spotify URL to the track data
+            const trackData = JSON.parse(localStorage.getItem('marble-track') || '{}');
+            trackData.spotifyUrl = spotifyUrl;
+            localStorage.setItem('marble-track', JSON.stringify(trackData));
         }
 
         function updateBallPreview() {
@@ -1496,6 +1841,267 @@
             updateRosterDisplay();
         }
 
+        function openTournamentPanel() {
+            document.getElementById('tournament-panel').style.display = 'block';
+            updateTournamentTrackList();
+            updateTournamentRosterDisplay();
+            updateTournamentResultsDisplay();
+        }
+
+        function addTournamentTrack(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Add the track data to the tournament
+                    if (!tournamentTracks) tournamentTracks = [];
+                    
+                    // Store track with filename for display
+                    const trackData = {
+                        name: file.name.replace('.json', ''),
+                        data: data
+                    };
+                    
+                    tournamentTracks.push(trackData);
+                    updateTournamentTrackList();
+                    
+                    alert(`Added "${trackData.name}" to tournament. Total tracks: ${tournamentTracks.length}`);
+                    
+                    // Clear the file input so the same file can be added again if needed
+                    event.target.value = '';
+                } catch (error) {
+                    console.error("Error adding tournament track:", error);
+                    alert('Failed to load or parse the track file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearTournamentTracks() {
+            if (confirm('Clear all tracks from the tournament?')) {
+                tournamentTracks = [];
+                currentTournamentTrackIndex = 0;
+                tournamentResults = {};
+                updateTournamentTrackList();
+                updateTournamentResultsDisplay();
+                alert('All tracks cleared from tournament.');
+            }
+        }
+
+        function updateTournamentTrackList() {
+            const listDiv = document.getElementById('tournament-track-list');
+            listDiv.innerHTML = '';
+            if (tournamentTracks.length === 0) {
+                listDiv.textContent = 'No tracks loaded.';
+                return;
+            }
+            tournamentTracks.forEach((track, index) => {
+                const p = document.createElement('p');
+                p.textContent = `Track ${index + 1}: ${track.name || 'Unnamed Track'} ${index === currentTournamentTrackIndex ? '(Current)' : ''}`;
+                listDiv.appendChild(p);
+            });
+        }
+
+        function updateTournamentRosterDisplay() {
+            const rosterList = document.getElementById('tournament-roster-list');
+            rosterList.innerHTML = '';
+            if (raceRoster.length === 0) {
+                rosterList.textContent = 'No balls in tournament roster. Add some from Ball Roster.';
+                return;
+            }
+            raceRoster.forEach(ball => {
+                const p = document.createElement('p');
+                p.textContent = `${ball.name} (Points: ${tournamentResults[ball.id] ? tournamentResults[ball.id].points : 0})`;
+                rosterList.appendChild(p);
+            });
+        }
+
+        function updateTournamentResultsDisplay() {
+            const resultsDiv = document.getElementById('tournament-results-display');
+            resultsDiv.innerHTML = '';
+            const sortedResults = Object.values(tournamentResults).sort((a, b) => b.points - a.points);
+            if (sortedResults.length === 0) {
+                resultsDiv.textContent = 'No results yet.';
+                return;
+            }
+            sortedResults.forEach((result, index) => {
+                const p = document.createElement('p');
+                p.textContent = `${index + 1}. ${result.name}: ${result.points} points`;
+                resultsDiv.appendChild(p);
+            });
+        }
+
+        async function startTournamentRace() {
+            if (tournamentTracks.length === 0) {
+                alert('Please load tournament tracks first.');
+                return;
+            }
+            if (raceRoster.length === 0) {
+                alert('Please add balls to the race roster first.');
+                return;
+            }
+
+            document.getElementById('tournament-panel').style.display = 'none';
+            isRaceMode = true;
+            updateRaceUI();
+            transformControls.detach();
+            transformControls.visible = false;
+
+            // Configure orbit controls for race mode
+            orbitControls.enabled = true;
+            orbitControls.enableRotate = false;
+            orbitControls.enablePan = true;
+            orbitControls.enableZoom = true;
+
+            for (let i = currentTournamentTrackIndex; i < tournamentTracks.length; i++) {
+                const trackData = tournamentTracks[i];
+                currentTournamentTrackIndex = i;
+                updateTournamentTrackList(); // Update current track in UI
+
+                // Clear current track and load new one
+                trackPieces.forEach(p => { scene.remove(p.group); p.physicsBodies.forEach(b => world.removeBody(b)); });
+                trackPieces = [];
+                transformControls.detach();
+
+                const actualTrackData = trackData.data;
+                
+                // Handle both old format (array) and new format (object with pieces)
+                if (Array.isArray(actualTrackData)) {
+                    // Old format - just track pieces
+                    actualTrackData.forEach(d => {
+                        const transform = {
+                            position: new THREE.Vector3().fromArray(d.position),
+                            quaternion: new THREE.Quaternion().fromArray(d.quaternion),
+                            scale: new THREE.Vector3().fromArray(d.scale)
+                        };
+                        addPiece(d.type, transform);
+                    });
+                } else {
+                    // New format - track pieces and other data
+                    if (actualTrackData.pieces) {
+                        actualTrackData.pieces.forEach(d => {
+                            const transform = {
+                                position: new THREE.Vector3().fromArray(d.position),
+                                quaternion: new THREE.Quaternion().fromArray(d.quaternion),
+                                scale: new THREE.Vector3().fromArray(d.scale)
+                            };
+                            addPiece(d.type, transform);
+                            if (d.materialData) {
+                                const piece = trackPieces[trackPieces.length - 1];
+                                piece.materialData = d.materialData;
+                                const mesh = piece.group.children[0];
+                                if (mesh && mesh.isMesh) {
+                                    mesh.material = createPieceMaterial(piece.materialData);
+                                }
+                            }
+                        });
+                    }
+                    if (actualTrackData.spotifyUrl) {
+                        document.getElementById('spotify-url').value = actualTrackData.spotifyUrl;
+                        embedSpotify();
+                    } else {
+                        document.getElementById('spotify-mini-player').style.display = 'none';
+                    }
+                }
+
+                // Wait for track to load and physics to settle (simple delay for now)
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Start race for current track
+                clearMarbles();
+                raceFinishers = [];
+                raceFinished = false;
+                document.getElementById('race-results').style.display = 'none';
+
+                const startPiece = trackPieces.find(p => p.type === 'start');
+                if (!startPiece) {
+                    alert(`Track ${i + 1} has no start piece! Skipping.`);
+                    continue;
+                }
+
+                spawnMarbles(startPiece);
+
+                // Wait for first ball to finish, then 30 seconds for others
+                await new Promise(resolve => {
+                    let raceTimer;
+                    const checkRace = setInterval(() => {
+                        if (raceFinishers.length > 0 && !raceTimer) {
+                            // First ball finished, start 30 second timer
+                            raceTimer = setTimeout(() => {
+                                clearInterval(checkRace);
+                                resolve();
+                            }, 30000); // 30 seconds
+                        }
+                        if (raceFinishers.length === raceRoster.length) {
+                            // All balls finished before timer
+                            if (raceTimer) clearTimeout(raceTimer);
+                            clearInterval(checkRace);
+                            resolve();
+                        }
+                    }, 500);
+                });
+
+                // Record results with new scoring system (1st=3, 2nd=2, 3rd=1)
+                const pointsMap = [3, 2, 1]; // 1st, 2nd, 3rd place points
+                raceFinishers.slice(0, 3).forEach((finisher, index) => {
+                    if (!tournamentResults[finisher.body.id]) {
+                        tournamentResults[finisher.body.id] = { name: finisher.name, points: 0 };
+                    }
+                    tournamentResults[finisher.body.id].points += pointsMap[index];
+                });
+                
+                updateTournamentResultsDisplay();
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Pause before next race
+            }
+
+            showTournamentOverScreen();
+            isRaceMode = false;
+            updateRaceUI();
+        }
+
+        function showTournamentOverScreen() {
+            const finalResultsDiv = document.getElementById('final-results');
+            const sortedResults = Object.values(tournamentResults).sort((a, b) => b.points - a.points);
+            
+            finalResultsDiv.innerHTML = '<h2>Final Standings:</h2>';
+            
+            if (sortedResults.length === 0) {
+                finalResultsDiv.innerHTML += '<p>No results to display.</p>';
+            } else {
+                const medals = ['🥇', '🥈', '🥉'];
+                sortedResults.forEach((result, index) => {
+                    const medal = index < 3 ? medals[index] : '';
+                    const resultElement = document.createElement('div');
+                    resultElement.style.cssText = 'margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; justify-content: space-between; align-items: center;';
+                    resultElement.innerHTML = `
+                        <span style="font-size: 1.2em;">${medal} ${index + 1}. ${result.name}</span>
+                        <span style="font-size: 1.4em; font-weight: bold; color: #28a745;">${result.points} points</span>
+                    `;
+                    finalResultsDiv.appendChild(resultElement);
+                });
+            }
+            
+            document.getElementById('tournament-over-screen').style.display = 'flex';
+        }
+
+        function closeTournamentOverScreen() {
+            document.getElementById('tournament-over-screen').style.display = 'none';
+            editTrack(); // Return to edit mode
+        }
+
+        function startNewTournament() {
+            if (confirm('Start a new tournament? This will clear all current results.')) {
+                tournamentResults = {};
+                currentTournamentTrackIndex = 0;
+                updateTournamentResultsDisplay();
+                document.getElementById('tournament-over-screen').style.display = 'none';
+                document.getElementById('tournament-panel').style.display = 'block';
+            }
+        }
+
         function generateRandomBall() {
             const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080', '#ffc0cb', '#a52a2a'];
             const textures = ['none', 'dots', 'stripes', 'marble'];
@@ -1592,6 +2198,7 @@
             document.getElementById('piece-transparency').value = mat.transparency;
             document.getElementById('piece-metalness').value = mat.metalness;
             document.getElementById('piece-roughness').value = mat.roughness;
+            document.getElementById('piece-bounciness').value = mat.bounciness || 0.3;
             document.getElementById('piece-emissive').value = mat.emissive;
             document.getElementById('piece-emissive-color').value = mat.emissiveColor;
             document.getElementById('piece-texture-type').value = mat.textureType;
@@ -1600,6 +2207,7 @@
             document.getElementById('transparency-value').textContent = mat.transparency;
             document.getElementById('piece-metalness-value').textContent = mat.metalness;
             document.getElementById('piece-roughness-value').textContent = mat.roughness;
+            document.getElementById('piece-bounciness-value').textContent = mat.bounciness || 0.3;
             document.getElementById('piece-emissive-value').textContent = mat.emissive;
             
             toggleTextureUpload();
@@ -1717,6 +2325,7 @@
                 transparency: parseFloat(document.getElementById('piece-transparency').value),
                 metalness: parseFloat(document.getElementById('piece-metalness').value),
                 roughness: parseFloat(document.getElementById('piece-roughness').value),
+                bounciness: parseFloat(document.getElementById('piece-bounciness').value),
                 emissive: parseFloat(document.getElementById('piece-emissive').value),
                 emissiveColor: document.getElementById('piece-emissive-color').value,
                 textureType: document.getElementById('piece-texture-type').value,
