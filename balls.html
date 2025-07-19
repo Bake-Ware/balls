@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/Bake-Ware/balls/refs/heads/master/favicon.ico">
     <title>BALL RACER</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
@@ -24,8 +24,53 @@
         .ui-content {
             flex-grow: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: #888 #333;
+            max-height: calc(100vh - 80px);
+        }
+        .ui-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .ui-content::-webkit-scrollbar-track {
+            background: #333;
+        }
+        .ui-content::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .ui-content::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .button-grid button {
+            margin: 0;
+            padding: 8px 4px;
+            font-size: 12px;
+        }
+        .button-full-width {
+            grid-column: 1 / -1;
+        }
+        .collapsible-section {
+            cursor: pointer;
+            user-select: none;
+        }
+        .collapsible-section:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .collapsible-content {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .collapsible-content.collapsed {
+            max-height: 0;
+            margin: 0;
+            padding: 0;
         }
         .ui-title { font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #555; padding-bottom: 5px;}
         button, label {
@@ -95,16 +140,54 @@
         .roster-ball-name { flex-grow: 1; font-size: 14px; }
         .roster-stats { font-size: 12px; color: #ccc; margin-left: 10px; }
         #material-editor {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px;
-            z-index: 200; display: none; text-align: left; min-width: 400px; max-height: 80vh; overflow-y: auto;
+            position: fixed; top: 0; right: 0; height: 100vh; width: 450px;
+            background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; 
+            z-index: 200; display: none; text-align: left; overflow-y: auto;
+            border-left: 3px solid #ffd700; box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+            transform: translateX(100%); transition: transform 0.3s ease-in-out;
         }
+        #material-editor.show {
+            transform: translateX(0);
+        }
+        
+        /* Save Dialog Styles */
+        #save-dialog {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95); color: white; padding: 30px; border-radius: 10px;
+            z-index: 300; display: none; text-align: center; min-width: 400px;
+            border: 2px solid #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        #save-dialog h3 { margin-top: 0; color: #ffd700; }
+        #save-dialog input[type="text"] { 
+            width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #666; 
+            border-radius: 5px; background: #2a2a2a; color: white; font-size: 16px;
+        }
+        #save-dialog .button-group { 
+            display: flex; gap: 10px; justify-content: center; margin-top: 20px; 
+        }
+        #save-dialog button { 
+            padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;
+        }
+        .save-confirm { background: #28a745; color: white; }
+        .save-cancel { background: #6c757d; color: white; }
+        
+        /* Message notification styles */
+        #message-notification {
+            position: fixed; top: 20px; right: 20px; z-index: 400;
+            padding: 15px 20px; border-radius: 5px; color: white; font-weight: bold;
+            transform: translateX(100%); transition: transform 0.3s ease-in-out;
+            max-width: 300px; word-wrap: break-word;
+        }
+        #message-notification.show { transform: translateX(0); }
+        #message-notification.success { background: #28a745; }
+        #message-notification.error { background: #dc3545; }
+        #message-notification.info { background: #17a2b8; }
         #material-editor h2 { margin-top: 0; color: #ffd700; text-align: center; }
         .material-option { margin: 15px 0; padding: 10px; background: #2a2a2a; border-radius: 5px; }
         .material-option label { display: block; margin-bottom: 5px; font-size: 14px; color: #ccc; }
         .material-option input[type="range"], .material-option input[type="color"], .material-option select { width: 100%; margin: 5px 0; }
         .texture-upload { margin: 10px 0; }
-        .texture-upload input[type="file"] { display: block; margin: 5px 0; }
+        .texture-upload input[type="file"] { display: none; }
         .texture-preview { width: 100px; height: 100px; border: 2px solid #666; margin: 10px 0; background-size: cover; background-repeat: no-repeat; }
         #skybox-selector {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -123,7 +206,7 @@
     <div id="ui-container">
         <button id="toggle-menu-btn">☰</button>
         <div class="ui-content">
-            <div class="ui-title">Add Pieces</div>
+            <div class="ui-title">➕ Add Pieces</div>
             <select id="piece-type-selector" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px;">
                 <option value="">Select piece type...</option>
                 <option value="start">Start Platform</option>
@@ -138,48 +221,56 @@
                 <option value="prism">Prism</option>
                 <option value="quarter-bowl">Quarter Bowl</option>
                 <option value="half-pipe">Half Pipe</option>
+                <option value="custom">📦 Custom (.obj)...</option>
             </select>
-            <button id="add-selected-piece-btn" style="width: 100%; margin-bottom: 10px;">Add Selected Piece</button>
-            <label for="add-custom-input">Add Custom (.obj)</label>
-            <input type="file" id="add-custom-input" accept=".obj">
-            <div class="ui-title" style="margin-top:15px;">Editor Tools (W,E,R)</div>
-            <button id="toggle-transform-btn">Enable Transform</button>
-            <div id="selection-info" style="color: #ffd700; font-size: 12px; margin: 5px 0; text-align: center;"></div>
-            <button id="duplicate-piece-btn">Duplicate Selected</button>
-            <button id="remove-piece-btn">Remove Selected</button>
-            <button id="edit-material-btn">Edit Material</button>
-            <hr style="border-color: #444; width:100%; margin: 15px 0;">
-            <button id="save-track-btn">Save Track</button>
-            <label for="load-track-input">Load Track</label>
-            <input type="file" id="load-track-input" accept=".json">
-            <hr style="border-color: #444; width:100%; margin: 15px 0;">
-            <button id="skybox-btn">Skybox</button>
-            <button id="camera-mode-btn">Camera: <span id="camera-mode-display">Panning</span></button>
-            <button id="ball-maker-btn">Ball Maker</button>
-            <button id="spotify-btn">Spotify</button>
-            <button id="start-race-btn">Start Race!</button>
-            <button id="restart-race-btn" style="display: none; background: #ffc107; border-color: #ffc107; color: #212529;">Restart Race</button>
-            <button id="edit-track-btn" style="display: none; background: #6c757d; border-color: #6c757d;">Edit Track</button>
+            <input type="file" id="add-custom-input" accept=".obj" style="display: none;">
+            <button id="start-race-btn" class="button-full-width" style="background: #28a745; border-color: #28a745; margin-top: 8px;">🏁 Start Race!</button>
+            
+            <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="editor-tools">🛠️ Editor Tools (W,E,R) ▼</div>
+            <div id="editor-tools" class="collapsible-content">
+                <button id="toggle-transform-btn" class="button-full-width" style="background: #007bff; border-color: #007bff;">🎯 Disable Transform</button>
+                <div id="selection-info" style="color: #ffd700; font-size: 12px; margin: 5px 0; text-align: center;"></div>
+                
+                <div class="button-grid" style="margin-top: 8px;">
+                    <button id="select-all-btn">🎯 Select All</button>
+                    <button id="duplicate-piece-btn">📋 Duplicate</button>
+                    <button id="remove-piece-btn">🗑️ Remove</button>
+                    <button id="edit-material-btn">🎨 Object</button>
+                </div>
+                
+                <div class="button-grid" style="margin-top: 8px;">
+                    <button id="save-track-btn">💾 Save</button>
+                    <label for="load-track-input" style="margin: 0; padding: 8px 4px; font-size: 12px;">📂 Load</label>
+                </div>
+                <input type="file" id="load-track-input" accept=".json" style="display: none;">
+                
+                <div class="button-grid" style="margin-top: 8px;">
+                    <button id="skybox-btn">🌌 Skybox</button>
+                    <button id="camera-mode-btn">📹 Camera</button>
+                    <button id="ball-maker-btn">⚽ Balls</button>
+                    <button id="spotify-btn">🎵 Music</button>
+                    <button id="ball-roster-btn" style="background: #17a2b8; border-color: #17a2b8;">👥 Roster</button>
+                    <button id="open-tournament-btn">🏁 Tournament</button>
+                </div>
+            </div>
+            <button id="restart-race-btn" class="button-full-width" style="display: none; background: #ffc107; border-color: #ffc107; color: #212529; margin-top: 8px;">🔄 Restart Race</button>
+            <button id="edit-track-btn" class="button-full-width" style="display: none; background: #6c757d; border-color: #6c757d; margin-top: 8px;">✏️ Edit Track</button>
             <div class="speed-control" id="camera-speed-control" style="display: none;">
                 <label for="camera-speed-slider">Camera Speed</label>
                 <input type="range" id="camera-speed-slider" min="0.1" max="2" step="0.1" value="1">
             </div>
-            <div class="speed-control">
-                <label>Ball Roster</label>
-                <button id="ball-roster-btn" style="background: #17a2b8; border-color: #17a2b8;">Manage Roster</button>
-            </div>
-            <div class="ui-title" style="margin-top:15px;">Tournament Mode</div>
-            <button id="open-tournament-btn">Open Tournament</button>
-            <div class="ui-title" style="margin-top:15px;">Lighting</div>
-            <div class="speed-control">
-                <label for="ambient-light-slider">Ambient Intensity: <span id="ambient-light-value">0.8</span></label>
-                <input type="range" id="ambient-light-slider" min="0" max="2" step="0.1" value="0.8">
-            </div>
-            <div class="speed-control">
-                <label for="directional-light-slider">Directional Intensity: <span id="directional-light-value">1.5</span></label>
-                <input type="range" id="directional-light-slider" min="0" max="5" step="0.1" value="1.5">
-                <label for="directional-light-color" style="margin-top: 5px;">Directional Color:</label>
-                <input type="color" id="directional-light-color" value="#ffffff" style="width: 100%; height: 30px; padding: 0; border-radius: 4px;">
+            <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="lighting-controls">💡 Lighting ▼</div>
+            <div id="lighting-controls" class="collapsible-content">
+                <div class="speed-control">
+                    <label for="ambient-light-slider">Ambient Intensity: <span id="ambient-light-value">0.8</span></label>
+                    <input type="range" id="ambient-light-slider" min="0" max="2" step="0.1" value="0.8">
+                </div>
+                <div class="speed-control">
+                    <label for="directional-light-slider">Directional Intensity: <span id="directional-light-value">1.5</span></label>
+                    <input type="range" id="directional-light-slider" min="0" max="5" step="0.1" value="1.5">
+                    <label for="directional-light-color" style="margin-top: 5px;">Directional Color:</label>
+                    <input type="color" id="directional-light-color" value="#ffffff" style="width: 100%; height: 30px; padding: 0; border-radius: 4px;">
+                </div>
             </div>
         </div>
     </div>
@@ -188,8 +279,8 @@
         <h2>🎵 Spotify Embed 🎵</h2>
         <p>Paste a Spotify URL (track, playlist, album, etc.) below:</p>
         <input type="text" id="spotify-url" placeholder="https://open.spotify.com/..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #666; background: #2a2a2a; color: white;">
-        <button id="embed-spotify-btn" style="margin-top: 10px; padding: 10px 20px; background: #1DB954; border: none; color: white; border-radius: 5px; cursor: pointer;">Embed</button>
-        <button id="close-spotify-btn" style="margin-top: 10px; margin-left: 10px; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+        <button id="embed-spotify-btn" style="margin-top: 10px; padding: 10px 20px; background: #1DB954; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Embed</button>
+        <button id="close-spotify-btn" style="margin-top: 10px; margin-left: 10px; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         <div id="spotify-embed-container" style="margin-top: 20px;"></div>
     </div>
 
@@ -198,7 +289,7 @@
     <div id="race-results">
         <h2>🏁 Race Results 🏁</h2>
         <div class="podium" id="podium-results"></div>
-        <button id="close-results-btn" style="margin-top: 20px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+        <button id="close-results-btn" style="margin-top: 20px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Close</button>
     </div>
 
     <div id="ball-maker">
@@ -247,8 +338,8 @@
         <div class="ball-preview" id="ball-preview"></div>
         
         <div style="text-align: center; margin: 20px 0;">
-            <button id="add-ball-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">Add Ball</button>
-            <button id="close-ball-maker-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+            <button id="add-ball-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">➕ Add Ball</button>
+            <button id="close-ball-maker-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
         
         <div style="border-top: 1px solid #444; padding-top: 20px; margin-top: 20px;">
@@ -265,7 +356,7 @@
             <div class="random-controls">
                 <label>Count: <span id="random-count-display">5</span></label>
                 <input type="range" id="random-count-slider" min="1" max="20" step="1" value="5">
-                <button id="add-random-balls-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">Add Random</button>
+                <button id="add-random-balls-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">🎲 Add Random</button>
             </div>
         </div>
         
@@ -273,13 +364,13 @@
             <h3>Race Roster: <span id="roster-count">0</span> balls</h3>
             <div class="race-roster" id="race-roster-list"></div>
             <div style="margin-top: 10px;">
-                <button id="clear-roster-btn" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">Clear All</button>
-                <button id="add-custom-to-roster-btn" style="padding: 8px 16px; background: #17a2b8; border: none; color: white; border-radius: 4px; cursor: pointer;">Add from Custom</button>
+                <button id="clear-roster-btn" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">🗑️ Clear All</button>
+                <button id="add-custom-to-roster-btn" style="padding: 8px 16px; background: #17a2b8; border: none; color: white; border-radius: 4px; cursor: pointer;">⚽ Add from Custom</button>
             </div>
         </div>
         
         <div style="text-align: center; margin-top: 20px;">
-            <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Done</button>
+            <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Done</button>
         </div>
     </div>
 
@@ -291,7 +382,7 @@
             <div class="random-controls">
                 <label>Count: <span id="random-count-display">5</span></label>
                 <input type="range" id="random-count-slider" min="1" max="20" step="1" value="5">
-                <button id="add-random-balls-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">Add Random</button>
+                <button id="add-random-balls-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">🎲 Add Random</button>
             </div>
         </div>
         
@@ -299,13 +390,13 @@
             <h3>Race Roster: <span id="roster-count">0</span> balls</h3>
             <div class="race-roster" id="race-roster-list"></div>
             <div style="margin-top: 10px;">
-                <button id="clear-roster-btn" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">Clear All</button>
-                <button id="add-custom-to-roster-btn" style="padding: 8px 16px; background: #17a2b8; border: none; color: white; border-radius: 4px; cursor: pointer;">Add from Custom</button>
+                <button id="clear-roster-btn" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">🗑️ Clear All</button>
+                <button id="add-custom-to-roster-btn" style="padding: 8px 16px; background: #17a2b8; border: none; color: white; border-radius: 4px; cursor: pointer;">⚽ Add from Custom</button>
             </div>
         </div>
         
         <div style="text-align: center; margin-top: 20px;">
-            <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Done</button>
+            <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Done</button>
         </div>
     </div>
 
@@ -326,7 +417,7 @@
         <div class="roster-section">
             <h3>Tournament Roster</h3>
             <div id="tournament-roster-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #444; padding: 5px;">No balls in tournament.</div>
-            <button id="start-tournament-race-btn" style="margin-top: 10px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Start Tournament Race</button>
+            <button id="start-tournament-race-btn" style="margin-top: 10px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">🏁 Start Tournament Race</button>
         </div>
 
         <div class="roster-section">
@@ -335,7 +426,7 @@
         </div>
 
         <div style="text-align: center; margin-top: 20px;">
-            <button id="close-tournament-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+            <button id="close-tournament-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -355,7 +446,7 @@
     </div>
 
     <div id="material-editor">
-        <h2>🎨 Material Editor 🎨</h2>
+        <h2>🎨 Object Editor 🎨</h2>
         
         <div class="material-option">
             <label for="piece-color">Color:</label>
@@ -404,14 +495,101 @@
         </div>
         
         <div class="texture-upload" id="texture-upload-section" style="display: none;">
-            <label for="texture-upload">Upload Texture:</label>
+            <label for="texture-upload" style="display: block; padding: 8px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; text-align: center; margin: 5px 0;">
+                📎 Upload Texture
+            </label>
             <input type="file" id="texture-upload" accept="image/*">
             <div class="texture-preview" id="texture-preview"></div>
         </div>
         
+        <hr style="border-color: #444; margin: 20px 0;">
+        
+        <div class="material-option">
+            <label>
+                <input type="checkbox" id="piece-rotation-enabled"> Enable Rotation
+            </label>
+        </div>
+        
+        <div id="rotation-settings" style="display: none;">
+            <div class="material-option">
+                <label for="piece-rotation-speed">Rotation Speed: <span id="rotation-speed-value">1</span></label>
+                <input type="range" id="piece-rotation-speed" min="0" max="10" step="0.1" value="1">
+            </div>
+            
+            <div class="material-option">
+                <label for="piece-rotation-axis">Rotation Axis:</label>
+                <select id="piece-rotation-axis">
+                    <option value="x">X Axis</option>
+                    <option value="y" selected>Y Axis</option>
+                    <option value="z">Z Axis</option>
+                </select>
+            </div>
+            
+            <div class="material-option">
+                <label>
+                    <input type="checkbox" id="piece-rotation-global"> Use Global Axis
+                </label>
+            </div>
+        </div>
+        
+        <div class="material-option">
+            <label>
+                <input type="checkbox" id="piece-raycast-mirror"> Raycast Mirror Surface
+            </label>
+        </div>
+        
+        <div class="material-option">
+            <label>
+                <input type="checkbox" id="piece-pathing-enabled"> 🛤️ Enable Pathing
+            </label>
+        </div>
+        
+        <div id="pathing-settings" style="display: none;">
+            <div class="material-option">
+                <label for="piece-path-mode">Path Mode:</label>
+                <select id="piece-path-mode">
+                    <option value="loop">🔄 Loop</option>
+                    <option value="loop-reverse">🔃 Loop Reversible</option>
+                    <option value="once-touch">👆 Once on Touch</option>
+                    <option value="manual">⏯️ Manual Control</option>
+                </select>
+            </div>
+            
+            <div class="material-option">
+                <label for="piece-path-speed">Path Speed: <span id="path-speed-value">1</span></label>
+                <input type="range" id="piece-path-speed" min="0.1" max="5" step="0.1" value="1">
+            </div>
+            
+            <div class="material-option">
+                <label>Transform Types:</label>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                    <label style="font-size: 12px;"><input type="checkbox" id="path-move" checked> Move</label>
+                    <label style="font-size: 12px;"><input type="checkbox" id="path-rotate"> Rotate</label>
+                    <label style="font-size: 12px;"><input type="checkbox" id="path-scale"> Scale</label>
+                </div>
+            </div>
+            
+            <div class="material-option">
+                <button id="path-record-btn" class="action-btn">📍 Start Recording Path</button>
+                <button id="path-add-point-btn" class="action-btn" style="display: none;">➕ Add Path Point</button>
+                <button id="path-stop-btn" class="action-btn" style="display: none;">⏹️ Stop Recording</button>
+            </div>
+            
+            <div class="material-option">
+                <div id="path-points-list" style="max-height: 100px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; margin-top: 5px;">
+                    <div style="font-size: 12px; color: #666;">No path points recorded</div>
+                </div>
+            </div>
+            
+            <div class="material-option">
+                <button id="path-clear-btn" class="action-btn">🗑️ Clear Path</button>
+                <button id="path-test-btn" class="action-btn">▶️ Test Path</button>
+            </div>
+        </div>
+        
         <div style="text-align: center; margin-top: 20px;">
-            <button id="apply-material-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">Apply</button>
-            <button id="close-material-editor-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+            <button id="apply-material-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
+            <button id="close-material-editor-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -474,8 +652,8 @@
         </div>
         
         <div style="text-align: center; margin-top: 20px;">
-            <button id="apply-skybox-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">Apply</button>
-            <button id="close-skybox-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+            <button id="apply-skybox-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
+            <button id="close-skybox-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -522,6 +700,22 @@
         let previousLeadMarble = null;
         let cameraTransitionTime = 0;
         let transitionDuration = 1.0; // seconds
+        let mouseDownPosition = { x: 0, y: 0 };
+        let isDragging = false;
+        const dragThreshold = 5; // pixels
+        
+        // Camera smooth transition variables
+        let cameraTransition = {
+            active: false,
+            startTime: 0,
+            duration: 0.8, // seconds
+            startCameraPosition: new THREE.Vector3(),
+            targetCameraPosition: new THREE.Vector3(),
+            startTarget: new THREE.Vector3(),
+            targetTarget: new THREE.Vector3()
+        };
+        let glowTime = 0; // For animated glow effect
+        let multiSelectInitialized = false; // Track if multi-select group is fully set up
         let tournamentTracks = [];
         let tournamentResults = {};
         let currentTournamentTrackIndex = 0;
@@ -560,12 +754,23 @@
             });
             
             transformControls = new TransformControls(camera, renderer.domElement);
-            transformControls.enabled = false;
-            transformControls.visible = false;
+            transformControls.enabled = true;
+            transformControls.visible = true;
             
             scene.add(transformControls);
 
             world = new CANNON.World({ gravity: new CANNON.Vec3(0, -30, 0) });
+            
+            // Improve collision detection to reduce clipping
+            world.solver.iterations = 20; // Increase solver iterations for better stability
+            world.solver.tolerance = 0.001; // Tighter tolerance for more precise collisions
+            world.allowSleep = true; // Allow bodies to sleep for better performance
+            world.sleepSpeedLimit = 0.1; // Bodies sleep when moving slower than this
+            world.sleepTimeLimit = 1; // Time before a slow body goes to sleep
+            
+            // Use SAP broadphase for better performance with many objects
+            world.broadphase = new CANNON.SAPBroadphase(world);
+            
             setupPhysicsMaterials();
             setupLighting();
             scene.add(new THREE.GridHelper(200, 20));
@@ -600,8 +805,19 @@
             groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
             world.addBody(groundBody);
 
-            world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, marbleCannonMaterial, { friction: 0.3, restitution: 0.5 }));
-            world.addContactMaterial(new CANNON.ContactMaterial(trackCannonMaterial, marbleCannonMaterial, { friction: 0.1, restitution: 0.6 }));
+            // Improved contact materials for better collision response
+            world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, marbleCannonMaterial, { 
+                friction: 0.3, 
+                restitution: 0.4,
+                contactEquationStiffness: 1e8,
+                contactEquationRelaxation: 4
+            }));
+            world.addContactMaterial(new CANNON.ContactMaterial(trackCannonMaterial, marbleCannonMaterial, { 
+                friction: 0.15, 
+                restitution: 0.3,
+                contactEquationStiffness: 1e8,
+                contactEquationRelaxation: 4
+            }));
         }
 
         function addPiece(type, transform, customModelData = null) {
@@ -666,7 +882,27 @@
                 group, 
                 type, 
                 physicsBodies: [],
-                materialData: materialData
+                materialData: materialData,
+                rotationSettings: {
+                    enabled: false,
+                    speed: 1,
+                    axis: 'y',
+                    global: false
+                },
+                raycastMirror: false,
+                pathingSettings: {
+                    enabled: false,
+                    mode: 'loop',
+                    speed: 1,
+                    transformTypes: { move: true, rotate: false, scale: false },
+                    points: [],
+                    isRecording: false,
+                    isPlaying: false,
+                    currentPointIndex: 0,
+                    playbackTime: 0,
+                    direction: 1,
+                    triggered: false
+                }
             };
             updatePhysicsForPiece(newPiece);
             
@@ -729,10 +965,14 @@
             });
             
             if (!isFinish) {
-                // Only add contact material for non-finish pieces
+                // Only add contact material for non-finish pieces with improved collision response
                 world.addContactMaterial(new CANNON.ContactMaterial(pieceCannonMaterial, marbleCannonMaterial, { 
-                    friction: 0.1, 
-                    restitution: bounciness 
+                    friction: 0.12, 
+                    restitution: bounciness,
+                    contactEquationStiffness: 1e8,
+                    contactEquationRelaxation: 4,
+                    frictionEquationStiffness: 1e7,
+                    frictionEquationRelaxation: 3
                 }));
             }
             
@@ -969,6 +1209,28 @@
         
         function onPointerDown(event) {
             if (!transformControls.enabled || transformControls.dragging) return;
+            
+            // Track mouse position for drag detection
+            mouseDownPosition.x = event.clientX;
+            mouseDownPosition.y = event.clientY;
+            isDragging = false;
+        }
+
+        function onPointerMove(event) {
+            if (!isDragging) {
+                const deltaX = Math.abs(event.clientX - mouseDownPosition.x);
+                const deltaY = Math.abs(event.clientY - mouseDownPosition.y);
+                
+                if (deltaX > dragThreshold || deltaY > dragThreshold) {
+                    isDragging = true;
+                }
+            }
+        }
+
+        function onPointerUp(event) {
+            if (!transformControls.enabled || transformControls.dragging || isDragging) return;
+            
+            // Only handle selection if this was a click (not a drag)
             pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
             raycaster.setFromCamera(pointer, camera);
             const intersects = raycaster.intersectObjects(trackPieces.map(p => p.group), true);
@@ -990,16 +1252,19 @@
                         } else {
                             // Add to selection
                             selectedPieces.push(piece);
-                            highlightPiece(piece);
                         }
+                        // Refresh highlights for all selected pieces
+                        refreshAllHighlights();
                         updateMultiSelectGroup();
+                        updateCameraTargetForMultiSelect();
                         updateSelectionUI();
                     } else {
                         // Single select mode
                         clearAllSelections();
                         selectedPieces = [piece];
-                        highlightPiece(piece);
+                        highlightPiece(piece, false);
                         transformControls.attach(object);
+                        updateCameraTarget(piece);
                         updateSelectionUI();
                     }
                 }
@@ -1012,17 +1277,31 @@
             }
         }
 
-        function highlightPiece(piece) {
+        function highlightPiece(piece, isMultiSelect = false) {
             const mesh = piece.group.children[0];
             if (mesh && mesh.isMesh) {
                 // Store original material if not already stored
                 if (!piece.originalMaterial) {
                     piece.originalMaterial = mesh.material;
                 }
-                // Create highlighted material
+                // Create highlighted material with different effects for single vs multi-select
                 const highlightMaterial = piece.originalMaterial.clone();
-                highlightMaterial.emissive.setHex(0x444444);
-                highlightMaterial.emissiveIntensity = 0.3;
+                
+                if (isMultiSelect) {
+                    // Brighter glow for multi-selected objects with animation support
+                    highlightMaterial.emissive.setHex(0x00aaff); // Bright cyan glow
+                    highlightMaterial.emissiveIntensity = 0.6;
+                    // Add a subtle transparency to make them stand out
+                    highlightMaterial.transparent = true;
+                    highlightMaterial.opacity = 0.9;
+                    // Mark this material for animation
+                    highlightMaterial.userData.isMultiSelectGlow = true;
+                } else {
+                    // Subtle gray highlight for single selection
+                    highlightMaterial.emissive.setHex(0x444444);
+                    highlightMaterial.emissiveIntensity = 0.3;
+                }
+                
                 mesh.material = highlightMaterial;
             }
         }
@@ -1033,6 +1312,24 @@
                 mesh.material = piece.originalMaterial;
                 delete piece.originalMaterial;
             }
+            // Clean up relative transform data
+            if (piece.relativePosition) {
+                delete piece.relativePosition;
+            }
+            if (piece.relativeRotation) {
+                delete piece.relativeRotation;
+            }
+            if (piece.relativeScale) {
+                delete piece.relativeScale;
+            }
+        }
+
+        function refreshAllHighlights() {
+            // Re-highlight all selected pieces with appropriate multi-select styling
+            selectedPieces.forEach(piece => {
+                clearPieceSelection(piece);
+                highlightPiece(piece, selectedPieces.length > 1);
+            });
         }
 
         function clearAllSelections() {
@@ -1054,15 +1351,64 @@
             }
         }
 
+        function updateCameraTarget(piece, smooth = false) {
+            if (piece && piece.group) {
+                if (smooth) {
+                    startCameraTransition(piece.group.position);
+                } else {
+                    // Set orbit controls target to the selected piece's position
+                    orbitControls.target.copy(piece.group.position);
+                    orbitControls.update();
+                }
+            }
+        }
+
+        function updateCameraTargetForMultiSelect(smooth = false) {
+            if (selectedPieces.length > 0) {
+                // Calculate center of selected pieces for camera target
+                const center = new THREE.Vector3();
+                selectedPieces.forEach(piece => {
+                    center.add(piece.group.position);
+                });
+                center.divideScalar(selectedPieces.length);
+                
+                if (smooth) {
+                    startCameraTransition(center);
+                } else {
+                    // Set orbit controls target to the center of selected pieces
+                    orbitControls.target.copy(center);
+                    orbitControls.update();
+                }
+            }
+        }
+
+        function startCameraTransition(newTargetPosition) {
+            // Calculate current relative position of camera to target
+            const currentRelativePosition = new THREE.Vector3().subVectors(camera.position, orbitControls.target);
+            
+            // Set up transition
+            cameraTransition.active = true;
+            cameraTransition.startTime = performance.now();
+            cameraTransition.startCameraPosition.copy(camera.position);
+            cameraTransition.startTarget.copy(orbitControls.target);
+            cameraTransition.targetTarget.copy(newTargetPosition);
+            
+            // Calculate new camera position maintaining relative orientation
+            cameraTransition.targetCameraPosition.copy(newTargetPosition).add(currentRelativePosition);
+        }
+
         function updateMultiSelectGroup() {
             destroyMultiSelectGroup();
             
             if (selectedPieces.length > 1) {
+                multiSelectInitialized = false;
+                
                 // Create a group for multi-selection
                 multiSelectGroup = new THREE.Group();
                 scene.add(multiSelectGroup);
                 
-                // Calculate center of selected pieces
+                // Calculate center of selected pieces ONLY from their current actual positions
+                // Don't modify piece positions - just use them to calculate the center
                 const center = new THREE.Vector3();
                 selectedPieces.forEach(piece => {
                     center.add(piece.group.position);
@@ -1074,9 +1420,16 @@
                 // Attach transform controls to the group
                 transformControls.attach(multiSelectGroup);
                 
-                // Store relative positions
+                // Store relative transforms based on current transforms (don't move pieces)
                 selectedPieces.forEach(piece => {
                     piece.relativePosition = piece.group.position.clone().sub(center);
+                    piece.relativeRotation = piece.group.quaternion.clone();
+                    piece.relativeScale = piece.group.scale.clone();
+                });
+                
+                // Mark as initialized on next frame to prevent immediate position updates
+                requestAnimationFrame(() => {
+                    multiSelectInitialized = true;
                 });
             }
         }
@@ -1086,6 +1439,7 @@
                 transformControls.detach();
                 scene.remove(multiSelectGroup);
                 multiSelectGroup = null;
+                multiSelectInitialized = false;
             }
         }
 
@@ -1166,28 +1520,21 @@
             document.getElementById('piece-type-selector').addEventListener('change', (e) => {
                 const selectedType = e.target.value;
                 if (selectedType) {
-                    addPiece(selectedType);
+                    if (selectedType === 'custom') {
+                        // Trigger file input for custom obj
+                        document.getElementById('add-custom-input').click();
+                    } else {
+                        addPiece(selectedType);
+                    }
                     // Reset dropdown to default
                     e.target.value = '';
-                }
-            });
-            
-            // Keep the manual add button as backup
-            document.getElementById('add-selected-piece-btn').addEventListener('click', () => {
-                const selector = document.getElementById('piece-type-selector');
-                const selectedType = selector.value;
-                if (selectedType) {
-                    addPiece(selectedType);
-                    selector.value = '';
-                } else {
-                    alert('Please select a piece type first!');
                 }
             });
             document.getElementById('add-custom-input').addEventListener('change', loadCustomObject);
             document.getElementById('toggle-transform-btn').addEventListener('click', (e) => {
                 transformControls.enabled = !transformControls.enabled;
                 transformControls.visible = transformControls.enabled;
-                e.target.textContent = transformControls.enabled ? 'Disable Transform' : 'Enable Transform';
+                e.target.textContent = transformControls.enabled ? '🎯 Disable Transform' : '🎯 Enable Transform';
                 e.target.style.background = transformControls.enabled ? '#007bff' : '#4a4a4a';
                 if (!transformControls.enabled) transformControls.detach();
             });
@@ -1222,27 +1569,112 @@
             document.getElementById('remove-piece-btn').addEventListener('click', removeSelectedPiece);
             document.getElementById('edit-material-btn').addEventListener('click', openMaterialEditor);
             document.getElementById('close-material-editor-btn').addEventListener('click', () => {
-                document.getElementById('material-editor').style.display = 'none';
+                const editor = document.getElementById('material-editor');
+                editor.classList.remove('show');
+                setTimeout(() => editor.style.display = 'none', 300);
             });
             document.getElementById('apply-material-btn').addEventListener('click', applyMaterial);
             document.getElementById('piece-texture-type').addEventListener('change', toggleTextureUpload);
             document.getElementById('texture-upload').addEventListener('change', handleTextureUpload);
             
-            // Material editor value display updates
-            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive'].forEach(id => {
+            // Material editor value display updates with real-time material application
+            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive', 'piece-rotation-speed'].forEach(id => {
                 document.getElementById(id).addEventListener('input', (e) => {
-                    document.getElementById(id.replace('piece-', '') + '-value').textContent = e.target.value;
+                    const valueId = id.replace('piece-', '').replace('-', '-') + '-value';
+                    const element = document.getElementById(valueId);
+                    if (element) {
+                        element.textContent = e.target.value;
+                    }
+                    
+                    // Apply material changes in real-time for visual properties
+                    if (['piece-metalness', 'piece-roughness', 'piece-emissive', 'piece-transparency'].includes(id)) {
+                        applyMaterialRealTime();
+                    }
+                });
+            });
+            
+            // Real-time updates for color and emissive color
+            document.getElementById('piece-color').addEventListener('input', applyMaterialRealTime);
+            document.getElementById('piece-emissive-color').addEventListener('input', applyMaterialRealTime);
+            
+            // Rotation settings toggle
+            document.getElementById('piece-rotation-enabled').addEventListener('change', (e) => {
+                const rotationSettings = document.getElementById('rotation-settings');
+                rotationSettings.style.display = e.target.checked ? 'block' : 'none';
+            });
+            
+            // Pathing settings toggle
+            document.getElementById('piece-pathing-enabled').addEventListener('change', (e) => {
+                const pathingSettings = document.getElementById('pathing-settings');
+                pathingSettings.style.display = e.target.checked ? 'block' : 'none';
+            });
+            
+            // Path speed value display update
+            document.getElementById('piece-path-speed').addEventListener('input', (e) => {
+                document.getElementById('path-speed-value').textContent = e.target.value;
+            });
+            
+            // Path recording controls
+            document.getElementById('path-record-btn').addEventListener('click', startPathRecording);
+            document.getElementById('path-add-point-btn').addEventListener('click', addPathPoint);
+            document.getElementById('path-stop-btn').addEventListener('click', stopPathRecording);
+            document.getElementById('path-clear-btn').addEventListener('click', clearPath);
+            document.getElementById('path-test-btn').addEventListener('click', testPath);
+            
+            // Save dialog event listeners
+            document.getElementById('save-confirm-btn').addEventListener('click', performSave);
+            document.getElementById('save-cancel-btn').addEventListener('click', () => {
+                document.getElementById('save-dialog').style.display = 'none';
+            });
+            document.getElementById('save-filename').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSave();
+                }
+            });
+            
+            // Select all button
+            document.getElementById('select-all-btn').addEventListener('click', () => {
+                clearAllSelections();
+                selectedPieces = [...trackPieces];
+                selectedPieces.forEach(piece => highlightPiece(piece, true));
+                refreshAllHighlights();
+                updateMultiSelectGroup();
+                updateCameraTargetForMultiSelect();
+                updateSelectionUI();
+            });
+            
+            // Collapsible sections
+            document.querySelectorAll('.collapsible-section').forEach(section => {
+                section.addEventListener('click', () => {
+                    const targetId = section.getAttribute('data-target');
+                    const content = document.getElementById(targetId);
+                    const isCollapsed = content.classList.contains('collapsed');
+                    
+                    if (isCollapsed) {
+                        content.classList.remove('collapsed');
+                        section.textContent = section.textContent.replace('▶', '▼');
+                    } else {
+                        content.classList.add('collapsed');
+                        section.textContent = section.textContent.replace('▼', '▶');
+                    }
                 });
             });
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('pointerdown', onPointerDown);
+            renderer.domElement.addEventListener('pointermove', onPointerMove);
+            renderer.domElement.addEventListener('pointerup', onPointerUp);
             transformControls.addEventListener('dragging-changed', event => orbitControls.enabled = !event.value);
             transformControls.addEventListener('change', updateMultiSelectPositions);
             transformControls.addEventListener('mouseUp', () => { 
                 if(transformControls.object && transformControls.object !== multiSelectGroup) {
-                    updatePhysicsForPiece(trackPieces.find(p => p.group === transformControls.object));
+                    const piece = trackPieces.find(p => p.group === transformControls.object);
+                    updatePhysicsForPiece(piece);
+                    // Smoothly update camera target to follow the moved piece
+                    updateCameraTarget(piece, true);
                 } else if (multiSelectGroup) {
                     selectedPieces.forEach(piece => updatePhysicsForPiece(piece));
+                    // Smoothly update camera target to follow the moved pieces
+                    updateCameraTargetForMultiSelect(true);
                 }
             });
             window.addEventListener('keydown', (e) => {
@@ -1273,32 +1705,119 @@
         }
         
         function saveTrack() {
-             const trackData = {
+            // Show save dialog
+            document.getElementById('save-dialog').style.display = 'block';
+            document.getElementById('save-filename').focus();
+            document.getElementById('save-filename').select();
+        }
+        
+        function performSave() {
+            const filename = document.getElementById('save-filename').value.trim();
+            if (!filename) {
+                showMessage('Please enter a filename', 'error');
+                return;
+            }
+            
+            const trackData = {
                 pieces: trackPieces.map(p => ({
                     type: p.type,
                     position: p.group.position.toArray(),
                     quaternion: p.group.quaternion.toArray(),
                     scale: p.group.scale.toArray(),
-                    materialData: p.materialData
+                    materialData: p.materialData,
+                    rotationSettings: p.rotationSettings,
+                    raycastMirror: p.raycastMirror,
+                    pathingSettings: p.pathingSettings ? {
+                        ...p.pathingSettings,
+                        // Convert Vector3 and Quaternion objects to arrays for JSON serialization
+                        points: p.pathingSettings.points ? p.pathingSettings.points.map(point => ({
+                            ...point,
+                            position: point.position.toArray(),
+                            quaternion: point.quaternion.toArray(),
+                            scale: point.scale.toArray()
+                        })) : []
+                    } : null
                 })),
                 customBalls: customBalls,
                 raceRoster: raceRoster,
                 skyboxData: currentSkyboxData,
                 spotifyUrl: document.getElementById('spotify-url').value
             };
+            
+            const finalFilename = filename.endsWith('.json') ? filename : filename + '.json';
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(trackData, null, 2)], {type: 'application/json'}));
-            a.download = 'marble-track.json';
+            a.download = finalFilename;
             a.click();
             URL.revokeObjectURL(a.href);
+            
+            document.getElementById('save-dialog').style.display = 'none';
+            showMessage(`Track saved as "${finalFilename}"`, 'success');
+        }
+        
+        function showMessage(text, type = 'info') {
+            const notification = document.getElementById('message-notification');
+            notification.textContent = text;
+            notification.className = `show ${type}`;
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
         }
 
+        function resetToDefaults() {
+            // Clear all track pieces
+            trackPieces.forEach(piece => {
+                scene.remove(piece.group);
+                if (piece.body) {
+                    world.removeBody(piece.body);
+                }
+            });
+            trackPieces.length = 0;
+            
+            // Clear selections
+            clearAllSelections();
+            transformControls.detach();
+            
+            // Reset custom balls
+            customBalls.length = 0;
+            updateCustomBallsList();
+            
+            // Reset race roster
+            raceRoster.length = 0;
+            
+            // Reset camera to default
+            camera.position.set(10, 10, 10);
+            camera.lookAt(0, 0, 0);
+            orbitControls.target.set(0, 0, 0);
+            orbitControls.update();
+            
+            // Reset lighting to defaults
+            document.getElementById('ambient-light-slider').value = 0.8;
+            document.getElementById('directional-light-slider').value = 1.5;
+            document.getElementById('ambient-light-value').textContent = '0.8';
+            document.getElementById('directional-light-value').textContent = '1.5';
+            updateLighting();
+            
+            // Reset skybox to default
+            currentSkyboxData = null;
+            scene.background = new THREE.Color(0x87CEEB);
+            
+            // Reset camera mode
+            cameraMode = 'panning';
+            
+            console.log('Reset to defaults complete');
+        }
+        
         function loadTrack(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = e => {
-                // Don't clear existing track pieces - add to existing circuit
+                // Reset everything to defaults before loading
+                resetToDefaults();
+                
                 transformControls.detach();
                 
                 const data = JSON.parse(e.target.result);
@@ -1325,14 +1844,35 @@
                             };
                             addPiece(d.type, transform);
                             
-                            // Apply saved material data
+                            // Apply saved material data and settings
+                            const piece = trackPieces[trackPieces.length - 1];
                             if (d.materialData) {
-                                const piece = trackPieces[trackPieces.length - 1];
                                 piece.materialData = d.materialData;
-                                const mesh = piece.group.children[0];
-                                if (mesh && mesh.isMesh) {
-                                    mesh.material = createPieceMaterial(piece.materialData);
-                                }
+                            }
+                            if (d.rotationSettings) {
+                                piece.rotationSettings = d.rotationSettings;
+                            }
+                            if (d.raycastMirror !== undefined) {
+                                piece.raycastMirror = d.raycastMirror;
+                            }
+                            if (d.pathingSettings) {
+                                piece.pathingSettings = {
+                                    ...piece.pathingSettings,
+                                    ...d.pathingSettings,
+                                    // Restore Vector3 and Quaternion objects from arrays
+                                    points: d.pathingSettings.points ? d.pathingSettings.points.map(point => ({
+                                        ...point,
+                                        position: new THREE.Vector3().fromArray(point.position),
+                                        quaternion: new THREE.Quaternion().fromArray(point.quaternion),
+                                        scale: new THREE.Vector3().fromArray(point.scale)
+                                    })) : []
+                                };
+                            }
+                            
+                            // Apply material with raycast mirror settings
+                            const mesh = piece.group.children[0];
+                            if (mesh && mesh.isMesh) {
+                                mesh.material = createPieceMaterial(piece.materialData, piece.raycastMirror);
                             }
                         });
                     }
@@ -1379,11 +1919,11 @@
                     if (geometry) {
                         addPiece('custom', null, { geometry });
                     } else {
-                        alert('Could not find a mesh in the OBJ file.');
+                        showMessage('Could not find a mesh in the OBJ file.', 'error');
                     }
                 } catch (error) {
                     console.error("Error loading custom object:", error);
-                    alert('Failed to load or parse the OBJ file.');
+                    showMessage('Failed to load or parse the OBJ file.', 'error');
                 }
             };
             reader.readAsText(file);
@@ -1403,7 +1943,7 @@
             orbitControls.enableZoom = true;
             
             const startPiece = trackPieces.find(p => p.type === 'start');
-            if(!startPiece) { alert("A 'Start' piece is required to race!"); isRaceMode = false; return; }
+            if(!startPiece) { showMessage("A 'Start' piece is required to race!", 'error'); isRaceMode = false; return; }
 
             spawnMarbles(startPiece);
         }
@@ -1466,7 +2006,12 @@
                 const nameplate = createNameplate(ballConfig.name);
                 scene.add(nameplate);
                 
-                const body = new CANNON.Body({ mass: 1.2, shape: new CANNON.Sphere(0.4), position: worldPos, material: marbleCannonMaterial });
+                const sphereShape = new CANNON.Sphere(0.39); // Slightly smaller for better collision detection
+                const body = new CANNON.Body({ mass: 1.2, shape: sphereShape, position: worldPos, material: marbleCannonMaterial });
+                
+                // Add collision margins for better contact detection
+                body.material.friction = 0.3;
+                body.material.restitution = 0.4;
                 body.userData = { isMarble: true, name: ballConfig.name, finished: false };
                 world.addBody(body);
                 marbles.push({ mesh, body, name: ballConfig.name, color: ballConfig.color, finished: false, nameplate });
@@ -1643,7 +2188,7 @@
         function embedSpotify() {
             const spotifyUrl = document.getElementById('spotify-url').value;
             if (!spotifyUrl || !spotifyUrl.includes('open.spotify.com')) {
-                alert('Please enter a valid Spotify URL.');
+                showMessage('Please enter a valid Spotify URL.', 'error');
                 return;
             }
 
@@ -1869,13 +2414,13 @@
                     tournamentTracks.push(trackData);
                     updateTournamentTrackList();
                     
-                    alert(`Added "${trackData.name}" to tournament. Total tracks: ${tournamentTracks.length}`);
+                    showMessage(`Added "${trackData.name}" to tournament. Total tracks: ${tournamentTracks.length}`, 'success');
                     
                     // Clear the file input so the same file can be added again if needed
                     event.target.value = '';
                 } catch (error) {
                     console.error("Error adding tournament track:", error);
-                    alert('Failed to load or parse the track file.');
+                    showMessage('Failed to load or parse the track file.', 'error');
                 }
             };
             reader.readAsText(file);
@@ -1888,7 +2433,7 @@
                 tournamentResults = {};
                 updateTournamentTrackList();
                 updateTournamentResultsDisplay();
-                alert('All tracks cleared from tournament.');
+                showMessage('All tracks cleared from tournament.', 'success');
             }
         }
 
@@ -1937,11 +2482,11 @@
 
         async function startTournamentRace() {
             if (tournamentTracks.length === 0) {
-                alert('Please load tournament tracks first.');
+                showMessage('Please load tournament tracks first.', 'error');
                 return;
             }
             if (raceRoster.length === 0) {
-                alert('Please add balls to the race roster first.');
+                showMessage('Please add balls to the race roster first.', 'error');
                 return;
             }
 
@@ -2019,7 +2564,7 @@
 
                 const startPiece = trackPieces.find(p => p.type === 'start');
                 if (!startPiece) {
-                    alert(`Track ${i + 1} has no start piece! Skipping.`);
+                    showMessage(`Track ${i + 1} has no start piece! Skipping.`, 'error');
                     continue;
                 }
 
@@ -2186,7 +2731,7 @@
 
         function openMaterialEditor() {
             if (!transformControls.object) {
-                alert('Please select a track piece first');
+                showMessage('Please select a track piece first', 'error');
                 return;
             }
             
@@ -2211,8 +2756,45 @@
             document.getElementById('piece-bounciness-value').textContent = mat.bounciness || 0.3;
             document.getElementById('piece-emissive-value').textContent = mat.emissive;
             
+            // Load rotation settings
+            const rotSettings = piece.rotationSettings || { enabled: false, speed: 1, axis: 'y', global: false };
+            document.getElementById('piece-rotation-enabled').checked = rotSettings.enabled;
+            document.getElementById('piece-rotation-speed').value = rotSettings.speed;
+            document.getElementById('piece-rotation-axis').value = rotSettings.axis;
+            document.getElementById('piece-rotation-global').checked = rotSettings.global;
+            
+            // Update rotation speed value display
+            document.getElementById('rotation-speed-value').textContent = rotSettings.speed;
+            
+            // Load raycast mirror setting
+            document.getElementById('piece-raycast-mirror').checked = piece.raycastMirror || false;
+            
+            // Load pathing settings
+            const pathSettings = piece.pathingSettings || {
+                enabled: false, mode: 'loop', speed: 1,
+                transformTypes: { move: true, rotate: false, scale: false },
+                points: []
+            };
+            document.getElementById('piece-pathing-enabled').checked = pathSettings.enabled;
+            document.getElementById('piece-path-mode').value = pathSettings.mode;
+            document.getElementById('piece-path-speed').value = pathSettings.speed;
+            document.getElementById('path-speed-value').textContent = pathSettings.speed;
+            document.getElementById('path-move').checked = pathSettings.transformTypes.move;
+            document.getElementById('path-rotate').checked = pathSettings.transformTypes.rotate;
+            document.getElementById('path-scale').checked = pathSettings.transformTypes.scale;
+            
+            // Update path points display
+            updatePathPointsDisplay(piece);
+            
+            // Show/hide settings based on enabled states
+            document.getElementById('rotation-settings').style.display = rotSettings.enabled ? 'block' : 'none';
+            document.getElementById('pathing-settings').style.display = pathSettings.enabled ? 'block' : 'none';
+            
             toggleTextureUpload();
-            document.getElementById('material-editor').style.display = 'block';
+            const editor = document.getElementById('material-editor');
+            editor.style.display = 'block';
+            // Trigger the slide-in animation
+            setTimeout(() => editor.classList.add('show'), 10);
         }
 
         function toggleTextureUpload() {
@@ -2235,16 +2817,22 @@
             reader.readAsDataURL(file);
         }
 
-        function createPieceMaterial(materialData) {
+        function createPieceMaterial(materialData, raycastMirror = false) {
             const material = new THREE.MeshStandardMaterial({
                 color: new THREE.Color(materialData.color),
                 transparent: materialData.transparency > 0,
                 opacity: 1 - materialData.transparency,
-                metalness: materialData.metalness,
-                roughness: materialData.roughness,
+                metalness: raycastMirror ? 1.0 : materialData.metalness, // Full metalness for mirrors
+                roughness: raycastMirror ? 0.0 : materialData.roughness, // No roughness for mirrors
                 emissive: new THREE.Color(materialData.emissiveColor),
                 emissiveIntensity: materialData.emissive
             });
+            
+            // Add mirror effect for raycast mirrors
+            if (raycastMirror) {
+                material.envMapIntensity = 2.0; // Enhance environment reflections
+                material.userData.isRaycastMirror = true;
+            }
 
             // Add texture
             if (materialData.textureType !== 'none') {
@@ -2333,13 +2921,287 @@
                 textureData: window.currentTextureData || piece.materialData.textureData
             };
             
+            // Update rotation settings
+            piece.rotationSettings = {
+                enabled: document.getElementById('piece-rotation-enabled').checked,
+                speed: parseFloat(document.getElementById('piece-rotation-speed').value),
+                axis: document.getElementById('piece-rotation-axis').value,
+                global: document.getElementById('piece-rotation-global').checked
+            };
+            
+            // Update raycast mirror setting
+            piece.raycastMirror = document.getElementById('piece-raycast-mirror').checked;
+            
+            // Update pathing settings
+            piece.pathingSettings = {
+                ...piece.pathingSettings,
+                enabled: document.getElementById('piece-pathing-enabled').checked,
+                mode: document.getElementById('piece-path-mode').value,
+                speed: parseFloat(document.getElementById('piece-path-speed').value),
+                transformTypes: {
+                    move: document.getElementById('path-move').checked,
+                    rotate: document.getElementById('path-rotate').checked,
+                    scale: document.getElementById('path-scale').checked
+                }
+            };
+            
             // Apply new material to mesh
             const mesh = piece.group.children[0];
             if (mesh && mesh.isMesh) {
-                mesh.material = createPieceMaterial(piece.materialData);
+                mesh.material = createPieceMaterial(piece.materialData, piece.raycastMirror);
             }
             
-            document.getElementById('material-editor').style.display = 'none';
+            const editor = document.getElementById('material-editor');
+            editor.classList.remove('show');
+            setTimeout(() => editor.style.display = 'none', 300);
+        }
+
+        function applyMaterialRealTime() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece) return;
+            
+            // Update only the visual material properties in real-time
+            const materialData = {
+                color: document.getElementById('piece-color').value,
+                transparency: parseFloat(document.getElementById('piece-transparency').value),
+                metalness: parseFloat(document.getElementById('piece-metalness').value),
+                roughness: parseFloat(document.getElementById('piece-roughness').value),
+                emissive: parseFloat(document.getElementById('piece-emissive').value),
+                emissiveColor: document.getElementById('piece-emissive-color').value,
+                textureType: piece.materialData?.textureType || 'none',
+                textureData: piece.materialData?.textureData
+            };
+            
+            // Apply new material to mesh immediately
+            const mesh = piece.group.children[0];
+            if (mesh && mesh.isMesh) {
+                mesh.material = createPieceMaterial(materialData, piece.raycastMirror);
+            }
+        }
+
+        // ============= PATHING SYSTEM =============
+        
+        let currentRecordingPiece = null;
+        
+        function startPathRecording() {
+            if (!transformControls.object) {
+                showMessage('Please select a track piece first', 'error');
+                return;
+            }
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece) return;
+            
+            // Initialize pathing settings if not exists
+            if (!piece.pathingSettings) {
+                piece.pathingSettings = {
+                    enabled: false, mode: 'loop', speed: 1,
+                    transformTypes: { move: true, rotate: false, scale: false },
+                    points: [], isRecording: false, isPlaying: false,
+                    currentPointIndex: 0, playbackTime: 0, direction: 1, triggered: false
+                };
+            }
+            
+            // Record initial position as first point
+            const startPoint = {
+                position: piece.group.position.clone(),
+                quaternion: piece.group.quaternion.clone(),
+                scale: piece.group.scale.clone(),
+                timestamp: 0
+            };
+            
+            piece.pathingSettings.points = [startPoint];
+            piece.pathingSettings.isRecording = true;
+            currentRecordingPiece = piece;
+            
+            // Update UI
+            document.getElementById('path-record-btn').style.display = 'none';
+            document.getElementById('path-add-point-btn').style.display = 'inline-block';
+            document.getElementById('path-stop-btn').style.display = 'inline-block';
+            
+            updatePathPointsDisplay(piece);
+            showMessage('Path recording started! Move/rotate/scale the piece and click "Add Path Point" to record keyframes.', 'info');
+        }
+        
+        function addPathPoint() {
+            if (!currentRecordingPiece) return;
+            
+            const piece = currentRecordingPiece;
+            const lastPoint = piece.pathingSettings.points[piece.pathingSettings.points.length - 1];
+            
+            const newPoint = {
+                position: piece.group.position.clone(),
+                quaternion: piece.group.quaternion.clone(),
+                scale: piece.group.scale.clone(),
+                timestamp: lastPoint.timestamp + 1 // Simple incremental timing
+            };
+            
+            piece.pathingSettings.points.push(newPoint);
+            updatePathPointsDisplay(piece);
+            
+            console.log(`Added path point ${piece.pathingSettings.points.length}:`, newPoint);
+        }
+        
+        function stopPathRecording() {
+            if (!currentRecordingPiece) return;
+            
+            currentRecordingPiece.pathingSettings.isRecording = false;
+            currentRecordingPiece = null;
+            
+            // Update UI
+            document.getElementById('path-record-btn').style.display = 'inline-block';
+            document.getElementById('path-add-point-btn').style.display = 'none';
+            document.getElementById('path-stop-btn').style.display = 'none';
+            
+            showMessage('Path recording stopped!', 'success');
+        }
+        
+        function clearPath() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece || !piece.pathingSettings) return;
+            
+            if (confirm('Clear all path points?')) {
+                piece.pathingSettings.points = [];
+                piece.pathingSettings.isPlaying = false;
+                piece.pathingSettings.currentPointIndex = 0;
+                piece.pathingSettings.playbackTime = 0;
+                updatePathPointsDisplay(piece);
+            }
+        }
+        
+        function testPath() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece || !piece.pathingSettings || piece.pathingSettings.points.length < 2) {
+                showMessage('Need at least 2 path points to test the path', 'error');
+                return;
+            }
+            
+            // Start path playback
+            piece.pathingSettings.isPlaying = true;
+            piece.pathingSettings.currentPointIndex = 0;
+            piece.pathingSettings.playbackTime = 0;
+            piece.pathingSettings.direction = 1;
+            
+            showMessage('Testing path! The piece will follow the recorded path.', 'info');
+        }
+        
+        function updatePathPointsDisplay(piece) {
+            const container = document.getElementById('path-points-list');
+            
+            if (!piece.pathingSettings || piece.pathingSettings.points.length === 0) {
+                container.innerHTML = '<div style="font-size: 12px; color: #666;">No path points recorded</div>';
+                return;
+            }
+            
+            let html = '';
+            piece.pathingSettings.points.forEach((point, index) => {
+                const pos = point.position;
+                const rot = point.quaternion;
+                const scale = point.scale;
+                html += `<div style="font-size: 11px; padding: 2px; border-bottom: 1px solid #eee;">
+                    <strong>Point ${index + 1}:</strong><br>
+                    Pos: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})<br>
+                    Scale: (${scale.x.toFixed(2)}, ${scale.y.toFixed(2)}, ${scale.z.toFixed(2)})
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function updatePathingAnimations(deltaTime) {
+            trackPieces.forEach(piece => {
+                if (!piece.pathingSettings || !piece.pathingSettings.enabled || !piece.pathingSettings.isPlaying) return;
+                if (piece.pathingSettings.points.length < 2) return;
+                
+                const settings = piece.pathingSettings;
+                const points = settings.points;
+                
+                // Update playback time
+                settings.playbackTime += deltaTime * settings.speed;
+                
+                // Calculate current segment
+                const totalTime = points[points.length - 1].timestamp;
+                let normalizedTime = (settings.playbackTime % (totalTime + 1)) / (totalTime + 1);
+                
+                // Handle different path modes
+                if (settings.mode === 'loop-reverse') {
+                    // Ping-pong between 0 and 1
+                    const cycle = Math.floor(settings.playbackTime / (totalTime + 1));
+                    if (cycle % 2 === 1) {
+                        normalizedTime = 1 - normalizedTime;
+                    }
+                } else if (settings.mode === 'once-touch') {
+                    if (settings.triggered && normalizedTime >= 1) {
+                        // Stop at end
+                        normalizedTime = 1;
+                        settings.isPlaying = false;
+                    } else if (!settings.triggered) {
+                        // Wait for trigger
+                        return;
+                    }
+                }
+                
+                // Find current segment
+                const targetTime = normalizedTime * totalTime;
+                let fromIndex = 0;
+                let toIndex = 1;
+                
+                for (let i = 0; i < points.length - 1; i++) {
+                    if (targetTime >= points[i].timestamp && targetTime <= points[i + 1].timestamp) {
+                        fromIndex = i;
+                        toIndex = i + 1;
+                        break;
+                    }
+                }
+                
+                const fromPoint = points[fromIndex];
+                const toPoint = points[toIndex];
+                const segmentDuration = toPoint.timestamp - fromPoint.timestamp;
+                const segmentProgress = segmentDuration > 0 ? (targetTime - fromPoint.timestamp) / segmentDuration : 0;
+                
+                // Interpolate transforms based on enabled types
+                if (settings.transformTypes.move) {
+                    piece.group.position.lerpVectors(fromPoint.position, toPoint.position, segmentProgress);
+                }
+                
+                if (settings.transformTypes.rotate) {
+                    piece.group.quaternion.slerpQuaternions(fromPoint.quaternion, toPoint.quaternion, segmentProgress);
+                }
+                
+                if (settings.transformTypes.scale) {
+                    piece.group.scale.lerpVectors(fromPoint.scale, toPoint.scale, segmentProgress);
+                }
+                
+                // Mark for physics update if moving
+                if (settings.transformTypes.move || settings.transformTypes.rotate) {
+                    piece.needsPhysicsUpdate = true;
+                }
+            });
+        }
+        
+        function checkPathTriggers() {
+            // Check for marble collisions with "once-touch" path pieces
+            trackPieces.forEach(piece => {
+                if (!piece.pathingSettings || !piece.pathingSettings.enabled) return;
+                if (piece.pathingSettings.mode !== 'once-touch' || piece.pathingSettings.triggered) return;
+                
+                // Simple distance check to marbles
+                marbles.forEach(marble => {
+                    const distance = marble.mesh.position.distanceTo(piece.group.position);
+                    if (distance < 3) { // Trigger radius
+                        piece.pathingSettings.triggered = true;
+                        piece.pathingSettings.isPlaying = true;
+                        piece.pathingSettings.playbackTime = 0;
+                        console.log(`Path triggered for piece near marble ${marble.name}`);
+                    }
+                });
+            });
         }
 
         function openSkyboxSelector() {
@@ -2466,15 +3328,7 @@
             const nextIndex = (currentIndex + 1) % modes.length;
             cameraMode = modes[nextIndex];
             
-            const display = document.getElementById('camera-mode-display');
-            const modeNames = {
-                'panning': 'Panning',
-                'fpv': 'FPV',
-                'behind': 'Behind',
-                'ridealong': 'Ride Along',
-                'oncoming': 'Oncoming'
-            };
-            display.textContent = modeNames[cameraMode];
+            // Camera mode changed - no display update needed for compact button
             
             // Reset camera angle for smooth transitions
             cameraAngle = 0;
@@ -2500,11 +3354,31 @@
         }
 
         function updateMultiSelectPositions() {
-            if (!multiSelectGroup || selectedPieces.length <= 1) return;
+            if (!multiSelectGroup || selectedPieces.length <= 1 || !multiSelectInitialized) return;
             
+            // Only update transforms if the multi-select group has been initialized
+            // This prevents pieces from moving during initial setup
             selectedPieces.forEach(piece => {
-                if (piece.relativePosition) {
-                    piece.group.position.copy(multiSelectGroup.position).add(piece.relativePosition);
+                if (piece.relativePosition && piece.relativeRotation && piece.relativeScale) {
+                    // Apply position transformation
+                    const scaledRelativePos = piece.relativePosition.clone().multiply(multiSelectGroup.scale);
+                    const rotatedRelativePos = scaledRelativePos.clone().applyQuaternion(multiSelectGroup.quaternion);
+                    const newPosition = multiSelectGroup.position.clone().add(rotatedRelativePos);
+                    piece.group.position.copy(newPosition);
+                    
+                    // Apply rotation transformation
+                    const newRotation = multiSelectGroup.quaternion.clone().multiply(piece.relativeRotation);
+                    piece.group.quaternion.copy(newRotation);
+                    
+                    // Apply scale transformation
+                    const newScale = piece.relativeScale.clone().multiply(multiSelectGroup.scale);
+                    piece.group.scale.copy(newScale);
+                    
+                    // Update physics body to match visual changes
+                    if (piece.body) {
+                        piece.body.position.copy(piece.group.position);
+                        piece.body.quaternion.copy(piece.group.quaternion);
+                    }
                 }
             });
         }
@@ -2513,8 +3387,71 @@
             requestAnimationFrame(animate);
             const deltaTime = clock.getDelta();
             
+            // Update glow animation for multi-selected objects
+            glowTime += deltaTime;
+            const glowIntensity = 0.6 + 0.3 * Math.sin(glowTime * 3); // Pulse between 0.6 and 0.9
+            
+            // Update all multi-select glow materials
+            scene.traverse((object) => {
+                if (object.isMesh && object.material.userData.isMultiSelectGlow) {
+                    object.material.emissiveIntensity = glowIntensity;
+                }
+            });
+            
+            // Update piece rotations
+            trackPieces.forEach(piece => {
+                if (piece.rotationSettings && piece.rotationSettings.enabled) {
+                    const rotationAmount = piece.rotationSettings.speed * deltaTime;
+                    const axis = piece.rotationSettings.axis;
+                    
+                    if (piece.rotationSettings.global) {
+                        // Global axis rotation
+                        const rotationAxis = new THREE.Vector3(
+                            axis === 'x' ? 1 : 0,
+                            axis === 'y' ? 1 : 0,
+                            axis === 'z' ? 1 : 0
+                        );
+                        piece.group.rotateOnWorldAxis(rotationAxis, rotationAmount);
+                    } else {
+                        // Local axis rotation
+                        if (axis === 'x') piece.group.rotateX(rotationAmount);
+                        else if (axis === 'y') piece.group.rotateY(rotationAmount);
+                        else if (axis === 'z') piece.group.rotateZ(rotationAmount);
+                    }
+                    
+                    // Mark that physics needs update on next frame for efficiency
+                    piece.needsPhysicsUpdate = true;
+                }
+            });
+            
+            // Update physics for pieces that have been rotated
+            trackPieces.forEach(piece => {
+                if (piece.needsPhysicsUpdate) {
+                    updatePhysicsForPiece(piece);
+                    piece.needsPhysicsUpdate = false;
+                }
+            });
+            
+            // Update pathing animations  
+            updatePathingAnimations(deltaTime);
+            
+            // Auto-start pathing for loop modes
+            trackPieces.forEach(piece => {
+                if (piece.pathingSettings && piece.pathingSettings.enabled && !piece.pathingSettings.isPlaying) {
+                    if (piece.pathingSettings.mode === 'loop' || piece.pathingSettings.mode === 'loop-reverse') {
+                        if (piece.pathingSettings.points.length >= 2) {
+                            piece.pathingSettings.isPlaying = true;
+                            piece.pathingSettings.playbackTime = 0;
+                        }
+                    }
+                }
+            });
+            
             if (isRaceMode) {
-                world.step(1/60, deltaTime, 3);
+                // Use fixed timestep for more stable physics simulation
+                const fixedTimeStep = 1/120; // 120 FPS physics for better precision
+                const maxSubSteps = 5; // Limit sub-steps to prevent spiral of death
+                world.step(fixedTimeStep, deltaTime, maxSubSteps);
                 marbles.forEach(m => {
                     m.mesh.position.copy(m.body.position);
                     m.mesh.quaternion.copy(m.body.quaternion);
@@ -2527,6 +3464,7 @@
                 });
 
                 checkFinishLine();
+                checkPathTriggers();
 
                 // Find the lead marble (closest to any finish line)
                 let leadMarble = null;
@@ -2643,10 +3581,54 @@
                 orbitControls.update();
             }
             
+            // Handle smooth camera transitions
+            if (cameraTransition.active) {
+                const currentTime = performance.now();
+                const elapsed = (currentTime - cameraTransition.startTime) / 1000; // Convert to seconds
+                const progress = Math.min(elapsed / cameraTransition.duration, 1);
+                
+                // Use easeInOutCubic for smooth transition
+                const easeProgress = progress < 0.5 
+                    ? 4 * progress * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+                
+                // Interpolate camera position and target
+                camera.position.lerpVectors(cameraTransition.startCameraPosition, cameraTransition.targetCameraPosition, easeProgress);
+                orbitControls.target.lerpVectors(cameraTransition.startTarget, cameraTransition.targetTarget, easeProgress);
+                
+                // Update orbit controls
+                orbitControls.update();
+                
+                // Check if transition is complete
+                if (progress >= 1) {
+                    cameraTransition.active = false;
+                }
+            }
+            
             renderer.render(scene, camera);
         }
 
         init();
     </script>
+
+    <!-- Save Dialog -->
+    <div id="save-dialog">
+        <h3>💾 Save Track</h3>
+        <div>
+            <label for="save-filename">Filename:</label>
+            <input type="text" id="save-filename" placeholder="Enter filename..." value="marble-track">
+            <div style="font-size: 12px; color: #ccc; margin-top: 5px;">
+                .json extension will be added automatically
+            </div>
+        </div>
+        <div class="button-group">
+            <button class="save-confirm" id="save-confirm-btn">💾 Save</button>
+            <button class="save-cancel" id="save-cancel-btn">❌ Cancel</button>
+        </div>
+    </div>
+
+    <!-- Message Notification -->
+    <div id="message-notification"></div>
+
 </body>
 </html>
