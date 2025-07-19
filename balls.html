@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js Marble Race - Functional Editor</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #ui-container {
+            position: absolute; top: 10px; left: 10px; z-index: 100;
+            background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 8px;
+            color: white; display: flex; flex-direction: column; max-width: 180px;
+            transition: all 0.3s ease;
+        }
+        #ui-container.collapsed {
+            max-width: 60px; padding: 5px;
+        }
+        #ui-container.collapsed .ui-content {
+            display: none;
+        }
+        .ui-title { font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #555; padding-bottom: 5px;}
+        button, label {
+            display: block; margin-top: 8px; padding: 8px; background: #4a4a4a;
+            border: 1px solid #666; color: white; cursor: pointer; border-radius: 4px; text-align: center;
+        }
+        button:hover, label:hover { background: #5a5a5a; }
+        #start-race-btn { background: #28a745; border-color: #28a745;}
+        #remove-piece-btn { background: #dc3545; border-color: #dc3545;}
+        #duplicate-piece-btn { background: #17a2b8; border-color: #17a2b8; }
+        #add-end-btn { background: #e74c3c; border-color: #e74c3c; }
+        input[type="file"] { display: none; }
+        .speed-control {
+            margin: 10px 0; padding: 10px; background: #2a2a2a; border-radius: 5px;
+        }
+        .speed-control label {
+            display: block; margin-bottom: 5px; font-size: 12px; color: #ccc;
+        }
+        .speed-control input[type="range"] {
+            width: 100%; margin: 0;
+        }
+        #toggle-menu-btn {
+            background: #343a40; border-color: #343a40; margin-bottom: 10px;
+            font-size: 16px; padding: 5px 10px; min-width: 40px;
+        }
+        #toggle-menu-btn:hover { background: #495057; }
+        #race-results {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px;
+            z-index: 200; display: none; text-align: center; min-width: 300px;
+        }
+        #race-results h2 { margin-top: 0; color: #ffd700; }
+        #race-results .podium { margin: 20px 0; }
+        #race-results .position { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        #race-results .first { background: #ffd700; color: #000; }
+        #race-results .second { background: #c0c0c0; color: #000; }
+        #race-results .third { background: #cd7f32; color: #000; }
+        #ball-maker {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px;
+            z-index: 200; display: none; text-align: left; min-width: 400px; max-height: 80vh; overflow-y: auto;
+        }
+        #ball-maker h2 { margin-top: 0; color: #ffd700; text-align: center; }
+        #ball-maker .ball-option { margin: 15px 0; padding: 10px; background: #2a2a2a; border-radius: 5px; }
+        #ball-maker .ball-option label { display: block; margin-bottom: 5px; font-size: 14px; color: #ccc; }
+        #ball-maker input[type="range"], #ball-maker input[type="color"], #ball-maker select { width: 100%; margin: 5px 0; }
+        #ball-maker .ball-preview { width: 60px; height: 60px; border-radius: 50%; margin: 10px auto; border: 2px solid #666; }
+        .ball-list-item { display: flex; align-items: center; padding: 10px; margin: 5px 0; background: #3a3a3a; border-radius: 5px; }
+        .ball-list-preview { width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; border: 1px solid #666; }
+        .ball-list-name { flex-grow: 1; }
+        .ball-list-actions button { margin-left: 5px; padding: 5px 10px; font-size: 12px; }
+        #ball-roster {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px;
+            z-index: 200; display: none; text-align: left; min-width: 500px; max-height: 80vh; overflow-y: auto;
+        }
+        #ball-roster h2 { margin-top: 0; color: #ffd700; text-align: center; }
+        .roster-section { margin: 20px 0; padding: 15px; background: #2a2a2a; border-radius: 5px; }
+        .roster-section h3 { margin-top: 0; color: #ccc; }
+        .random-controls { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+        .random-controls input[type="range"] { flex-grow: 1; }
+        .race-roster { max-height: 300px; overflow-y: auto; }
+        .roster-ball { display: flex; align-items: center; padding: 8px; margin: 3px 0; background: #4a4a4a; border-radius: 3px; cursor: pointer; }
+        .roster-ball:hover { background: #5a5a5a; }
+        .roster-ball.selected { background: #007bff; }
+        .roster-ball-preview { width: 25px; height: 25px; border-radius: 50%; margin-right: 10px; border: 1px solid #666; }
+        .roster-ball-name { flex-grow: 1; font-size: 14px; }
+        .roster-stats { font-size: 12px; color: #ccc; margin-left: 10px; }
+        #material-editor {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px;
+            z-index: 200; display: none; text-align: left; min-width: 400px; max-height: 80vh; overflow-y: auto;
+        }
+        #material-editor h2 { margin-top: 0; color: #ffd700; text-align: center; }
+        .material-option { margin: 15px 0; padding: 10px; background: #2a2a2a; border-radius: 5px; }
+        .material-option label { display: block; margin-bottom: 5px; font-size: 14px; color: #ccc; }
+        .material-option input[type="range"], .material-option input[type="color"], .material-option select { width: 100%; margin: 5px 0; }
+        .texture-upload { margin: 10px 0; }
+        .texture-upload input[type="file"] { display: block; margin: 5px 0; }
+        .texture-preview { width: 100px; height: 100px; border: 2px solid #666; margin: 10px 0; background-size: cover; background-repeat: no-repeat; }
+        #skybox-selector {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px;
+            z-index: 200; display: none; text-align: left; min-width: 500px; max-height: 80vh; overflow-y: auto;
+        }
+        #skybox-selector h2 { margin-top: 0; color: #ffd700; text-align: center; }
+        .skybox-option { display: inline-block; margin: 10px; padding: 10px; background: #2a2a2a; border-radius: 5px; cursor: pointer; text-align: center; width: 120px; }
+        .skybox-option:hover { background: #3a3a3a; }
+        .skybox-option.selected { background: #007bff; }
+        .skybox-preview { width: 100px; height: 60px; border: 2px solid #666; margin: 5px auto; background-size: cover; border-radius: 3px; }
+        .skybox-name { font-size: 12px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div id="ui-container">
+        <button id="toggle-menu-btn">☰</button>
+        <div class="ui-content">
+            <div class="ui-title">Add Pieces</div>
+            <button id="add-start-btn">Add Start Platform</button>
+            <button id="add-straight-btn">Add Straight</button>
+            <button id="add-curve-btn">Add Curve</button>
+            <button id="add-end-btn">Add End Platform</button>
+            <button id="add-ball-btn-piece">Add Ball (Pinned)</button>
+            <button id="add-pyramid-btn">Add Pyramid</button>
+            <button id="add-cylinder-btn">Add Cylinder</button>
+            <button id="add-pipe-btn">Add Pipe</button>
+            <button id="add-cube-btn">Add Cube</button>
+            <button id="add-prism-btn">Add Prism</button>
+            <label for="add-custom-input">Add Custom (.obj)</label>
+            <input type="file" id="add-custom-input" accept=".obj">
+            <div class="ui-title" style="margin-top:15px;">Editor Tools (W,E,R)</div>
+            <button id="toggle-transform-btn">Enable Transform</button>
+            <div id="selection-info" style="color: #ffd700; font-size: 12px; margin: 5px 0; text-align: center;"></div>
+            <button id="duplicate-piece-btn">Duplicate Selected</button>
+            <button id="remove-piece-btn">Remove Selected</button>
+            <button id="edit-material-btn">Edit Material</button>
+            <hr style="border-color: #444; width:100%; margin: 15px 0;">
+            <button id="save-track-btn">Save Track</button>
+            <label for="load-track-input">Load Track</label>
+            <input type="file" id="load-track-input" accept=".json">
+            <hr style="border-color: #444; width:100%; margin: 15px 0;">
+            <button id="skybox-btn">Skybox</button>
+            <button id="camera-mode-btn">Camera: <span id="camera-mode-display">Panning</span></button>
+            <button id="ball-maker-btn">Ball Maker</button>
+            <button id="start-race-btn">Start Race!</button>
+            <button id="restart-race-btn" style="display: none; background: #ffc107; border-color: #ffc107; color: #212529;">Restart Race</button>
+            <button id="edit-track-btn" style="display: none; background: #6c757d; border-color: #6c757d;">Edit Track</button>
+            <div class="speed-control" id="camera-speed-control" style="display: none;">
+                <label for="camera-speed-slider">Camera Speed</label>
+                <input type="range" id="camera-speed-slider" min="0.1" max="2" step="0.1" value="1">
+            </div>
+            <div class="speed-control">
+                <label>Ball Roster</label>
+                <button id="ball-roster-btn" style="background: #17a2b8; border-color: #17a2b8;">Manage Roster</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="race-results">
+        <h2>🏁 Race Results 🏁</h2>
+        <div class="podium" id="podium-results"></div>
+        <button id="close-results-btn" style="margin-top: 20px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+    </div>
+
+    <div id="ball-maker">
+        <h2>⚽ Ball Maker ⚽</h2>
+        
+        <div class="ball-option">
+            <label for="ball-name">Ball Name:</label>
+            <input type="text" id="ball-name" placeholder="Enter ball name" value="Custom Ball">
+        </div>
+        
+        <div class="ball-option">
+            <label for="ball-color">Color:</label>
+            <input type="color" id="ball-color" value="#ff0000">
+        </div>
+        
+        <div class="ball-option">
+            <label for="ball-metalness">Metalness: <span id="metalness-value">0.5</span></label>
+            <input type="range" id="ball-metalness" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        
+        <div class="ball-option">
+            <label for="ball-roughness">Roughness: <span id="roughness-value">0.5</span></label>
+            <input type="range" id="ball-roughness" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        
+        <div class="ball-option">
+            <label for="ball-emissive">Glow Intensity: <span id="emissive-value">0</span></label>
+            <input type="range" id="ball-emissive" min="0" max="1" step="0.1" value="0">
+        </div>
+        
+        <div class="ball-option">
+            <label for="ball-emissive-color">Glow Color:</label>
+            <input type="color" id="ball-emissive-color" value="#ffffff">
+        </div>
+        
+        <div class="ball-option">
+            <label for="ball-texture">Texture:</label>
+            <select id="ball-texture">
+                <option value="none">None</option>
+                <option value="dots">Polka Dots</option>
+                <option value="stripes">Stripes</option>
+                <option value="marble">Marble</option>
+            </select>
+        </div>
+        
+        <div class="ball-preview" id="ball-preview"></div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button id="add-ball-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">Add Ball</button>
+            <button id="close-ball-maker-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+        </div>
+        
+        <div style="border-top: 1px solid #444; padding-top: 20px; margin-top: 20px;">
+            <h3>Custom Balls: <span id="custom-ball-count">0</span></h3>
+            <div id="custom-balls-list"></div>
+        </div>
+    </div>
+
+    <div id="ball-roster">
+        <h2>🏁 Ball Roster 🏁</h2>
+        
+        <div class="roster-section">
+            <h3>Add Random Balls</h3>
+            <div class="random-controls">
+                <label>Count: <span id="random-count-display">5</span></label>
+                <input type="range" id="random-count-slider" min="1" max="20" step="1" value="5">
+                <button id="add-random-balls-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">Add Random</button>
+            </div>
+        </div>
+        
+        <div class="roster-section">
+            <h3>Race Roster: <span id="roster-count">0</span> balls</h3>
+            <div class="race-roster" id="race-roster-list"></div>
+            <div style="margin-top: 10px;">
+                <button id="clear-roster-btn" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">Clear All</button>
+                <button id="add-custom-to-roster-btn" style="padding: 8px 16px; background: #17a2b8; border: none; color: white; border-radius: 4px; cursor: pointer;">Add from Custom</button>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">Done</button>
+        </div>
+    </div>
+
+    <div id="material-editor">
+        <h2>🎨 Material Editor 🎨</h2>
+        
+        <div class="material-option">
+            <label for="piece-color">Color:</label>
+            <input type="color" id="piece-color" value="#449944">
+        </div>
+        
+        <div class="material-option">
+            <label for="piece-transparency">Transparency: <span id="transparency-value">0</span></label>
+            <input type="range" id="piece-transparency" min="0" max="1" step="0.1" value="0">
+        </div>
+        
+        <div class="material-option">
+            <label for="piece-metalness">Metalness: <span id="piece-metalness-value">0</span></label>
+            <input type="range" id="piece-metalness" min="0" max="1" step="0.1" value="0">
+        </div>
+        
+        <div class="material-option">
+            <label for="piece-roughness">Roughness: <span id="piece-roughness-value">0.8</span></label>
+            <input type="range" id="piece-roughness" min="0" max="1" step="0.1" value="0.8">
+        </div>
+        
+        <div class="material-option">
+            <label for="piece-emissive">Glow Intensity: <span id="piece-emissive-value">0</span></label>
+            <input type="range" id="piece-emissive" min="0" max="1" step="0.1" value="0">
+        </div>
+        
+        <div class="material-option">
+            <label for="piece-emissive-color">Glow Color:</label>
+            <input type="color" id="piece-emissive-color" value="#ffffff">
+        </div>
+        
+        <div class="material-option">
+            <label for="piece-texture-type">Texture Type:</label>
+            <select id="piece-texture-type">
+                <option value="none">None</option>
+                <option value="upload">Upload Custom</option>
+                <option value="dots">Polka Dots</option>
+                <option value="stripes">Stripes</option>
+                <option value="marble">Marble</option>
+            </select>
+        </div>
+        
+        <div class="texture-upload" id="texture-upload-section" style="display: none;">
+            <label for="texture-upload">Upload Texture:</label>
+            <input type="file" id="texture-upload" accept="image/*">
+            <div class="texture-preview" id="texture-preview"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="apply-material-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">Apply</button>
+            <button id="close-material-editor-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <div id="skybox-selector">
+        <h2>🌌 Skybox Selector 🌌</h2>
+        
+        <div style="margin: 20px 0;">
+            <h3>Procedural Skyboxes</h3>
+            <div id="procedural-skyboxes">
+                <div class="skybox-option" data-type="gradient" data-value="sunset">
+                    <div class="skybox-preview" style="background: linear-gradient(to bottom, #ff6b35, #ff8e53, #ffd23f);"></div>
+                    <div class="skybox-name">Sunset</div>
+                </div>
+                <div class="skybox-option" data-type="gradient" data-value="ocean">
+                    <div class="skybox-preview" style="background: linear-gradient(to bottom, #87ceeb, #4682b4, #1e3a8a);"></div>
+                    <div class="skybox-name">Ocean</div>
+                </div>
+                <div class="skybox-option" data-type="gradient" data-value="space">
+                    <div class="skybox-preview" style="background: linear-gradient(to bottom, #000000, #1a1a2e, #16213e);"></div>
+                    <div class="skybox-name">Space</div>
+                </div>
+                <div class="skybox-option" data-type="gradient" data-value="dawn">
+                    <div class="skybox-preview" style="background: linear-gradient(to bottom, #ffb347, #ffcc5c, #87ceeb);"></div>
+                    <div class="skybox-name">Dawn</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <h3>HDR Environments</h3>
+            <div id="hdr-skyboxes">
+                <div class="skybox-option" data-type="hdr" data-value="studio">
+                    <div class="skybox-preview" style="background: #f0f0f0;"></div>
+                    <div class="skybox-name">Studio</div>
+                </div>
+                <div class="skybox-option" data-type="hdr" data-value="forest">
+                    <div class="skybox-preview" style="background: linear-gradient(to bottom, #87ceeb, #228b22);"></div>
+                    <div class="skybox-name">Forest</div>
+                </div>
+                <div class="skybox-option" data-type="hdr" data-value="city">
+                    <div class="skybox-preview" style="background: linear-gradient(to bottom, #ff6b35, #4a4a4a);"></div>
+                    <div class="skybox-name">City</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <h3>Custom Upload</h3>
+            <label for="skybox-upload" style="display: block; padding: 10px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; text-align: center; margin: 10px 0;">
+                Upload Custom Skybox
+            </label>
+            <input type="file" id="skybox-upload" accept="image/*" style="display: none;">
+            <div style="font-size: 12px; color: #ccc;">Upload a 360° panoramic image or cubemap</div>
+            <div id="custom-skybox-preview" style="display: none; margin: 10px 0;">
+                <div class="skybox-option selected" data-type="upload">
+                    <div class="skybox-preview" id="uploaded-preview"></div>
+                    <div class="skybox-name">Custom</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="apply-skybox-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">Apply</button>
+            <button id="close-skybox-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+    { "imports": {
+            "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/",
+            "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+    }}
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { TransformControls } from 'three/addons/controls/TransformControls.js';
+        import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+        import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+        import * as CANNON from 'cannon-es';
+
+        let scene, camera, renderer, orbitControls, transformControls, world, clock;
+        let trackPieces = [];
+        let marbles = [];
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        let isRaceMode = false;
+        let raceFinishers = [];
+        let raceFinished = false;
+        let cameraAngle = 0;
+        let cameraSpeed = 1;
+        let ballCount = 6;
+        let customBalls = [];
+        let raceRoster = [];
+        let selectedPieces = [];
+        let cameraMode = 'panning'; // panning, fpv, behind, ridealong, oncoming
+        let currentSkyboxData = null;
+        let multiSelectGroup = null;
+        let previousLeadMarble = null;
+        let cameraTransitionTime = 0;
+        let transitionDuration = 1.0; // seconds
+
+        var WALL_HEIGHT = 1.5;
+
+        const marbleCannonMaterial = new CANNON.Material('marble');
+        const trackCannonMaterial = new CANNON.Material('track');
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x77b5fe);
+            clock = new THREE.Clock();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(0, 20, 30);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            
+            orbitControls = new OrbitControls(camera, renderer.domElement);
+            orbitControls.enableDamping = true;
+            orbitControls.enablePan = true;
+            orbitControls.panSpeed = 1.0;
+            orbitControls.enableZoom = true;
+            orbitControls.enableRotate = true;
+            
+            // Track user interaction
+            orbitControls.userData = { userInteracting: false };
+            orbitControls.addEventListener('start', () => {
+                orbitControls.userData.userInteracting = true;
+            });
+            orbitControls.addEventListener('end', () => {
+                orbitControls.userData.userInteracting = false;
+            });
+            
+            transformControls = new TransformControls(camera, renderer.domElement);
+            transformControls.enabled = false;
+            transformControls.visible = false;
+            scene.add(transformControls);
+
+            world = new CANNON.World({ gravity: new CANNON.Vec3(0, -30, 0) });
+            setupPhysicsMaterials();
+            setupLighting();
+            scene.add(new THREE.GridHelper(200, 20));
+            
+            setupEventListeners();
+            addPiece("start", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+            
+            animate();
+        }
+
+        function setupLighting() {
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const light = new THREE.DirectionalLight(0xffffff, 1.5);
+            light.position.set(20, 40, 20);
+            light.castShadow = true;
+            light.shadow.mapSize.set(2048, 2048);
+            scene.add(light);
+        }
+        
+        function setupPhysicsMaterials() {
+            const groundMaterial = new CANNON.Material('ground');
+            const groundBody = new CANNON.Body({ mass: 0, material: groundMaterial, shape: new CANNON.Plane() });
+            groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+            world.addBody(groundBody);
+
+            world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, marbleCannonMaterial, { friction: 0.3, restitution: 0.5 }));
+            world.addContactMaterial(new CANNON.ContactMaterial(trackCannonMaterial, marbleCannonMaterial, { friction: 0.1, restitution: 0.6 }));
+        }
+
+        function addPiece(type, transform, customModelData = null) {
+            let config;
+            if (customModelData && customModelData.geometry) {
+                config = { geometry: customModelData.geometry };
+            } else {
+                config = getPieceConfig(type);
+            }
+            if (!config) return;
+
+            const newPos = transform?.position || new THREE.Vector3(0, 5, 0);
+            const newQuat = transform?.quaternion || new THREE.Quaternion();
+            const newScale = transform?.scale || new THREE.Vector3(1, 1, 1);
+            
+            const group = new THREE.Group();
+            group.userData = { isTrackPiece: true, type: type };
+            
+            // Different colors for different piece types
+            let color = 0x449944; // Default green
+            if (type === 'start') color = 0x4CAF50; // Bright green for start
+            if (type === 'end') color = 0xF44336; // Red for end/finish line
+            if (type === 'ball') color = 0x2196F3; // Blue for pinned balls
+            if (type === 'pyramid') color = 0xFF9800; // Orange for pyramid
+            if (type === 'cylinder') color = 0x9C27B0; // Purple for cylinder
+            if (type === 'pipe') color = 0x607D8B; // Blue Grey for pipe
+            if (type === 'cube') color = 0x795548; // Brown for cube
+            if (type === 'prism') color = 0xE91E63; // Pink for prism
+            
+            const materialData = {
+                color: `#${color.toString(16).padStart(6, '0')}`,
+                transparency: 0,
+                metalness: 0,
+                roughness: 0.8,
+                emissive: 0,
+                emissiveColor: '#ffffff',
+                textureType: 'none',
+                textureData: null
+            };
+            const floorMat = createPieceMaterial(materialData);
+            const mesh = new THREE.Mesh(config.geometry, floorMat);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            group.add(mesh);
+
+            group.position.copy(newPos);
+            group.quaternion.copy(newQuat);
+            group.scale.copy(newScale);
+
+            const newPiece = { 
+                group, 
+                type, 
+                physicsBodies: [],
+                materialData: materialData
+            };
+            updatePhysicsForPiece(newPiece);
+            
+            trackPieces.push(newPiece);
+            scene.add(group);
+        }
+        
+        function updatePhysicsForPiece(piece) {
+            if (!piece) return;
+
+            if (piece.physicsBodies) {
+                piece.physicsBodies.forEach(b => world.removeBody(b));
+            }
+            piece.physicsBodies = [];
+            
+            const mesh = piece.group.children[0];
+            let shape;
+            
+            // Use the exact same geometry that's being rendered for collision
+            // Force update of world matrices to get accurate transforms
+            piece.group.updateMatrixWorld(true);
+            
+            // Get the actual rendered geometry with all transformations applied
+            const geometry = mesh.geometry.clone();
+            geometry.applyMatrix4(mesh.matrixWorld);
+            
+            if (!geometry.attributes.position) {
+                console.warn("No position attribute found, skipping physics for this piece");
+                return;
+            }
+            
+            // Extract vertices and indices from the transformed geometry
+            const vertices = Array.from(geometry.attributes.position.array);
+            const indices = geometry.index ? Array.from(geometry.index.array) : [];
+            
+            // If no indices, create them for triangulated geometry
+            if (indices.length === 0) {
+                for (let i = 0; i < vertices.length / 3; i++) {
+                    indices.push(i);
+                }
+            }
+            
+            // Create Trimesh from the exact rendered geometry
+            shape = new CANNON.Trimesh(vertices, indices);
+            
+            // Check if this piece should be pinned (like a ball obstacle)
+            const isPinned = piece.type === 'ball';
+            const body = new CANNON.Body({ 
+                mass: isPinned ? 0 : 0, // All track pieces are static for now
+                shape: shape, 
+                material: trackCannonMaterial 
+            });
+            
+            // Since we applied the world transformation to the geometry, the physics body stays at origin
+            body.position.set(0, 0, 0);
+            body.quaternion.set(0, 0, 0, 1);
+            
+            console.log(`${piece.type} piece: Using exact rendered geometry as collision mesh`);
+            
+            world.addBody(body);
+            piece.physicsBodies.push(body);
+        }
+        
+        function getPieceConfig(type) {
+            const w = 8, l = 10, h = 1.5, t = 0.5;
+            switch(type) {
+                case "start":
+                    return { geometry: new THREE.BoxGeometry(w + 4, h, l)};
+                case "end":
+                    return { geometry: new THREE.BoxGeometry(w + 4, h, l)};
+                case "straight":
+                    const straightShape = new THREE.Shape();
+                    straightShape.moveTo(-w/2, -h/2);
+                    straightShape.lineTo(-w/2, h/2);
+                    straightShape.lineTo(w/2, h/2);
+                    straightShape.lineTo(w/2, -h/2);
+                    straightShape.lineTo(-w/2, -h/2);
+                    return { geometry: new THREE.ExtrudeGeometry(straightShape, {steps: 1, depth: l, bevelEnabled: false}).rotateX(Math.PI/2) };
+                case "curve":
+                    const curvePath = new THREE.CatmullRomCurve3([
+                        new THREE.Vector3(0, 0, -l/2),
+                        new THREE.Vector3(l/4, 0, -l/4),
+                        new THREE.Vector3(l/2, 0, 0),
+                        new THREE.Vector3(l/2, 0, l/2),
+                    ]);
+                    const curveShape = new THREE.Shape();
+                    curveShape.moveTo(-w/2, -h/2);
+                    curveShape.lineTo(-w/2, h/2);
+                    curveShape.lineTo(w/2, h/2);
+                    curveShape.lineTo(w/2, -h/2);
+                    curveShape.lineTo(-w/2, -h/2);
+                    return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
+                case "ball":
+                    return { geometry: new THREE.SphereGeometry(2, 16, 16), pinned: true };
+                case "pyramid":
+                    return { geometry: new THREE.ConeGeometry(3, 6, 8) };
+                case "cylinder":
+                    return { geometry: new THREE.CylinderGeometry(2, 2, 6, 16) };
+                case "pipe":
+                    // Create a hollow tube/pipe geometry using TubeGeometry
+                    const pipePath = new THREE.LineCurve3(
+                        new THREE.Vector3(0, -4, 0),
+                        new THREE.Vector3(0, 4, 0)
+                    );
+                    const pipeGeometry = new THREE.TubeGeometry(pipePath, 20, 1.5, 8, false);
+                    return { geometry: pipeGeometry };
+                case "cube":
+                    return { geometry: new THREE.BoxGeometry(4, 4, 4) };
+                case "prism":
+                    return { geometry: new THREE.CylinderGeometry(3, 3, 6, 6) };
+            }
+            return null;
+        }
+
+        function removeSelectedPiece() {
+            if (selectedPieces.length > 0) {
+                selectedPieces.forEach(piece => {
+                    transformControls.detach();
+                    scene.remove(piece.group);
+                    piece.physicsBodies.forEach(b => world.removeBody(b));
+                    trackPieces = trackPieces.filter(p => p !== piece);
+                });
+                selectedPieces = [];
+                updateSelectionUI();
+            } else if (transformControls.object) {
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (piece) {
+                    transformControls.detach();
+                    scene.remove(piece.group);
+                    piece.physicsBodies.forEach(b => world.removeBody(b));
+                    trackPieces = trackPieces.filter(p => p !== piece);
+                }
+            }
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function onPointerDown(event) {
+            if (!transformControls.enabled || transformControls.dragging) return;
+            pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(pointer, camera);
+            const intersects = raycaster.intersectObjects(trackPieces.map(p => p.group), true);
+            
+            if (intersects.length > 0) {
+                let object = intersects[0].object;
+                while (object.parent && !object.userData.isTrackPiece) object = object.parent;
+                
+                if (object.userData.isTrackPiece) {
+                    const piece = trackPieces.find(p => p.group === object);
+                    
+                    if (event.ctrlKey || event.metaKey) {
+                        // Multi-select mode
+                        const index = selectedPieces.indexOf(piece);
+                        if (index > -1) {
+                            // Deselect
+                            selectedPieces.splice(index, 1);
+                            clearPieceSelection(piece);
+                        } else {
+                            // Add to selection
+                            selectedPieces.push(piece);
+                            highlightPiece(piece);
+                        }
+                        updateMultiSelectGroup();
+                        updateSelectionUI();
+                    } else {
+                        // Single select mode
+                        clearAllSelections();
+                        selectedPieces = [piece];
+                        highlightPiece(piece);
+                        transformControls.attach(object);
+                        updateSelectionUI();
+                    }
+                }
+            } else {
+                if (!event.ctrlKey && !event.metaKey) {
+                    clearAllSelections();
+                    transformControls.detach();
+                    updateSelectionUI();
+                }
+            }
+        }
+
+        function highlightPiece(piece) {
+            const mesh = piece.group.children[0];
+            if (mesh && mesh.isMesh) {
+                // Store original material if not already stored
+                if (!piece.originalMaterial) {
+                    piece.originalMaterial = mesh.material;
+                }
+                // Create highlighted material
+                const highlightMaterial = piece.originalMaterial.clone();
+                highlightMaterial.emissive.setHex(0x444444);
+                highlightMaterial.emissiveIntensity = 0.3;
+                mesh.material = highlightMaterial;
+            }
+        }
+
+        function clearPieceSelection(piece) {
+            const mesh = piece.group.children[0];
+            if (mesh && mesh.isMesh && piece.originalMaterial) {
+                mesh.material = piece.originalMaterial;
+                delete piece.originalMaterial;
+            }
+        }
+
+        function clearAllSelections() {
+            selectedPieces.forEach(piece => clearPieceSelection(piece));
+            selectedPieces = [];
+            destroyMultiSelectGroup();
+        }
+
+        function updateSelectionUI() {
+            const selectionInfo = document.getElementById('selection-info');
+            if (selectionInfo) {
+                if (selectedPieces.length > 1) {
+                    selectionInfo.textContent = `${selectedPieces.length} pieces selected`;
+                } else if (selectedPieces.length === 1) {
+                    selectionInfo.textContent = `1 piece selected`;
+                } else {
+                    selectionInfo.textContent = '';
+                }
+            }
+        }
+
+        function updateMultiSelectGroup() {
+            destroyMultiSelectGroup();
+            
+            if (selectedPieces.length > 1) {
+                // Create a group for multi-selection
+                multiSelectGroup = new THREE.Group();
+                scene.add(multiSelectGroup);
+                
+                // Calculate center of selected pieces
+                const center = new THREE.Vector3();
+                selectedPieces.forEach(piece => {
+                    center.add(piece.group.position);
+                });
+                center.divideScalar(selectedPieces.length);
+                
+                multiSelectGroup.position.copy(center);
+                
+                // Attach transform controls to the group
+                transformControls.attach(multiSelectGroup);
+                
+                // Store relative positions
+                selectedPieces.forEach(piece => {
+                    piece.relativePosition = piece.group.position.clone().sub(center);
+                });
+            }
+        }
+
+        function destroyMultiSelectGroup() {
+            if (multiSelectGroup) {
+                transformControls.detach();
+                scene.remove(multiSelectGroup);
+                multiSelectGroup = null;
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('toggle-menu-btn').addEventListener('click', toggleMenu);
+            document.getElementById('start-race-btn').addEventListener('click', startRace);
+            document.getElementById('restart-race-btn').addEventListener('click', restartRace);
+            document.getElementById('edit-track-btn').addEventListener('click', editTrack);
+            document.getElementById('close-results-btn').addEventListener('click', () => {
+                document.getElementById('race-results').style.display = 'none';
+            });
+            document.getElementById('skybox-btn').addEventListener('click', openSkyboxSelector);
+            document.getElementById('camera-mode-btn').addEventListener('click', toggleCameraMode);
+            document.getElementById('ball-maker-btn').addEventListener('click', openBallMaker);
+            document.getElementById('close-ball-maker-btn').addEventListener('click', () => {
+                document.getElementById('ball-maker').style.display = 'none';
+            });
+            document.getElementById('add-ball-btn').addEventListener('click', addCustomBall);
+            
+            // Ball maker control event listeners
+            ['ball-color', 'ball-metalness', 'ball-roughness', 'ball-emissive', 'ball-emissive-color', 'ball-texture'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateBallPreview);
+            });
+            document.getElementById('ball-metalness').addEventListener('input', (e) => {
+                document.getElementById('metalness-value').textContent = e.target.value;
+            });
+            document.getElementById('ball-roughness').addEventListener('input', (e) => {
+                document.getElementById('roughness-value').textContent = e.target.value;
+            });
+            document.getElementById('ball-emissive').addEventListener('input', (e) => {
+                document.getElementById('emissive-value').textContent = e.target.value;
+            });
+            
+            // Skybox event listeners
+            document.getElementById('close-skybox-btn').addEventListener('click', () => {
+                document.getElementById('skybox-selector').style.display = 'none';
+            });
+            document.getElementById('apply-skybox-btn').addEventListener('click', applySkybox);
+            document.getElementById('skybox-upload').addEventListener('change', handleSkyboxUpload);
+            
+            // Skybox option selection
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.skybox-option')) {
+                    document.querySelectorAll('.skybox-option').forEach(opt => opt.classList.remove('selected'));
+                    e.target.closest('.skybox-option').classList.add('selected');
+                }
+            });
+            document.getElementById('camera-speed-slider').addEventListener('input', (e) => {
+                cameraSpeed = parseFloat(e.target.value);
+            });
+            document.getElementById('ball-roster-btn').addEventListener('click', openBallRoster);
+            document.getElementById('close-roster-btn').addEventListener('click', () => {
+                document.getElementById('ball-roster').style.display = 'none';
+            });
+            document.getElementById('random-count-slider').addEventListener('input', (e) => {
+                document.getElementById('random-count-display').textContent = e.target.value;
+            });
+            document.getElementById('add-random-balls-btn').addEventListener('click', addRandomBalls);
+            document.getElementById('clear-roster-btn').addEventListener('click', clearRoster);
+            document.getElementById('add-custom-to-roster-btn').addEventListener('click', addCustomToRoster);
+            document.getElementById('save-track-btn').addEventListener('click', saveTrack);
+            document.getElementById('load-track-input').addEventListener('change', loadTrack);
+            document.getElementById('add-start-btn').addEventListener('click', () => addPiece("start"));
+            document.getElementById('add-straight-btn').addEventListener('click', () => addPiece("straight"));
+            document.getElementById('add-curve-btn').addEventListener('click', () => addPiece("curve"));
+            document.getElementById('add-end-btn').addEventListener('click', () => addPiece("end"));
+            document.getElementById('add-ball-btn-piece').addEventListener('click', () => addPiece("ball"));
+            document.getElementById('add-pyramid-btn').addEventListener('click', () => addPiece("pyramid"));
+            document.getElementById('add-cylinder-btn').addEventListener('click', () => addPiece("cylinder"));
+            document.getElementById('add-pipe-btn').addEventListener('click', () => addPiece("pipe"));
+            document.getElementById('add-cube-btn').addEventListener('click', () => addPiece("cube"));
+            document.getElementById('add-prism-btn').addEventListener('click', () => addPiece("prism"));
+            document.getElementById('add-custom-input').addEventListener('change', loadCustomObject);
+            document.getElementById('toggle-transform-btn').addEventListener('click', (e) => {
+                transformControls.enabled = !transformControls.enabled;
+                transformControls.visible = transformControls.enabled;
+                e.target.textContent = transformControls.enabled ? 'Disable Transform' : 'Enable Transform';
+                e.target.style.background = transformControls.enabled ? '#007bff' : '#4a4a4a';
+                if (!transformControls.enabled) transformControls.detach();
+            });
+            document.getElementById('duplicate-piece-btn').addEventListener('click', () => {
+                if (selectedPieces.length > 0) {
+                    selectedPieces.forEach(piece => {
+                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
+                        addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
+                        // Copy material data to new piece
+                        const newPiece = trackPieces[trackPieces.length - 1];
+                        newPiece.materialData = {...piece.materialData};
+                        const mesh = newPiece.group.children[0];
+                        if (mesh && mesh.isMesh) {
+                            mesh.material = createPieceMaterial(newPiece.materialData);
+                        }
+                    });
+                } else if(transformControls.object){
+                    const piece = trackPieces.find(p => p.group === transformControls.object);
+                    if(piece) {
+                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
+                        addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
+                        // Copy material data to new piece
+                        const newPiece = trackPieces[trackPieces.length - 1];
+                        newPiece.materialData = {...piece.materialData};
+                        const mesh = newPiece.group.children[0];
+                        if (mesh && mesh.isMesh) {
+                            mesh.material = createPieceMaterial(newPiece.materialData);
+                        }
+                    }
+                }
+            });
+            document.getElementById('remove-piece-btn').addEventListener('click', removeSelectedPiece);
+            document.getElementById('edit-material-btn').addEventListener('click', openMaterialEditor);
+            document.getElementById('close-material-editor-btn').addEventListener('click', () => {
+                document.getElementById('material-editor').style.display = 'none';
+            });
+            document.getElementById('apply-material-btn').addEventListener('click', applyMaterial);
+            document.getElementById('piece-texture-type').addEventListener('change', toggleTextureUpload);
+            document.getElementById('texture-upload').addEventListener('change', handleTextureUpload);
+            
+            // Material editor value display updates
+            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-emissive'].forEach(id => {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    document.getElementById(id.replace('piece-', '') + '-value').textContent = e.target.value;
+                });
+            });
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('pointerdown', onPointerDown);
+            transformControls.addEventListener('dragging-changed', event => orbitControls.enabled = !event.value);
+            transformControls.addEventListener('change', updateMultiSelectPositions);
+            transformControls.addEventListener('mouseUp', () => { 
+                if(transformControls.object && transformControls.object !== multiSelectGroup) {
+                    updatePhysicsForPiece(trackPieces.find(p => p.group === transformControls.object));
+                } else if (multiSelectGroup) {
+                    selectedPieces.forEach(piece => updatePhysicsForPiece(piece));
+                }
+            });
+            window.addEventListener('keydown', (e) => {
+                if (transformControls.enabled && transformControls.object) {
+                    switch (e.key.toLowerCase()) {
+                        case 'w': transformControls.setMode('translate'); break;
+                        case 'e': transformControls.setMode('rotate'); break;
+                        case 'r': transformControls.setMode('scale'); break;
+                    }
+                }
+            });
+        }
+        
+        function saveTrack() {
+             const trackData = {
+                pieces: trackPieces.map(p => ({
+                    type: p.type,
+                    position: p.group.position.toArray(),
+                    quaternion: p.group.quaternion.toArray(),
+                    scale: p.group.scale.toArray(),
+                    materialData: p.materialData
+                })),
+                customBalls: customBalls,
+                raceRoster: raceRoster,
+                skyboxData: currentSkyboxData
+            };
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(trackData, null, 2)], {type: 'application/json'}));
+            a.download = 'marble-track.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function loadTrack(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                trackPieces.forEach(p => { scene.remove(p.group); p.physicsBodies.forEach(b => world.removeBody(b)); });
+                trackPieces = [];
+                transformControls.detach();
+                
+                const data = JSON.parse(e.target.result);
+                
+                // Handle both old format (array) and new format (object with pieces and customBalls)
+                if (Array.isArray(data)) {
+                    // Old format - just track pieces
+                    data.forEach(d => {
+                        const transform = {
+                            position: new THREE.Vector3().fromArray(d.position),
+                            quaternion: new THREE.Quaternion().fromArray(d.quaternion),
+                            scale: new THREE.Vector3().fromArray(d.scale)
+                        };
+                        addPiece(d.type, transform);
+                    });
+                } else {
+                    // New format - track pieces and custom balls
+                    if (data.pieces) {
+                        data.pieces.forEach(d => {
+                            const transform = {
+                                position: new THREE.Vector3().fromArray(d.position),
+                                quaternion: new THREE.Quaternion().fromArray(d.quaternion),
+                                scale: new THREE.Vector3().fromArray(d.scale)
+                            };
+                            addPiece(d.type, transform);
+                            
+                            // Apply saved material data
+                            if (d.materialData) {
+                                const piece = trackPieces[trackPieces.length - 1];
+                                piece.materialData = d.materialData;
+                                const mesh = piece.group.children[0];
+                                if (mesh && mesh.isMesh) {
+                                    mesh.material = createPieceMaterial(piece.materialData);
+                                }
+                            }
+                        });
+                    }
+                    
+                    if (data.customBalls) {
+                        customBalls = data.customBalls;
+                        updateCustomBallsList();
+                    }
+                    
+                    if (data.raceRoster) {
+                        raceRoster = data.raceRoster;
+                        updateRosterDisplay();
+                    }
+                    
+                    if (data.skyboxData) {
+                        currentSkyboxData = data.skyboxData;
+                        loadSkybox(data.skyboxData);
+                    }
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function loadCustomObject(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const loader = new OBJLoader();
+                    const object = loader.parse(e.target.result);
+                    let geometry;
+                    object.traverse(child => {
+                        if (child.isMesh) {
+                            geometry = child.geometry;
+                        }
+                    });
+
+                    if (geometry) {
+                        addPiece('custom', null, { geometry });
+                    } else {
+                        alert('Could not find a mesh in the OBJ file.');
+                    }
+                } catch (error) {
+                    console.error("Error loading custom object:", error);
+                    alert('Failed to load or parse the OBJ file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function startRace() {
+            if (isRaceMode) return;
+            isRaceMode = true;
+            updateRaceUI();
+            transformControls.detach();
+            transformControls.visible = false;
+            
+            // Configure orbit controls for race mode - disable rotation but allow pan and zoom
+            orbitControls.enabled = true;
+            orbitControls.enableRotate = false;
+            orbitControls.enablePan = true;
+            orbitControls.enableZoom = true;
+            
+            const startPiece = trackPieces.find(p => p.type === 'start');
+            if(!startPiece) { alert("A 'Start' piece is required to race!"); isRaceMode = false; return; }
+
+            spawnMarbles(startPiece);
+        }
+
+        function restartRace() {
+            if (!isRaceMode) return;
+            clearMarbles();
+            raceFinishers = [];
+            raceFinished = false;
+            document.getElementById('race-results').style.display = 'none';
+            
+            const startPiece = trackPieces.find(p => p.type === 'start');
+            if (startPiece) {
+                spawnMarbles(startPiece);
+            }
+        }
+
+        function editTrack() {
+            if (!isRaceMode) return;
+            isRaceMode = false;
+            clearMarbles();
+            raceFinishers = [];
+            raceFinished = false;
+            document.getElementById('race-results').style.display = 'none';
+            updateRaceUI();
+            transformControls.enabled = false;
+            transformControls.visible = false;
+            
+            // Re-enable all orbit controls for edit mode
+            orbitControls.enabled = true;
+            orbitControls.enableRotate = true;
+            orbitControls.enablePan = true;
+            orbitControls.enableZoom = true;
+        }
+
+        function spawnMarbles(startPiece) {
+            // If no roster, create a default one
+            if (raceRoster.length === 0) {
+                for (let i = 0; i < 6; i++) {
+                    raceRoster.push(generateRandomBall());
+                }
+            }
+            
+            // Randomize the order of balls for each race
+            const shuffledRoster = [...raceRoster].sort(() => Math.random() - 0.5);
+            
+            for (let i = 0; i < shuffledRoster.length; i++) {
+                const laneOffset = (i - (shuffledRoster.length - 1) / 2) * 1.0;
+                const localPos = new THREE.Vector3(laneOffset, WALL_HEIGHT, -10/2 + 2);
+                const worldPos = startPiece.group.localToWorld(localPos);
+
+                const ballConfig = shuffledRoster[i];
+                const material = createBallMaterial(ballConfig);
+                
+                const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), material);
+                mesh.castShadow = true;
+                scene.add(mesh);
+                
+                // Create nameplate
+                const nameplate = createNameplate(ballConfig.name);
+                scene.add(nameplate);
+                
+                const body = new CANNON.Body({ mass: 1.2, shape: new CANNON.Sphere(0.4), position: worldPos, material: marbleCannonMaterial });
+                world.addBody(body);
+                marbles.push({ mesh, body, name: ballConfig.name, color: ballConfig.color, finished: false, nameplate });
+            }
+        }
+
+        function createNameplate(name) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 512;
+            canvas.height = 128;
+            
+            // Clear canvas
+            context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add border
+            context.strokeStyle = '#ffffff';
+            context.lineWidth = 4;
+            context.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+            
+            // Add text
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 48px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(name, canvas.width / 2, canvas.height / 2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                transparent: true,
+                depthWrite: false
+            });
+            
+            const geometry = new THREE.PlaneGeometry(3, 0.75);
+            const nameplate = new THREE.Mesh(geometry, material);
+            
+            // Make nameplate always face camera
+            nameplate.onBeforeRender = function() {
+                this.lookAt(camera.position);
+            };
+            
+            return nameplate;
+        }
+
+        function clearMarbles() {
+            marbles.forEach(marble => {
+                scene.remove(marble.mesh);
+                if (marble.nameplate) scene.remove(marble.nameplate);
+                world.removeBody(marble.body);
+            });
+            marbles = [];
+        }
+
+        function updateRaceUI() {
+            const uiContainer = document.getElementById('ui-container');
+            const startBtn = document.getElementById('start-race-btn');
+            const restartBtn = document.getElementById('restart-race-btn');
+            const editBtn = document.getElementById('edit-track-btn');
+            const speedControl = document.getElementById('camera-speed-control');
+
+            if (isRaceMode) {
+                uiContainer.style.display = 'block';
+                startBtn.style.display = 'none';
+                restartBtn.style.display = 'block';
+                editBtn.style.display = 'block';
+                speedControl.style.display = 'block';
+            } else {
+                uiContainer.style.display = 'block';
+                startBtn.style.display = 'block';
+                restartBtn.style.display = 'none';
+                editBtn.style.display = 'none';
+                speedControl.style.display = 'none';
+            }
+        }
+
+        function toggleMenu() {
+            const uiContainer = document.getElementById('ui-container');
+            const toggleBtn = document.getElementById('toggle-menu-btn');
+            
+            if (uiContainer.classList.contains('collapsed')) {
+                uiContainer.classList.remove('collapsed');
+                toggleBtn.textContent = '☰';
+            } else {
+                uiContainer.classList.add('collapsed');
+                toggleBtn.textContent = '▼';
+            }
+        }
+
+        function checkFinishLine() {
+            if (raceFinished) return;
+            
+            const endPieces = trackPieces.filter(p => p.type === 'end');
+            if (endPieces.length === 0) return;
+            
+            marbles.forEach(marble => {
+                if (marble.finished) return;
+                
+                endPieces.forEach(endPiece => {
+                    const endPos = endPiece.group.position;
+                    const marblePos = marble.mesh.position;
+                    const prevPos = marble.prevPosition || marblePos.clone();
+                    
+                    // Check both current position and if marble crossed the finish line this frame
+                    const currentDistance = marblePos.distanceTo(endPos);
+                    const prevDistance = prevPos.distanceTo(endPos);
+                    
+                    // Finish if close enough OR if marble crossed through the finish area this frame
+                    const crossedFinish = (prevDistance > 3 && currentDistance <= 3) || currentDistance < 3;
+                    
+                    if (crossedFinish) {
+                        marble.finished = true;
+                        raceFinishers.push(marble);
+                        console.log(`${marble.name} finished in position ${raceFinishers.length}!`);
+                        
+                        // Show results immediately on first finish, update as more finish
+                        if (raceFinishers.length === 1) {
+                            showRaceResults(); // Show dialog immediately
+                        } else {
+                            updateRaceResults(); // Update existing dialog
+                        }
+                    }
+                });
+                
+                // Store previous position for next frame
+                marble.prevPosition = marble.mesh.position.clone();
+            });
+        }
+
+        function showRaceResults() {
+            console.log("SHOWING RACE RESULTS");
+            const resultsDiv = document.getElementById('race-results');
+            updateRaceResults();
+            resultsDiv.style.display = 'block';
+        }
+
+        function updateRaceResults() {
+            const podiumDiv = document.getElementById('podium-results');
+            podiumDiv.innerHTML = '';
+            
+            const podiumClasses = ['first', 'second', 'third'];
+            const podiumLabels = ['🥇 1st Place', '🥈 2nd Place', '🥉 3rd Place'];
+            
+            for (let i = 0; i < raceFinishers.length; i++) {
+                const marble = raceFinishers[i];
+                const positionDiv = document.createElement('div');
+                
+                // Create ball preview
+                const ballPreview = document.createElement('div');
+                ballPreview.style.width = '30px';
+                ballPreview.style.height = '30px';
+                ballPreview.style.borderRadius = '50%';
+                ballPreview.style.display = 'inline-block';
+                ballPreview.style.marginRight = '10px';
+                ballPreview.style.verticalAlign = 'middle';
+                ballPreview.style.border = '2px solid #666';
+                ballPreview.style.background = marble.color;
+                
+                // Add glow effect if marble has emissive properties
+                const ballConfig = raceRoster.find(b => b.name === marble.name) || 
+                                  customBalls.find(b => b.name === marble.name);
+                if (ballConfig && ballConfig.emissive > 0) {
+                    ballPreview.style.boxShadow = `0 0 ${ballConfig.emissive * 10}px ${ballConfig.emissiveColor}`;
+                }
+                
+                if (i < 3) {
+                    // Top 3 with medals and special styling
+                    positionDiv.className = `position ${podiumClasses[i]}`;
+                    positionDiv.appendChild(ballPreview);
+                    positionDiv.appendChild(document.createTextNode(`${podiumLabels[i]}: ${marble.name}`));
+                } else {
+                    // 4th place and beyond - no medals, simple styling
+                    positionDiv.className = 'position';
+                    positionDiv.style.background = '#4a4a4a';
+                    positionDiv.style.color = '#fff';
+                    const suffix = getOrdinalSuffix(i + 1);
+                    positionDiv.appendChild(ballPreview);
+                    positionDiv.appendChild(document.createTextNode(`${i + 1}${suffix} Place: ${marble.name}`));
+                }
+                
+                podiumDiv.appendChild(positionDiv);
+            }
+        }
+
+        function getOrdinalSuffix(num) {
+            const j = num % 10;
+            const k = num % 100;
+            if (j == 1 && k != 11) return "st";
+            if (j == 2 && k != 12) return "nd";
+            if (j == 3 && k != 13) return "rd";
+            return "th";
+        }
+
+        function openBallMaker() {
+            document.getElementById('ball-maker').style.display = 'block';
+            updateBallPreview();
+            updateCustomBallsList();
+        }
+
+        function updateBallPreview() {
+            const preview = document.getElementById('ball-preview');
+            const color = document.getElementById('ball-color').value;
+            const metalness = parseFloat(document.getElementById('ball-metalness').value);
+            const roughness = parseFloat(document.getElementById('ball-roughness').value);
+            const emissive = parseFloat(document.getElementById('ball-emissive').value);
+            const emissiveColor = document.getElementById('ball-emissive-color').value;
+            
+            // Create gradient effect for metalness and roughness
+            let background = color;
+            if (metalness > 0.5) {
+                background = `linear-gradient(45deg, ${color}, #ffffff ${metalness * 100}%)`;
+            }
+            
+            // Add glow effect
+            let boxShadow = '';
+            if (emissive > 0) {
+                boxShadow = `0 0 ${emissive * 20}px ${emissiveColor}`;
+            }
+            
+            preview.style.background = background;
+            preview.style.boxShadow = boxShadow;
+            preview.style.filter = `brightness(${1 + emissive})`;
+        }
+
+        function createBallMaterial(ballConfig) {
+            const material = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(ballConfig.color),
+                metalness: ballConfig.metalness,
+                roughness: ballConfig.roughness,
+                emissive: new THREE.Color(ballConfig.emissiveColor),
+                emissiveIntensity: ballConfig.emissive
+            });
+
+            // Add texture patterns
+            if (ballConfig.texture && ballConfig.texture !== 'none') {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                
+                // Fill with base color
+                ctx.fillStyle = ballConfig.color;
+                ctx.fillRect(0, 0, 512, 512);
+                
+                // Add pattern overlay
+                ctx.globalCompositeOperation = 'multiply';
+                
+                switch (ballConfig.texture) {
+                    case 'dots':
+                        ctx.fillStyle = '#ffffff';
+                        ctx.globalCompositeOperation = 'overlay';
+                        for (let i = 0; i < 40; i++) {
+                            const x = Math.random() * 512;
+                            const y = Math.random() * 512;
+                            const radius = 15 + Math.random() * 10;
+                            ctx.beginPath();
+                            ctx.arc(x, y, radius, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        break;
+                    case 'stripes':
+                        ctx.fillStyle = '#ffffff';
+                        ctx.globalCompositeOperation = 'overlay';
+                        for (let i = 0; i < 512; i += 40) {
+                            ctx.fillRect(i, 0, 20, 512);
+                        }
+                        break;
+                    case 'marble':
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.globalCompositeOperation = 'overlay';
+                        ctx.lineWidth = 3;
+                        for (let i = 0; i < 80; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(Math.random() * 512, Math.random() * 512);
+                            ctx.quadraticCurveTo(
+                                Math.random() * 512, Math.random() * 512,
+                                Math.random() * 512, Math.random() * 512
+                            );
+                            ctx.stroke();
+                        }
+                        break;
+                }
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.flipY = false;
+                material.map = texture;
+                material.needsUpdate = true;
+            }
+
+            return material;
+        }
+
+        function addCustomBall() {
+            const name = document.getElementById('ball-name').value || 'Custom Ball';
+            const color = document.getElementById('ball-color').value;
+            const metalness = parseFloat(document.getElementById('ball-metalness').value);
+            const roughness = parseFloat(document.getElementById('ball-roughness').value);
+            const emissive = parseFloat(document.getElementById('ball-emissive').value);
+            const emissiveColor = document.getElementById('ball-emissive-color').value;
+            const texture = document.getElementById('ball-texture').value;
+
+            const ballConfig = {
+                id: Date.now(),
+                name,
+                color,
+                metalness,
+                roughness,
+                emissive,
+                emissiveColor,
+                texture
+            };
+
+            customBalls.push(ballConfig);
+            updateCustomBallsList();
+            
+            // Reset form
+            document.getElementById('ball-name').value = 'Custom Ball';
+            document.getElementById('ball-color').value = '#ff0000';
+            document.getElementById('ball-metalness').value = '0.5';
+            document.getElementById('ball-roughness').value = '0.5';
+            document.getElementById('ball-emissive').value = '0';
+            document.getElementById('ball-emissive-color').value = '#ffffff';
+            document.getElementById('ball-texture').value = 'none';
+            updateBallPreview();
+        }
+
+        function updateCustomBallsList() {
+            const list = document.getElementById('custom-balls-list');
+            const count = document.getElementById('custom-ball-count');
+            
+            count.textContent = customBalls.length;
+            list.innerHTML = '';
+
+            customBalls.forEach(ball => {
+                const item = document.createElement('div');
+                item.className = 'ball-list-item';
+                
+                const preview = document.createElement('div');
+                preview.className = 'ball-list-preview';
+                preview.style.background = ball.color;
+                if (ball.emissive > 0) {
+                    preview.style.boxShadow = `0 0 ${ball.emissive * 10}px ${ball.emissiveColor}`;
+                }
+                
+                const name = document.createElement('div');
+                name.className = 'ball-list-name';
+                name.textContent = ball.name;
+                
+                const actions = document.createElement('div');
+                actions.className = 'ball-list-actions';
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.style.background = '#dc3545';
+                deleteBtn.style.border = 'none';
+                deleteBtn.style.color = 'white';
+                deleteBtn.style.borderRadius = '3px';
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.onclick = () => removeCustomBall(ball.id);
+                
+                actions.appendChild(deleteBtn);
+                item.appendChild(preview);
+                item.appendChild(name);
+                item.appendChild(actions);
+                list.appendChild(item);
+            });
+        }
+
+        function removeCustomBall(id) {
+            customBalls = customBalls.filter(ball => ball.id !== id);
+            updateCustomBallsList();
+        }
+
+        function openBallRoster() {
+            document.getElementById('ball-roster').style.display = 'block';
+            updateRosterDisplay();
+        }
+
+        function generateRandomBall() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080', '#ffc0cb', '#a52a2a'];
+            const textures = ['none', 'dots', 'stripes', 'marble'];
+            const names = ['Speedster', 'Thunder', 'Lightning', 'Rocket', 'Comet', 'Meteor', 'Blaze', 'Storm', 'Fury', 'Phoenix', 'Dragon', 'Viper', 'Wolf', 'Eagle', 'Hawk', 'Tiger', 'Lion', 'Panther', 'Cheetah', 'Falcon'];
+            
+            return {
+                id: Date.now() + Math.random(),
+                name: names[Math.floor(Math.random() * names.length)] + ' ' + Math.floor(Math.random() * 999 + 1),
+                color: colors[Math.floor(Math.random() * colors.length)],
+                metalness: Math.random(),
+                roughness: Math.random(),
+                emissive: Math.random() * 0.8,
+                emissiveColor: colors[Math.floor(Math.random() * colors.length)],
+                texture: textures[Math.floor(Math.random() * textures.length)]
+            };
+        }
+
+        function addRandomBalls() {
+            const count = parseInt(document.getElementById('random-count-slider').value);
+            for (let i = 0; i < count; i++) {
+                const randomBall = generateRandomBall();
+                raceRoster.push(randomBall);
+            }
+            updateRosterDisplay();
+        }
+
+        function clearRoster() {
+            raceRoster = [];
+            updateRosterDisplay();
+        }
+
+        function addCustomToRoster() {
+            customBalls.forEach(ball => {
+                const copy = {...ball, id: Date.now() + Math.random()};
+                raceRoster.push(copy);
+            });
+            updateRosterDisplay();
+        }
+
+        function updateRosterDisplay() {
+            const rosterList = document.getElementById('race-roster-list');
+            const rosterCount = document.getElementById('roster-count');
+            
+            rosterCount.textContent = raceRoster.length;
+            rosterList.innerHTML = '';
+
+            raceRoster.forEach((ball, index) => {
+                const item = document.createElement('div');
+                item.className = 'roster-ball';
+                item.onclick = () => removeFromRoster(index);
+                
+                const preview = document.createElement('div');
+                preview.className = 'roster-ball-preview';
+                preview.style.background = ball.color;
+                if (ball.emissive > 0) {
+                    preview.style.boxShadow = `0 0 ${ball.emissive * 8}px ${ball.emissiveColor}`;
+                }
+                
+                const name = document.createElement('div');
+                name.className = 'roster-ball-name';
+                name.textContent = ball.name;
+                
+                const stats = document.createElement('div');
+                stats.className = 'roster-stats';
+                stats.textContent = `M:${ball.metalness.toFixed(1)} R:${ball.roughness.toFixed(1)} G:${ball.emissive.toFixed(1)} ${ball.texture !== 'none' ? ball.texture : ''}`;
+                
+                item.appendChild(preview);
+                item.appendChild(name);
+                item.appendChild(stats);
+                rosterList.appendChild(item);
+            });
+            
+            // Update ballCount for backwards compatibility
+            ballCount = raceRoster.length;
+        }
+
+        function removeFromRoster(index) {
+            raceRoster.splice(index, 1);
+            updateRosterDisplay();
+        }
+
+        function openMaterialEditor() {
+            if (!transformControls.object) {
+                alert('Please select a track piece first');
+                return;
+            }
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece) return;
+            
+            // Load current material data into editor
+            const mat = piece.materialData;
+            document.getElementById('piece-color').value = mat.color;
+            document.getElementById('piece-transparency').value = mat.transparency;
+            document.getElementById('piece-metalness').value = mat.metalness;
+            document.getElementById('piece-roughness').value = mat.roughness;
+            document.getElementById('piece-emissive').value = mat.emissive;
+            document.getElementById('piece-emissive-color').value = mat.emissiveColor;
+            document.getElementById('piece-texture-type').value = mat.textureType;
+            
+            // Update value displays
+            document.getElementById('transparency-value').textContent = mat.transparency;
+            document.getElementById('piece-metalness-value').textContent = mat.metalness;
+            document.getElementById('piece-roughness-value').textContent = mat.roughness;
+            document.getElementById('piece-emissive-value').textContent = mat.emissive;
+            
+            toggleTextureUpload();
+            document.getElementById('material-editor').style.display = 'block';
+        }
+
+        function toggleTextureUpload() {
+            const textureType = document.getElementById('piece-texture-type').value;
+            const uploadSection = document.getElementById('texture-upload-section');
+            uploadSection.style.display = textureType === 'upload' ? 'block' : 'none';
+        }
+
+        function handleTextureUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('texture-preview');
+                preview.style.backgroundImage = `url(${e.target.result})`;
+                // Store base64 data for saving
+                window.currentTextureData = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function createPieceMaterial(materialData) {
+            const material = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(materialData.color),
+                transparent: materialData.transparency > 0,
+                opacity: 1 - materialData.transparency,
+                metalness: materialData.metalness,
+                roughness: materialData.roughness,
+                emissive: new THREE.Color(materialData.emissiveColor),
+                emissiveIntensity: materialData.emissive
+            });
+
+            // Add texture
+            if (materialData.textureType !== 'none') {
+                let texture = null;
+                
+                if (materialData.textureType === 'upload' && materialData.textureData) {
+                    // Load from base64
+                    const loader = new THREE.TextureLoader();
+                    texture = loader.load(materialData.textureData);
+                } else {
+                    // Generate procedural texture
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 512;
+                    canvas.height = 512;
+                    const ctx = canvas.getContext('2d');
+                    
+                    ctx.fillStyle = materialData.color;
+                    ctx.fillRect(0, 0, 512, 512);
+                    
+                    ctx.globalCompositeOperation = 'overlay';
+                    
+                    switch (materialData.textureType) {
+                        case 'dots':
+                            ctx.fillStyle = '#ffffff';
+                            for (let i = 0; i < 40; i++) {
+                                const x = Math.random() * 512;
+                                const y = Math.random() * 512;
+                                const radius = 15 + Math.random() * 10;
+                                ctx.beginPath();
+                                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                            break;
+                        case 'stripes':
+                            ctx.fillStyle = '#ffffff';
+                            for (let i = 0; i < 512; i += 40) {
+                                ctx.fillRect(i, 0, 20, 512);
+                            }
+                            break;
+                        case 'marble':
+                            ctx.strokeStyle = '#ffffff';
+                            ctx.lineWidth = 3;
+                            for (let i = 0; i < 80; i++) {
+                                ctx.beginPath();
+                                ctx.moveTo(Math.random() * 512, Math.random() * 512);
+                                ctx.quadraticCurveTo(
+                                    Math.random() * 512, Math.random() * 512,
+                                    Math.random() * 512, Math.random() * 512
+                                );
+                                ctx.stroke();
+                            }
+                            break;
+                    }
+                    
+                    texture = new THREE.CanvasTexture(canvas);
+                }
+                
+                if (texture) {
+                    texture.wrapS = THREE.RepeatWrapping;
+                    texture.wrapT = THREE.RepeatWrapping;
+                    texture.flipY = false;
+                    material.map = texture;
+                    material.needsUpdate = true;
+                }
+            }
+
+            return material;
+        }
+
+        function applyMaterial() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece) return;
+            
+            // Update material data
+            piece.materialData = {
+                color: document.getElementById('piece-color').value,
+                transparency: parseFloat(document.getElementById('piece-transparency').value),
+                metalness: parseFloat(document.getElementById('piece-metalness').value),
+                roughness: parseFloat(document.getElementById('piece-roughness').value),
+                emissive: parseFloat(document.getElementById('piece-emissive').value),
+                emissiveColor: document.getElementById('piece-emissive-color').value,
+                textureType: document.getElementById('piece-texture-type').value,
+                textureData: window.currentTextureData || piece.materialData.textureData
+            };
+            
+            // Apply new material to mesh
+            const mesh = piece.group.children[0];
+            if (mesh && mesh.isMesh) {
+                mesh.material = createPieceMaterial(piece.materialData);
+            }
+            
+            document.getElementById('material-editor').style.display = 'none';
+        }
+
+        function openSkyboxSelector() {
+            document.getElementById('skybox-selector').style.display = 'block';
+        }
+
+        function createGradientSkybox(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            let gradient;
+            switch(type) {
+                case 'sunset':
+                    gradient = ctx.createLinearGradient(0, 0, 0, 512);
+                    gradient.addColorStop(0, '#ff6b35');
+                    gradient.addColorStop(0.5, '#ff8e53');
+                    gradient.addColorStop(1, '#ffd23f');
+                    break;
+                case 'ocean':
+                    gradient = ctx.createLinearGradient(0, 0, 0, 512);
+                    gradient.addColorStop(0, '#87ceeb');
+                    gradient.addColorStop(0.7, '#4682b4');
+                    gradient.addColorStop(1, '#1e3a8a');
+                    break;
+                case 'space':
+                    gradient = ctx.createLinearGradient(0, 0, 0, 512);
+                    gradient.addColorStop(0, '#000000');
+                    gradient.addColorStop(0.5, '#1a1a2e');
+                    gradient.addColorStop(1, '#16213e');
+                    // Add some stars
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, 1024, 512);
+                    ctx.fillStyle = 'white';
+                    for (let i = 0; i < 200; i++) {
+                        const x = Math.random() * 1024;
+                        const y = Math.random() * 256; // Only in upper half
+                        const size = Math.random() * 2 + 0.5;
+                        ctx.fillRect(x, y, size, size);
+                    }
+                    return new THREE.CanvasTexture(canvas);
+                case 'dawn':
+                    gradient = ctx.createLinearGradient(0, 0, 0, 512);
+                    gradient.addColorStop(0, '#ffb347');
+                    gradient.addColorStop(0.6, '#ffcc5c');
+                    gradient.addColorStop(1, '#87ceeb');
+                    break;
+            }
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1024, 512);
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function applySkybox() {
+            const selected = document.querySelector('.skybox-option.selected');
+            if (!selected) return;
+            
+            const type = selected.getAttribute('data-type');
+            const value = selected.getAttribute('data-value');
+            
+            if (type === 'gradient') {
+                currentSkyboxData = { type: 'gradient', value: value };
+                const texture = createGradientSkybox(value);
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;
+                scene.environment = texture;
+            } else if (type === 'hdr') {
+                currentSkyboxData = { type: 'hdr', value: value };
+                // For HDR, we'll use procedural approximations
+                const texture = createGradientSkybox(value === 'studio' ? 'ocean' : value === 'forest' ? 'dawn' : 'sunset');
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;
+                scene.environment = texture;
+            } else if (type === 'upload' && window.uploadedSkyboxTexture) {
+                scene.background = window.uploadedSkyboxTexture;
+                scene.environment = window.uploadedSkyboxTexture;
+            }
+            
+            document.getElementById('skybox-selector').style.display = 'none';
+        }
+
+        function handleSkyboxUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                // Store the base64 data for saving
+                currentSkyboxData = {
+                    type: 'upload',
+                    data: e.target.result
+                };
+                
+                // Show preview
+                const preview = document.getElementById('uploaded-preview');
+                preview.style.backgroundImage = `url(${e.target.result})`;
+                preview.style.backgroundSize = 'cover';
+                
+                const previewContainer = document.getElementById('custom-skybox-preview');
+                previewContainer.style.display = 'block';
+                
+                // Clear other selections
+                document.querySelectorAll('.skybox-option').forEach(opt => opt.classList.remove('selected'));
+                previewContainer.querySelector('.skybox-option').classList.add('selected');
+                
+                // Load the texture
+                const loader = new THREE.TextureLoader();
+                loader.load(e.target.result, (texture) => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    window.uploadedSkyboxTexture = texture;
+                });
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function toggleCameraMode() {
+            const modes = ['panning', 'fpv', 'behind', 'ridealong', 'oncoming'];
+            const currentIndex = modes.indexOf(cameraMode);
+            const nextIndex = (currentIndex + 1) % modes.length;
+            cameraMode = modes[nextIndex];
+            
+            const display = document.getElementById('camera-mode-display');
+            const modeNames = {
+                'panning': 'Panning',
+                'fpv': 'FPV',
+                'behind': 'Behind',
+                'ridealong': 'Ride Along',
+                'oncoming': 'Oncoming'
+            };
+            display.textContent = modeNames[cameraMode];
+            
+            // Reset camera angle for smooth transitions
+            cameraAngle = 0;
+        }
+
+        function loadSkybox(skyboxData) {
+            if (!skyboxData) return;
+            
+            if (skyboxData.type === 'gradient' || skyboxData.type === 'hdr') {
+                const texture = createGradientSkybox(skyboxData.value);
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;
+                scene.environment = texture;
+            } else if (skyboxData.type === 'upload' && skyboxData.data) {
+                const loader = new THREE.TextureLoader();
+                loader.load(skyboxData.data, (texture) => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    scene.background = texture;
+                    scene.environment = texture;
+                    window.uploadedSkyboxTexture = texture;
+                });
+            }
+        }
+
+        function updateMultiSelectPositions() {
+            if (!multiSelectGroup || selectedPieces.length <= 1) return;
+            
+            selectedPieces.forEach(piece => {
+                if (piece.relativePosition) {
+                    piece.group.position.copy(multiSelectGroup.position).add(piece.relativePosition);
+                }
+            });
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const deltaTime = clock.getDelta();
+            
+            if (isRaceMode) {
+                world.step(1/60, deltaTime, 3);
+                marbles.forEach(m => {
+                    m.mesh.position.copy(m.body.position);
+                    m.mesh.quaternion.copy(m.body.quaternion);
+                    
+                    // Update nameplate position to stay above ball
+                    if (m.nameplate) {
+                        m.nameplate.position.copy(m.mesh.position);
+                        m.nameplate.position.y += 1.5;
+                    }
+                });
+
+                checkFinishLine();
+
+                // Find the lead marble (closest to any finish line)
+                let leadMarble = null;
+                let minDistanceToFinish = Infinity;
+                
+                const endPieces = trackPieces.filter(p => p.type === 'end');
+                
+                marbles.forEach(marble => {
+                    if (!marble.finished && endPieces.length > 0) {
+                        // Find the closest distance to any end piece
+                        let closestDistance = Infinity;
+                        
+                        endPieces.forEach(endPiece => {
+                            const distance = marble.mesh.position.distanceTo(endPiece.group.position);
+                            if (distance < closestDistance) {
+                                closestDistance = distance;
+                            }
+                        });
+                        
+                        // This marble is the leader if it's closest to any finish line
+                        if (closestDistance < minDistanceToFinish) {
+                            minDistanceToFinish = closestDistance;
+                            leadMarble = marble;
+                        }
+                    }
+                });
+
+                // If no unfinished marbles or no end pieces, use the first marble
+                if (!leadMarble && marbles.length > 0) {
+                    leadMarble = marbles[0];
+                }
+
+                // Check if lead marble changed
+                if (leadMarble !== previousLeadMarble) {
+                    previousLeadMarble = leadMarble;
+                    cameraTransitionTime = 0; // Start transition
+                }
+
+                if (leadMarble && !raceFinished) {
+                    const marblePosition = leadMarble.mesh.position;
+                    const marbleVelocity = leadMarble.body.velocity;
+                    
+                    // Update transition time
+                    cameraTransitionTime += deltaTime;
+                    const transitionProgress = Math.min(cameraTransitionTime / transitionDuration, 1);
+                    const easeProgress = 1 - Math.pow(1 - transitionProgress, 3); // Ease out cubic
+                    
+                    // Only update camera when user isn't interacting to prevent jitter
+                    if (!orbitControls.userData.userInteracting) {
+                        // Smooth transition to new target
+                        const currentTarget = orbitControls.target.clone();
+                        const targetPosition = marblePosition.clone();
+                        orbitControls.target.lerpVectors(currentTarget, targetPosition, easeProgress * 0.1 + 0.05);
+                        
+                        switch(cameraMode) {
+                            case 'panning':
+                                // Original orbiting camera
+                                cameraAngle += deltaTime * cameraSpeed;
+                                const radius = 15;
+                                const height = 8;
+                                
+                                const x = marblePosition.x + Math.cos(cameraAngle) * radius;
+                                const z = marblePosition.z + Math.sin(cameraAngle) * radius;
+                                const y = marblePosition.y + height;
+                                
+                                camera.position.set(x, y, z);
+                                camera.lookAt(marblePosition);
+                                break;
+                                
+                            case 'fpv':
+                                // First person view - camera at marble position
+                                camera.position.copy(marblePosition);
+                                camera.position.y += 0.5; // Slightly above marble
+                                
+                                // Look in direction of movement
+                                const lookTarget = marblePosition.clone();
+                                lookTarget.add(new THREE.Vector3(marbleVelocity.x, 0, marbleVelocity.z).normalize().multiplyScalar(5));
+                                camera.lookAt(lookTarget);
+                                break;
+                                
+                            case 'behind':
+                                // Behind the marble
+                                const behindOffset = new THREE.Vector3(-marbleVelocity.x, 0, -marbleVelocity.z).normalize().multiplyScalar(8);
+                                if (behindOffset.length() === 0) behindOffset.set(0, 0, 8); // Default if stationary
+                                
+                                camera.position.copy(marblePosition).add(behindOffset);
+                                camera.position.y += 4;
+                                camera.lookAt(marblePosition);
+                                break;
+                                
+                            case 'ridealong':
+                                // Smooth follow at fixed offset
+                                const targetPos = marblePosition.clone().add(new THREE.Vector3(5, 6, 5));
+                                camera.position.lerp(targetPos, deltaTime * 2);
+                                camera.lookAt(marblePosition);
+                                break;
+                                
+                            case 'oncoming':
+                                // Camera ahead of marble looking back
+                                const aheadOffset = new THREE.Vector3(marbleVelocity.x, 0, marbleVelocity.z).normalize().multiplyScalar(12);
+                                if (aheadOffset.length() === 0) aheadOffset.set(0, 0, -12); // Default if stationary
+                                
+                                camera.position.copy(marblePosition).add(aheadOffset);
+                                camera.position.y += 3;
+                                camera.lookAt(marblePosition);
+                                break;
+                        }
+                    }
+                }
+
+                // Update orbit controls for middle mouse panning
+                orbitControls.update();
+            } else {
+                orbitControls.update();
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
