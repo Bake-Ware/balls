@@ -16,6 +16,8 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Custom Textures**: Upload your own textures with base64 encoding for portability
 - **Transform Controls**: Move, rotate, and scale pieces with W/E/R hotkeys
 - **Snap to Grid**: Hold Shift while transforming for precise alignment
+- **ViewCube Navigation**: 3D orientation cube for quick orthographic view switching (Front, Back, Left, Right, Top, Bottom)
+- **Real-time Orientation**: ViewCube reflects current camera position with smooth transitions
 
 ### ⚽ Ball Maker System
 - **Complete Customization**: Color, metalness, roughness, glow intensity, glow color
@@ -55,11 +57,16 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Speed Control**: Adjustable playback speed for perfect timing
 - **Multi-point Paths**: Create complex movement sequences with multiple keyframes
 
-### 🌌 Environment System
+### 🌌 Environment & Lighting System
 - **Skybox Selector**: Procedural skyboxes (Sunset, Ocean, Space, Dawn)
 - **Custom Upload**: Upload 360° panoramic images
+- **Background Color Control**: Customizable world background color with real-time updates
+- **Dynamic Lighting**: 4 light types (Spot, Point, Strobe, Directional) with real-time controls
+- **Advanced Particle Systems**: 5 particle shapes (Point, Star, Square, Circle, Spark) and 5 themed types (Fire, Water, Electrical, Steam, Wind)
+- **Bloom Post-Processing**: Enhanced particle effects with glowing materials and bloom rendering
+- **Real-time Updates**: All lighting and particle settings update instantly without apply buttons
 - **Environment Lighting**: Skyboxes affect scene lighting and reflections
-- **Save Integration**: Skyboxes saved with track files
+- **Save Integration**: Skyboxes, lighting, and particle settings saved with track files
 
 ### 🏆 Tournament & Race Features
 - **Tournament Mode**: Multi-track tournaments with automatic progression
@@ -117,6 +124,8 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Cannon-ES**: Physics simulation
 - **WebGL**: Hardware-accelerated rendering
 - **Canvas API**: Procedural texture generation
+- **EffectComposer**: Post-processing pipeline for bloom effects
+- **UnrealBloomPass**: Advanced particle glow rendering
 
 ### Architecture
 - **Modular Design**: Separate systems for editor, physics, rendering, UI
@@ -125,6 +134,9 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Event-Driven**: Clean separation between UI interactions and game logic
 - **Affector System**: Real-time physics modification zones with continuous effect application
 - **Animation Engine**: Keyframe-based pathing system with multiple playback modes
+- **Post-Processing Pipeline**: Bloom effects with emissive materials for enhanced visuals
+- **Real-time UI Updates**: Instant feedback system without apply buttons for smooth editing
+- **3D Navigation**: ViewCube with spherical coordinate camera positioning
 
 ### Performance
 - **SAP Broadphase**: Advanced collision detection algorithm for better performance
@@ -204,12 +216,29 @@ balls/
 4. Use material editor to make pipes transparent
 5. Add End platform after loop
 
-### Night Race Scene
-1. Open Skybox Selector
-2. Choose "Space" skybox
-3. Set track pieces to have glow materials
-4. Create glowing balls for visibility
-5. Start race for cosmic marble action!
+### Night Race Scene with Lighting Effects
+1. Open Skybox Selector and choose "Space" skybox
+2. Add Spot Lights along the track for dramatic lighting
+3. Add Particle Generators with "Fire" type for ambient effects
+4. Set track pieces to have glow materials
+5. Create glowing balls for visibility
+6. Use Strobe Lights for exciting race atmosphere
+7. Start race for cosmic marble action!
+
+### Creating Dynamic Particle Effects
+1. Add a Particle Generator from the piece selector
+2. Select the generator and open Object Editor
+3. Choose "Electrical" type for sparking effects
+4. Adjust particle count to 500 for density
+5. Set "Spark" shape for realistic electrical look
+6. Combine with Point Lights for enhanced illumination
+
+### Custom Environment Setup
+1. Open Lighting controls
+2. Set custom Background Color (e.g., deep blue #001122)
+3. Adjust Ambient and Directional light intensity
+4. Add multiple light sources for complex shadows
+5. Use ViewCube to check lighting from all angles
 
 ## 🐛 Troubleshooting
 

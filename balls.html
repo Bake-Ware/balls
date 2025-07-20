@@ -197,6 +197,31 @@
         #skybox-selector h2 { margin-top: 0; color: #ffd700; text-align: center; }
         .skybox-option { display: inline-block; margin: 10px; padding: 10px; background: #2a2a2a; border-radius: 5px; cursor: pointer; text-align: center; width: 120px; }
         .skybox-option:hover { background: #3a3a3a; }
+        
+        /* ViewCube styles */
+        #viewcube {
+            position: absolute; top: 20px; right: 20px; z-index: 150;
+            width: 100px; height: 100px; perspective: 200px; user-select: none;
+        }
+        .viewcube-container {
+            width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(45deg); transition: transform 0.3s ease;
+        }
+        .viewcube-face {
+            position: absolute; width: 100px; height: 100px; border: 2px solid #666;
+            background: rgba(40, 40, 40, 0.9); color: white; display: flex;
+            align-items: center; justify-content: center; font-weight: bold;
+            font-size: 12px; cursor: pointer; transition: all 0.2s ease;
+        }
+        .viewcube-face:hover {
+            background: rgba(80, 80, 80, 0.9); border-color: #888;
+        }
+        .viewcube-front { transform: translateZ(50px); }
+        .viewcube-back { transform: rotateY(180deg) translateZ(50px); }
+        .viewcube-right { transform: rotateY(90deg) translateZ(50px); }
+        .viewcube-left { transform: rotateY(-90deg) translateZ(50px); }
+        .viewcube-top { transform: rotateX(90deg) translateZ(50px); }
+        .viewcube-bottom { transform: rotateX(-90deg) translateZ(50px); }
         .skybox-option.selected { background: #007bff; }
         .skybox-preview { width: 100px; height: 60px; border: 2px solid #666; margin: 5px auto; background-size: cover; border-radius: 3px; }
         .skybox-name { font-size: 12px; margin-top: 5px; }
@@ -229,6 +254,13 @@
                     <option value="accelerator">⚡ Accelerator</option>
                     <option value="brakes">🛑 Brake Zone</option>
                     <option value="ice">🧊 Ice Zone</option>
+                </optgroup>
+                <optgroup label="💡 Lights & Effects">
+                    <option value="spot-light">🔦 Spot Light</option>
+                    <option value="point-light">💡 Point Light</option>
+                    <option value="strobe-light">⚡ Strobe Light</option>
+                    <option value="directional-light">☀️ Directional Light</option>
+                    <option value="particle-gen">✨ Particle Generator</option>
                 </optgroup>
             </select>
             <input type="file" id="add-custom-input" accept=".obj" style="display: none;">
@@ -278,6 +310,10 @@
                     <input type="range" id="directional-light-slider" min="0" max="5" step="0.1" value="1.5">
                     <label for="directional-light-color" style="margin-top: 5px;">Directional Color:</label>
                     <input type="color" id="directional-light-color" value="#ffffff" style="width: 100%; height: 30px; padding: 0; border-radius: 4px;">
+                </div>
+                <div class="speed-control">
+                    <label for="background-color">Background Color:</label>
+                    <input type="color" id="background-color" value="#202020" style="width: 100%; height: 30px; padding: 0; border-radius: 4px; margin-top: 5px;">
                 </div>
             </div>
         </div>
@@ -606,6 +642,127 @@
             </div>
         </div>
         
+        <!-- Light Settings Section -->
+        <div class="material-option" id="light-settings" style="display: none;">
+            <label>💡 Light Settings</label>
+            <hr style="border-color: #444; margin: 10px 0;">
+            
+            <div class="material-option">
+                <label for="light-color">Light Color:</label>
+                <input type="color" id="light-color" value="#ffffff">
+            </div>
+            
+            <div class="material-option">
+                <label for="light-intensity">Intensity: <span id="light-intensity-value">2</span></label>
+                <input type="range" id="light-intensity" min="0" max="10" step="0.1" value="2">
+            </div>
+            
+            <div class="material-option" id="light-distance-setting">
+                <label for="light-distance">Distance: <span id="light-distance-value">30</span></label>
+                <input type="range" id="light-distance" min="5" max="100" step="1" value="30">
+                <div style="font-size: 11px; color: #aaa;">Light range/falloff distance</div>
+            </div>
+            
+            <div class="material-option" id="light-angle-setting" style="display: none;">
+                <label for="light-angle">Spot Angle: <span id="light-angle-value">30</span>°</label>
+                <input type="range" id="light-angle" min="5" max="90" step="1" value="30">
+            </div>
+            
+            <div class="material-option" id="light-penumbra-setting" style="display: none;">
+                <label for="light-penumbra">Edge Softness: <span id="light-penumbra-value">0.3</span></label>
+                <input type="range" id="light-penumbra" min="0" max="1" step="0.05" value="0.3">
+            </div>
+            
+            <div class="material-option" id="light-decay-setting">
+                <label for="light-decay">Decay: <span id="light-decay-value">2</span></label>
+                <input type="range" id="light-decay" min="0" max="5" step="0.1" value="2">
+                <div style="font-size: 11px; color: #aaa;">How light fades with distance</div>
+            </div>
+            
+            <div class="material-option">
+                <label>
+                    <input type="checkbox" id="light-cast-shadow" checked> Cast Shadows
+                </label>
+            </div>
+            
+            <div class="material-option" id="strobe-settings" style="display: none;">
+                <label for="strobe-frequency">Strobe Frequency: <span id="strobe-frequency-value">8</span> Hz</label>
+                <input type="range" id="strobe-frequency" min="1" max="20" step="0.5" value="8">
+            </div>
+        </div>
+        
+        <!-- Particle Settings Section -->
+        <div class="material-option" id="particle-settings" style="display: none;">
+            <label>✨ Particle Settings</label>
+            <hr style="border-color: #444; margin: 10px 0;">
+            
+            <div class="material-option">
+                <label for="particle-type">Particle Type:</label>
+                <select id="particle-type">
+                    <option value="fire">🔥 Fire</option>
+                    <option value="water">💧 Water</option>
+                    <option value="electrical">⚡ Electrical</option>
+                    <option value="steam">☁️ Steam</option>
+                    <option value="wind">💨 Wind</option>
+                    <option value="custom">✨ Custom</option>
+                </select>
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-shape">Particle Shape:</label>
+                <select id="particle-shape">
+                    <option value="point">● Point</option>
+                    <option value="star">⭐ Star</option>
+                    <option value="square">⬛ Square</option>
+                    <option value="circle">⭕ Circle</option>
+                    <option value="spark">⚡ Spark</option>
+                </select>
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-count">Particle Count: <span id="particle-count-value">200</span></label>
+                <input type="range" id="particle-count" min="50" max="500" step="10" value="200">
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-size">Particle Size: <span id="particle-size-value">0.1</span></label>
+                <input type="range" id="particle-size" min="0.02" max="0.5" step="0.01" value="0.1">
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-spread">Spread: <span id="particle-spread-value">2</span></label>
+                <input type="range" id="particle-spread" min="0.5" max="5" step="0.1" value="2">
+                <div style="font-size: 11px; color: #aaa;">Initial position spread around generator</div>
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-velocity">Velocity: <span id="particle-velocity-value">0.1</span></label>
+                <input type="range" id="particle-velocity" min="0.01" max="0.3" step="0.01" value="0.1">
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-gravity">Gravity Strength: <span id="particle-gravity-value">0.005</span></label>
+                <input type="range" id="particle-gravity" min="0" max="0.02" step="0.001" value="0.005">
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-color">Particle Color:</label>
+                <input type="color" id="particle-color" value="#ffa500">
+            </div>
+            
+            <div class="material-option">
+                <label for="particle-opacity">Opacity: <span id="particle-opacity-value">0.8</span></label>
+                <input type="range" id="particle-opacity" min="0.1" max="1" step="0.05" value="0.8">
+            </div>
+            
+            <div class="material-option">
+                <label>
+                    <input type="checkbox" id="particle-additive" checked> Additive Blending
+                </label>
+                <div style="font-size: 11px; color: #aaa;">Makes particles glow and blend together</div>
+            </div>
+        </div>
+        
         <div style="text-align: center; margin-top: 20px;">
             <button id="apply-material-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
             <button id="close-material-editor-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
@@ -618,6 +775,10 @@
         <div style="margin: 20px 0;">
             <h3>Procedural Skyboxes</h3>
             <div id="procedural-skyboxes">
+                <div class="skybox-option" data-type="background" data-value="none">
+                    <div class="skybox-preview" style="background: #202020; border: 2px solid #666;"></div>
+                    <div class="skybox-name">Background Color</div>
+                </div>
                 <div class="skybox-option" data-type="gradient" data-value="sunset">
                     <div class="skybox-preview" style="background: linear-gradient(to bottom, #ff6b35, #ff8e53, #ffd23f);"></div>
                     <div class="skybox-name">Sunset</div>
@@ -670,6 +831,16 @@
             </div>
         </div>
         
+        <div style="margin: 20px 0; text-align: center;">
+            <label style="display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ffd700;">
+                <input type="checkbox" id="ground-projection-toggle" style="margin-right: 8px; transform: scale(1.2);">
+                🏔️ Ground Projection
+            </label>
+            <div style="font-size: 11px; color: #ccc; margin-top: 5px;">
+                Projects skybox onto ground plane for realistic lighting
+            </div>
+        </div>
+        
         <div style="text-align: center; margin-top: 20px;">
             <button id="apply-skybox-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
             <button id="close-skybox-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
@@ -690,6 +861,10 @@
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+        import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         
         // Simple CSG operations using BufferGeometryUtils
         function createCSGGeometry(operation, geomA, geomB) {
@@ -699,7 +874,7 @@
         }
         import * as CANNON from 'cannon-es';
 
-        let scene, camera, renderer, orbitControls, transformControls, world, clock, ambientLight, directionalLight;
+        let scene, camera, renderer, orbitControls, transformControls, world, clock, ambientLight, directionalLight, groundedSkybox, composer, bloomPass;
         let trackPieces = [];
         let marbles = [];
         const raycaster = new THREE.Raycaster();
@@ -746,7 +921,9 @@
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x77b5fe);
+            const initialBackgroundColor = new THREE.Color(0x202020);
+            scene.background = initialBackgroundColor;
+            window.defaultBackgroundColor = initialBackgroundColor;
             clock = new THREE.Clock();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
             camera.position.set(0, 20, 30);
@@ -754,7 +931,21 @@
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.body.appendChild(renderer.domElement);
+            
+            // Set up bloom post-processing
+            composer = new EffectComposer(renderer);
+            const renderPass = new RenderPass(scene, camera);
+            composer.addPass(renderPass);
+            
+            bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                1.5, // strength
+                0.4, // radius
+                0.85 // threshold
+            );
+            composer.addPass(bloomPass);
             
             orbitControls = new OrbitControls(camera, renderer.domElement);
             orbitControls.enableDamping = true;
@@ -801,9 +992,9 @@
         }
 
         function setupLighting() {
-            ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
             scene.add(ambientLight);
-            directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(20, 40, 20);
             directionalLight.castShadow = true;
             directionalLight.shadow.mapSize.set(2048, 2048);
@@ -816,6 +1007,19 @@
             directionalLight.color.set(document.getElementById('directional-light-color').value);
             document.getElementById('ambient-light-value').textContent = ambientLight.intensity.toFixed(1);
             document.getElementById('directional-light-value').textContent = directionalLight.intensity.toFixed(1);
+        }
+
+        function updateBackgroundColor() {
+            const colorValue = document.getElementById('background-color').value;
+            const color = new THREE.Color(colorValue);
+            
+            // Only update background if no skybox is active
+            if (!scene.background || scene.background.isColor || !scene.background.isTexture) {
+                scene.background = color;
+            }
+            
+            // Store the color for when skybox is removed
+            window.defaultBackgroundColor = color;
         }
         
         function setupPhysicsMaterials() {
@@ -884,8 +1088,17 @@
             if (type === 'brakes') color = 0xF44336; // Red for brakes
             if (type === 'ice') color = 0x00BCD4; // Cyan for ice
             
+            // Light colors
+            if (type === 'spot-light') color = 0xFFFF88; // Warm yellow for spot
+            if (type === 'point-light') color = 0xFFFFFF; // White for point
+            if (type === 'strobe-light') color = 0xFF6B35; // Orange for strobe
+            if (type === 'directional-light') color = 0xFFE135; // Golden for directional
+            if (type === 'particle-gen') color = 0xFF8C00; // Dark orange for particles
+            
             // Set transparency for affectors
             const isAffector = config.isAffector || false;
+            const isLight = config.isLight || false;
+            const isParticleGen = config.isParticleGen || false;
             const transparency = isAffector ? 0.7 : 0;
             
             const materialData = {
@@ -894,7 +1107,7 @@
                 metalness: 0,
                 roughness: 0.8,
                 bounciness: 0.3,
-                emissive: isAffector ? 0.3 : 0, // Affectors glow slightly
+                emissive: isAffector ? 0.3 : (isLight || isParticleGen ? 0.4 : 0), // Affectors and lights glow
                 emissiveColor: `#${color.toString(16).padStart(6, '0')}`,
                 textureType: 'none',
                 textureData: null
@@ -922,6 +1135,110 @@
                 arrowMesh.rotation.x = Math.PI / 2; // Point forward (Z direction)
                 
                 group.add(arrowMesh);
+            }
+
+            // Add actual lights for light objects
+            if (config.isLight) {
+                let light;
+                switch (config.lightType) {
+                    case 'spot':
+                        light = new THREE.SpotLight(0xffffff, 5, 50, Math.PI / 6, 0.3, 2);
+                        light.position.set(0, 2, 0);
+                        light.target.position.set(0, 0, 5); // Point forward along Z axis
+                        light.castShadow = true;
+                        light.shadow.mapSize.width = 1024;
+                        light.shadow.mapSize.height = 1024;
+                        
+                        group.add(light);
+                        group.add(light.target);
+                        break;
+                    case 'point':
+                        light = new THREE.PointLight(0xffffff, 5, 30, 2);
+                        light.position.set(0, 2, 0);
+                        light.castShadow = true;
+                        light.shadow.mapSize.width = 512;
+                        light.shadow.mapSize.height = 512;
+                        group.add(light);
+                        break;
+                    case 'strobe':
+                        light = new THREE.PointLight(0xffffff, 8, 25, 2);
+                        light.position.set(0, 2, 0);
+                        light.castShadow = true;
+                        light.shadow.mapSize.width = 512;
+                        light.shadow.mapSize.height = 512;
+                        // Add strobe animation
+                        light.userData.isStrobe = true;
+                        light.userData.strobeTime = 0;
+                        light.userData.originalIntensity = 8;
+                        light.userData.strobeFrequency = 8;
+                        group.add(light);
+                        break;
+                    case 'directional':
+                        light = new THREE.DirectionalLight(0xffffff, 2.5);
+                        light.position.set(0, 5, 0);
+                        light.target.position.set(0, 0, 10);
+                        light.castShadow = true;
+                        light.shadow.mapSize.width = 2048;
+                        light.shadow.mapSize.height = 2048;
+                        light.shadow.camera.near = 0.5;
+                        light.shadow.camera.far = 50;
+                        light.shadow.camera.left = -20;
+                        light.shadow.camera.right = 20;
+                        light.shadow.camera.top = 20;
+                        light.shadow.camera.bottom = -20;
+                        group.add(light);
+                        group.add(light.target);
+                        break;
+                }
+            }
+
+            // Add particle system for particle generators
+            if (config.isParticleGen) {
+                const particleCount = 200;
+                const particles = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const velocities = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    // Random positions around generator
+                    positions[i3] = (Math.random() - 0.5) * 2;
+                    positions[i3 + 1] = Math.random() * 2;
+                    positions[i3 + 2] = (Math.random() - 0.5) * 2;
+                    
+                    // Random velocities
+                    velocities[i3] = (Math.random() - 0.5) * 0.1;
+                    velocities[i3 + 1] = Math.random() * 0.15 + 0.05;
+                    velocities[i3 + 2] = (Math.random() - 0.5) * 0.1;
+                    
+                    // Random colors (gold/orange particles)
+                    const hue = Math.random() * 0.1 + 0.1; // Orange to yellow
+                    colors[i3] = 1;
+                    colors[i3 + 1] = hue * 2;
+                    colors[i3 + 2] = 0;
+                }
+                
+                particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                particles.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+                particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                
+                const particleMaterial = new THREE.PointsMaterial({
+                    size: 0.1,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                
+                const particleSystem = new THREE.Points(particles, particleMaterial);
+                particleSystem.userData.isParticleSystem = true;
+                particleSystem.userData.time = 0;
+                particleSystem.userData.settings = {
+                    count: 200, spread: 2, velocity: 0.1, gravity: 0.005,
+                    color: 0xffa500, size: 0.1, opacity: 0.8, additive: true
+                };
+                group.add(particleSystem);
             }
 
             group.position.copy(newPos);
@@ -958,6 +1275,25 @@
                 affectorSettings: {
                     strength: 5.0, // Default intensity (0-10 scale)
                     direction: new THREE.Vector3(0, 0, 1) // Default forward direction for accelerator
+                },
+                isLight: config.isLight || false,
+                lightType: config.lightType || null,
+                lightSettings: {
+                    color: 0xffffff,
+                    intensity: config.lightType === 'strobe' ? 4 : 2,
+                    distance: config.lightType === 'directional' ? 0 : (config.lightType === 'spot' ? 50 : 30),
+                    angle: config.lightType === 'spot' ? Math.PI / 6 : 0,
+                    penumbra: config.lightType === 'spot' ? 0.3 : 0,
+                    decay: config.lightType === 'directional' ? 0 : 2,
+                    castShadow: true
+                },
+                isParticleGen: config.isParticleGen || false,
+                particleSettings: {
+                    count: 200,
+                    spread: 2,
+                    velocity: 0.1,
+                    gravity: 0.005,
+                    color: 0xffa500 // Orange particles
                 }
             };
             updatePhysicsForPiece(newPiece);
@@ -1192,52 +1528,43 @@
                 case "prism":
                     return { geometry: new THREE.CylinderGeometry(3, 3, 6, 6) };
                 case "quarter-bowl":
-                    // Create a proper quarter bowl using composite geometry
-                    const size = 4;
-                    const segments = 16;
+                    // Create a simple quarter bowl using quarter sphere
+                    const bowlRadius = 4;
+                    const qbSegments = 32;
                     
-                    // Create the L-shaped base structure
-                    const baseGeometry = new THREE.BoxGeometry(size, 0.5, size);
-                    baseGeometry.translate(size/2, 0.25, size/2);
+                    // Create quarter sphere (phi from 0 to PI/2, theta from 0 to PI/2)
+                    const quarterBowlGeometry = new THREE.SphereGeometry(
+                        bowlRadius,     // radius
+                        qbSegments,     // width segments
+                        qbSegments,     // height segments
+                        0,              // phi start (azimuth)
+                        Math.PI / 2,    // phi length (quarter circle around Y axis)
+                        0,              // theta start (polar)
+                        Math.PI / 2     // theta length (quarter from top)
+                    );
                     
-                    // Create back wall
-                    const backWallGeometry = new THREE.BoxGeometry(size, size, 0.5);
-                    backWallGeometry.translate(size/2, size/2, 0.25);
-                    
-                    // Create side wall
-                    const sideWallGeometry = new THREE.BoxGeometry(0.5, size, size);
-                    sideWallGeometry.translate(0.25, size/2, size/2);
-                    
-                    // Create the bowl surface (inverted quarter sphere)
-                    const bowlGeometry = new THREE.SphereGeometry(size/3, segments, segments, 0, Math.PI/2, 0, Math.PI/2);
-                    bowlGeometry.scale(1, -1, 1); // Invert to make concave
-                    bowlGeometry.translate(size/3, size/3, size/3);
-                    
-                    // Create top rim pieces
-                    const topRimBack = new THREE.BoxGeometry(size, 0.3, 0.3);
-                    topRimBack.translate(size/2, size - 0.15, 0.15);
-                    
-                    const topRimSide = new THREE.BoxGeometry(0.3, 0.3, size);
-                    topRimSide.translate(0.15, size - 0.15, size/2);
-                    
-                    // Merge all components
-                    const quarterBowlGeometry = BufferGeometryUtils.mergeGeometries([
-                        baseGeometry, backWallGeometry, sideWallGeometry, 
-                        bowlGeometry, topRimBack, topRimSide
-                    ]);
+                    // Rotate to orient correctly (opening upward)
+                    quarterBowlGeometry.rotateX(-Math.PI / 2);
                     
                     return { geometry: quarterBowlGeometry };
                 case "half-pipe":
-                    // Create a simple half pipe - just the curved surface
+                    // Create a proper half pipe with walls
                     const radius = 3;
                     const length = 8;
-                    const hpSegments = 16;
+                    const hpSegments = 32;
                     
-                    // Main curved surface (half cylinder)
-                    const curvedSurface = new THREE.CylinderGeometry(radius, radius, length, hpSegments, 1, true, 0, Math.PI);
-                    curvedSurface.rotateZ(Math.PI); // Flip so opening faces up
+                    // Create half cylinder using LatheGeometry for proper hollow surface
+                    const points = [];
+                    for (let i = 0; i <= hpSegments; i++) {
+                        const angle = (i / hpSegments) * Math.PI;
+                        points.push(new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius));
+                    }
                     
-                    return { geometry: curvedSurface };
+                    const halfPipeGeometry = new THREE.LatheGeometry(points, 32);
+                    halfPipeGeometry.rotateX(Math.PI / 2); // Orient correctly
+                    halfPipeGeometry.scale(1, length / (2 * radius), 1); // Scale to proper length
+                    
+                    return { geometry: halfPipeGeometry };
                     
                 // Physics Affectors - Invisible/transparent zones that affect marble physics
                 case "water":
@@ -1276,8 +1603,377 @@
                         isAffector: true,
                         affectorType: 'ice'
                     };
+                    
+                // Light objects
+                case "spot-light":
+                    return { 
+                        geometry: new THREE.ConeGeometry(1, 2, 8),
+                        isLight: true,
+                        lightType: 'spot'
+                    };
+                case "point-light":
+                    return { 
+                        geometry: new THREE.SphereGeometry(0.5, 16, 16),
+                        isLight: true,
+                        lightType: 'point'
+                    };
+                case "strobe-light":
+                    return { 
+                        geometry: new THREE.CylinderGeometry(0.8, 0.8, 1.5, 8),
+                        isLight: true,
+                        lightType: 'strobe'
+                    };
+                case "directional-light":
+                    return { 
+                        geometry: new THREE.CylinderGeometry(0.3, 1, 2, 6),
+                        isLight: true,
+                        lightType: 'directional'
+                    };
+                case "particle-gen":
+                    return { 
+                        geometry: new THREE.BoxGeometry(1, 1, 1),
+                        isParticleGen: true
+                    };
             }
             return null;
+        }
+
+        function applyLightSettingsRealTime() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece || !piece.isLight) return;
+            
+            // Update piece settings
+            piece.lightSettings = {
+                color: parseInt(document.getElementById('light-color').value.substring(1), 16),
+                intensity: parseFloat(document.getElementById('light-intensity').value),
+                distance: parseFloat(document.getElementById('light-distance').value),
+                angle: parseFloat(document.getElementById('light-angle').value) * Math.PI / 180,
+                penumbra: parseFloat(document.getElementById('light-penumbra').value),
+                decay: parseFloat(document.getElementById('light-decay').value),
+                castShadow: document.getElementById('light-cast-shadow').checked,
+                strobeFrequency: piece.lightType === 'strobe' ? parseFloat(document.getElementById('strobe-frequency').value) : 8
+            };
+            
+            // Apply settings to actual light object
+            piece.group.traverse((child) => {
+                if (child.isLight) {
+                    child.color.setHex(piece.lightSettings.color);
+                    child.intensity = piece.lightSettings.intensity;
+                    if (child.distance !== undefined) child.distance = piece.lightSettings.distance;
+                    if (child.angle !== undefined) child.angle = piece.lightSettings.angle;
+                    if (child.penumbra !== undefined) child.penumbra = piece.lightSettings.penumbra;
+                    if (child.decay !== undefined) child.decay = piece.lightSettings.decay;
+                    child.castShadow = piece.lightSettings.castShadow;
+                    
+                    // Update strobe settings if applicable
+                    if (child.userData.isStrobe) {
+                        child.userData.strobeFrequency = piece.lightSettings.strobeFrequency;
+                        child.userData.originalIntensity = piece.lightSettings.intensity;
+                    }
+                }
+            });
+        }
+
+        function applyParticleTypePreset() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece || !piece.isParticleGen) return;
+            
+            const selectedType = document.getElementById('particle-type').value;
+            if (selectedType === 'custom') return; // Don't override custom settings
+            
+            const preset = getParticleTypePreset(selectedType);
+            
+            // Update UI controls with preset values
+            document.getElementById('particle-count').value = preset.count;
+            document.getElementById('particle-count-value').textContent = preset.count;
+            document.getElementById('particle-size').value = preset.size;
+            document.getElementById('particle-size-value').textContent = preset.size;
+            document.getElementById('particle-spread').value = preset.spread;
+            document.getElementById('particle-spread-value').textContent = preset.spread;
+            document.getElementById('particle-velocity').value = preset.velocity;
+            document.getElementById('particle-velocity-value').textContent = preset.velocity;
+            document.getElementById('particle-gravity').value = preset.gravity;
+            document.getElementById('particle-gravity-value').textContent = preset.gravity;
+            document.getElementById('particle-color').value = `#${preset.color.toString(16).padStart(6, '0')}`;
+            document.getElementById('particle-opacity').value = preset.opacity;
+            document.getElementById('particle-opacity-value').textContent = preset.opacity;
+            document.getElementById('particle-additive').checked = preset.additive;
+            document.getElementById('particle-shape').value = preset.shape;
+            
+            // Apply the preset
+            applyParticleSettingsRealTime();
+        }
+
+        let particleUpdateTimeout;
+        function applyParticleSettingsRealTime() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece || !piece.isParticleGen) return;
+            
+            // Update piece settings
+            piece.particleSettings = {
+                count: parseInt(document.getElementById('particle-count').value),
+                size: parseFloat(document.getElementById('particle-size').value),
+                spread: parseFloat(document.getElementById('particle-spread').value),
+                velocity: parseFloat(document.getElementById('particle-velocity').value),
+                gravity: parseFloat(document.getElementById('particle-gravity').value),
+                color: parseInt(document.getElementById('particle-color').value.substring(1), 16),
+                opacity: parseFloat(document.getElementById('particle-opacity').value),
+                additive: document.getElementById('particle-additive').checked,
+                shape: document.getElementById('particle-shape').value,
+                type: document.getElementById('particle-type').value
+            };
+            
+            // Throttle particle regeneration to avoid performance issues
+            clearTimeout(particleUpdateTimeout);
+            particleUpdateTimeout = setTimeout(() => {
+                regenerateParticleSystem(piece);
+            }, 150); // 150ms delay
+        }
+
+        function createParticleTexture(shape) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 64, 64);
+            
+            const centerX = 32;
+            const centerY = 32;
+            
+            switch (shape) {
+                case 'point':
+                    // Simple filled circle
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+                    ctx.fill();
+                    break;
+                    
+                case 'star':
+                    // 4-pointed star
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    for (let i = 0; i < 4; i++) {
+                        const angle = (i * Math.PI) / 2;
+                        const x = centerX + Math.cos(angle) * 25;
+                        const y = centerY + Math.sin(angle) * 25;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                        
+                        // Inner point
+                        const innerAngle = angle + Math.PI / 4;
+                        const innerX = centerX + Math.cos(innerAngle) * 10;
+                        const innerY = centerY + Math.sin(innerAngle) * 10;
+                        ctx.lineTo(innerX, innerY);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                    
+                case 'square':
+                    // Filled square
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(12, 12, 40, 40);
+                    break;
+                    
+                case 'circle':
+                    // Circle outline
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 25, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    break;
+                    
+                case 'spark':
+                    // Lightning-like spark
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, 8);
+                    ctx.lineTo(centerX - 8, 20);
+                    ctx.lineTo(centerX + 5, 25);
+                    ctx.lineTo(centerX - 5, 35);
+                    ctx.lineTo(centerX + 8, 45);
+                    ctx.lineTo(centerX, 56);
+                    ctx.stroke();
+                    break;
+                    
+                default:
+                    // Default to point
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+                    ctx.fill();
+            }
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function getParticleTypePreset(type) {
+            switch (type) {
+                case 'fire':
+                    return {
+                        count: 300,
+                        size: 0.15,
+                        spread: 1.5,
+                        velocity: 0.12,
+                        gravity: -0.002, // Upward for fire
+                        color: 0xff4500,
+                        opacity: 0.9,
+                        additive: true,
+                        shape: 'point',
+                        emissive: true
+                    };
+                case 'water':
+                    return {
+                        count: 150,
+                        size: 0.08,
+                        spread: 2.0,
+                        velocity: 0.15,
+                        gravity: 0.008,
+                        color: 0x1e88e5,
+                        opacity: 0.7,
+                        additive: false,
+                        shape: 'circle',
+                        emissive: false
+                    };
+                case 'electrical':
+                    return {
+                        count: 250,
+                        size: 0.12,
+                        spread: 1.0,
+                        velocity: 0.2,
+                        gravity: 0.001,
+                        color: 0x00ffff,
+                        opacity: 0.95,
+                        additive: true,
+                        shape: 'spark',
+                        emissive: true
+                    };
+                case 'steam':
+                    return {
+                        count: 120,
+                        size: 0.2,
+                        spread: 2.5,
+                        velocity: 0.08,
+                        gravity: -0.003,
+                        color: 0xffffff,
+                        opacity: 0.4,
+                        additive: false,
+                        shape: 'circle',
+                        emissive: false
+                    };
+                case 'wind':
+                    return {
+                        count: 200,
+                        size: 0.06,
+                        spread: 3.0,
+                        velocity: 0.25,
+                        gravity: 0.002,
+                        color: 0xe0e0e0,
+                        opacity: 0.3,
+                        additive: false,
+                        shape: 'point',
+                        emissive: false
+                    };
+                default:
+                    return {
+                        count: 200,
+                        size: 0.1,
+                        spread: 2.0,
+                        velocity: 0.1,
+                        gravity: 0.005,
+                        color: 0xffa500,
+                        opacity: 0.8,
+                        additive: true,
+                        shape: 'point',
+                        emissive: false
+                    };
+            }
+        }
+
+        function regenerateParticleSystem(piece) {
+            if (!piece.isParticleGen) return;
+            
+            // Remove existing particle system
+            piece.group.traverse((child) => {
+                if (child.userData.isParticleSystem) {
+                    piece.group.remove(child);
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                }
+            });
+            
+            // Create new particle system with current settings
+            const settings = piece.particleSettings || {
+                count: 200, spread: 2, velocity: 0.1, gravity: 0.005,
+                color: 0xffa500, size: 0.1, opacity: 0.8, additive: true,
+                shape: 'point', type: 'custom'
+            };
+            
+            const particleCount = settings.count;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            
+            const color = new THREE.Color(settings.color);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                // Random positions around generator
+                positions[i3] = (Math.random() - 0.5) * settings.spread;
+                positions[i3 + 1] = Math.random() * settings.spread;
+                positions[i3 + 2] = (Math.random() - 0.5) * settings.spread;
+                
+                // Random velocities
+                velocities[i3] = (Math.random() - 0.5) * settings.velocity;
+                velocities[i3 + 1] = Math.random() * settings.velocity * 1.5 + settings.velocity * 0.5;
+                velocities[i3 + 2] = (Math.random() - 0.5) * settings.velocity;
+                
+                // Set colors
+                colors[i3] = color.r;
+                colors[i3 + 1] = color.g;
+                colors[i3 + 2] = color.b;
+            }
+            
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            // Create texture for particle shape
+            const particleTexture = createParticleTexture(settings.shape || 'point');
+            
+            const particleMaterial = new THREE.PointsMaterial({
+                size: settings.size,
+                vertexColors: true,
+                transparent: true,
+                opacity: settings.opacity,
+                blending: settings.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+                map: particleTexture,
+                alphaTest: 0.1
+            });
+            
+            // Add emissive properties for bloom effect
+            if (settings.emissive || settings.type === 'fire' || settings.type === 'electrical') {
+                particleMaterial.emissive = new THREE.Color(settings.color);
+                particleMaterial.emissiveIntensity = 0.3;
+            }
+            
+            const particleSystem = new THREE.Points(particles, particleMaterial);
+            particleSystem.userData.isParticleSystem = true;
+            particleSystem.userData.time = 0;
+            particleSystem.userData.settings = settings; // Store settings for animation
+            piece.group.add(particleSystem);
         }
 
         function removeSelectedPiece() {
@@ -1305,6 +2001,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
         }
         
         function onPointerDown(event) {
@@ -1497,6 +2194,125 @@
             cameraTransition.targetCameraPosition.copy(newTargetPosition).add(currentRelativePosition);
         }
 
+        function setOrthographicView(view) {
+            // Get the center of the scene (or selected objects)
+            const center = new THREE.Vector3();
+            if (selectedPieces.length > 0) {
+                selectedPieces.forEach(piece => center.add(piece.group.position));
+                center.divideScalar(selectedPieces.length);
+            } else {
+                // Default to scene center or first track piece
+                const firstPiece = trackPieces.find(p => p.type === 'start') || trackPieces[0];
+                if (firstPiece) center.copy(firstPiece.group.position);
+            }
+            
+            // Set camera position based on view direction
+            const distance = 30; // Distance from target
+            let newPosition = new THREE.Vector3();
+            
+            switch (view) {
+                case 'front':
+                    newPosition.set(center.x, center.y, center.z + distance);
+                    break;
+                case 'back':
+                    newPosition.set(center.x, center.y, center.z - distance);
+                    break;
+                case 'right':
+                    newPosition.set(center.x + distance, center.y, center.z);
+                    break;
+                case 'left':
+                    newPosition.set(center.x - distance, center.y, center.z);
+                    break;
+                case 'top':
+                    newPosition.set(center.x, center.y + distance, center.z);
+                    break;
+                case 'bottom':
+                    newPosition.set(center.x, center.y - distance, center.z);
+                    break;
+            }
+            
+            // Smoothly transition camera
+            orbitControls.target.copy(center);
+            
+            // Animate camera position
+            const startPos = camera.position.clone();
+            const duration = 500; // 500ms animation
+            const startTime = performance.now();
+            
+            function animateCamera() {
+                const elapsed = performance.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Ease-out cubic for smooth animation
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                
+                camera.position.lerpVectors(startPos, newPosition, easedProgress);
+                orbitControls.update();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateCamera);
+                }
+            }
+            
+            animateCamera();
+            
+            // Update viewcube visual rotation to match camera
+            updateViewCubeRotation(view);
+        }
+
+        function updateViewCubeRotation(view) {
+            const container = document.querySelector('.viewcube-container');
+            if (!container) return;
+            
+            let rotation = '';
+            switch (view) {
+                case 'front':
+                    rotation = 'rotateX(-20deg) rotateY(0deg)';
+                    break;
+                case 'back':
+                    rotation = 'rotateX(-20deg) rotateY(180deg)';
+                    break;
+                case 'right':
+                    rotation = 'rotateX(-20deg) rotateY(-90deg)';
+                    break;
+                case 'left':
+                    rotation = 'rotateX(-20deg) rotateY(90deg)';
+                    break;
+                case 'top':
+                    rotation = 'rotateX(-90deg) rotateY(0deg)';
+                    break;
+                case 'bottom':
+                    rotation = 'rotateX(90deg) rotateY(0deg)';
+                    break;
+                default:
+                    rotation = 'rotateX(-20deg) rotateY(45deg)';
+            }
+            
+            container.style.transform = rotation;
+        }
+
+        function updateViewCubeFromCamera() {
+            const container = document.querySelector('.viewcube-container');
+            if (!container) return;
+            
+            // Calculate camera direction relative to target
+            const direction = new THREE.Vector3().subVectors(camera.position, orbitControls.target).normalize();
+            
+            // Convert to spherical coordinates to get orientation angles
+            const spherical = new THREE.Spherical().setFromVector3(direction);
+            
+            // Convert spherical coordinates to rotation angles (in degrees)
+            const azimuth = THREE.MathUtils.radToDeg(spherical.theta); // Horizontal rotation
+            const elevation = THREE.MathUtils.radToDeg(spherical.phi) - 90; // Vertical rotation (adjust for coordinate system)
+            
+            // Apply rotation to viewcube container to match camera orientation
+            // Adjust the angles to properly represent the camera's view direction
+            const rotationX = elevation;
+            const rotationY = -azimuth;
+            
+            container.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+        }
+
         function updateMultiSelectGroup() {
             destroyMultiSelectGroup();
             
@@ -1614,6 +2430,7 @@
             document.getElementById('ambient-light-slider').addEventListener('input', updateLighting);
             document.getElementById('directional-light-slider').addEventListener('input', updateLighting);
             document.getElementById('directional-light-color').addEventListener('input', updateLighting);
+            document.getElementById('background-color').addEventListener('input', updateBackgroundColor);
             document.getElementById('save-track-btn').addEventListener('click', saveTrack);
             document.getElementById('load-track-input').addEventListener('change', loadTrack);
             // Auto-add piece when selected in dropdown
@@ -1678,22 +2495,40 @@
             document.getElementById('texture-upload').addEventListener('change', handleTextureUpload);
             
             // Material editor value display updates with real-time material application
-            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive', 'piece-rotation-speed', 'piece-affector-intensity'].forEach(id => {
+            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive', 'piece-rotation-speed', 'piece-affector-intensity', 'light-intensity', 'light-distance', 'light-angle', 'light-penumbra', 'light-decay', 'strobe-frequency', 'particle-count', 'particle-size', 'particle-spread', 'particle-velocity', 'particle-gravity', 'particle-opacity'].forEach(id => {
                 document.getElementById(id).addEventListener('input', (e) => {
                     let valueId;
                     if (id === 'piece-affector-intensity') {
                         valueId = 'affector-intensity-value';
+                    } else if (id.startsWith('light-') || id.startsWith('particle-') || id === 'strobe-frequency') {
+                        valueId = id + '-value';
                     } else {
                         valueId = id.replace('piece-', '').replace('-', '-') + '-value';
                     }
+                    
                     const element = document.getElementById(valueId);
                     if (element) {
-                        element.textContent = e.target.value;
+                        let displayValue = e.target.value;
+                        // Special formatting for angle (convert to degrees)
+                        if (id === 'light-angle') {
+                            displayValue = Math.round(e.target.value);
+                        }
+                        element.textContent = displayValue;
                     }
                     
                     // Apply material changes in real-time for visual properties
                     if (['piece-metalness', 'piece-roughness', 'piece-emissive', 'piece-transparency'].includes(id)) {
                         applyMaterialRealTime();
+                    }
+                    
+                    // Apply light settings in real-time
+                    if (['light-intensity', 'light-distance', 'light-angle', 'light-penumbra', 'light-decay', 'strobe-frequency'].includes(id)) {
+                        applyLightSettingsRealTime();
+                    }
+                    
+                    // Apply particle settings in real-time
+                    if (['particle-count', 'particle-size', 'particle-spread', 'particle-velocity', 'particle-gravity', 'particle-opacity'].includes(id)) {
+                        applyParticleSettingsRealTime();
                     }
                 });
             });
@@ -1701,6 +2536,20 @@
             // Real-time updates for color and emissive color
             document.getElementById('piece-color').addEventListener('input', applyMaterialRealTime);
             document.getElementById('piece-emissive-color').addEventListener('input', applyMaterialRealTime);
+            
+            // Real-time updates for light colors
+            document.getElementById('light-color').addEventListener('input', applyLightSettingsRealTime);
+            
+            // Real-time updates for particle colors
+            document.getElementById('particle-color').addEventListener('input', applyParticleSettingsRealTime);
+            
+            // Real-time updates for checkboxes
+            document.getElementById('light-cast-shadow').addEventListener('change', applyLightSettingsRealTime);
+            document.getElementById('particle-additive').addEventListener('change', applyParticleSettingsRealTime);
+            
+            // Particle type and shape selectors
+            document.getElementById('particle-type').addEventListener('change', applyParticleTypePreset);
+            document.getElementById('particle-shape').addEventListener('change', applyParticleSettingsRealTime);
             
             // Rotation settings toggle
             document.getElementById('piece-rotation-enabled').addEventListener('change', (e) => {
@@ -1807,6 +2656,14 @@
                     transformControls.scaleSnap = null;
                 }
             });
+            
+            // ViewCube event listeners
+            document.querySelectorAll('.viewcube-face').forEach(face => {
+                face.addEventListener('click', (e) => {
+                    const view = e.target.dataset.view;
+                    setOrthographicView(view);
+                });
+            });
         }
         
         function saveTrack() {
@@ -1848,11 +2705,18 @@
                             quaternion: point.quaternion.toArray(),
                             scale: point.scale.toArray()
                         })) : []
-                    } : null
+                    } : null,
+                    isLight: p.isLight,
+                    lightType: p.lightType,
+                    lightSettings: p.lightSettings,
+                    isParticleGen: p.isParticleGen,
+                    particleSettings: p.particleSettings
                 })),
                 customBalls: customBalls,
                 raceRoster: raceRoster,
                 skyboxData: currentSkyboxData,
+                backgroundColor: document.getElementById('background-color').value,
+                groundProjection: document.getElementById('ground-projection-toggle').checked,
                 spotifyUrl: document.getElementById('spotify-url').value
             };
             
@@ -1995,6 +2859,61 @@
                                 };
                             }
                             
+                            // Restore light settings
+                            if (d.isLight !== undefined) {
+                                piece.isLight = d.isLight;
+                                piece.lightType = d.lightType;
+                                if (d.lightSettings) {
+                                    piece.lightSettings = d.lightSettings;
+                                    
+                                    // Apply settings to actual light object
+                                    piece.group.traverse((child) => {
+                                        if (child.isLight) {
+                                            child.color.setHex(piece.lightSettings.color);
+                                            child.intensity = piece.lightSettings.intensity;
+                                            if (child.distance !== undefined) child.distance = piece.lightSettings.distance;
+                                            if (child.angle !== undefined) child.angle = piece.lightSettings.angle;
+                                            if (child.penumbra !== undefined) child.penumbra = piece.lightSettings.penumbra;
+                                            if (child.decay !== undefined) child.decay = piece.lightSettings.decay;
+                                            child.castShadow = piece.lightSettings.castShadow;
+                                            
+                                            // Update strobe settings if applicable
+                                            if (child.userData.isStrobe) {
+                                                child.userData.strobeFrequency = piece.lightSettings.strobeFrequency || 8;
+                                                child.userData.originalIntensity = piece.lightSettings.intensity;
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            // Restore particle settings
+                            if (d.isParticleGen !== undefined) {
+                                piece.isParticleGen = d.isParticleGen;
+                                if (d.particleSettings) {
+                                    piece.particleSettings = d.particleSettings;
+                                    
+                                    // Apply settings to actual particle system
+                                    piece.group.traverse((child) => {
+                                        if (child.userData.isParticleSystem) {
+                                            child.material.size = piece.particleSettings.size || 0.1;
+                                            child.material.opacity = piece.particleSettings.opacity || 0.8;
+                                            child.material.blending = piece.particleSettings.additive !== false ? THREE.AdditiveBlending : THREE.NormalBlending;
+                                            
+                                            // Update particle colors
+                                            const colors = child.geometry.attributes.color.array;
+                                            const color = new THREE.Color(piece.particleSettings.color || 0xffa500);
+                                            for (let i = 0; i < colors.length; i += 3) {
+                                                colors[i] = color.r;
+                                                colors[i + 1] = color.g;
+                                                colors[i + 2] = color.b;
+                                            }
+                                            child.geometry.attributes.color.needsUpdate = true;
+                                        }
+                                    });
+                                }
+                            }
+                            
                             // Apply material with raycast mirror settings
                             const mesh = piece.group.children[0];
                             if (mesh && mesh.isMesh) {
@@ -2015,7 +2934,18 @@
                     
                     if (data.skyboxData) {
                         currentSkyboxData = data.skyboxData;
-                        loadSkybox(data.skyboxData);
+                        // Preserve ground projection state if it was saved with the track
+                        const useGroundProjection = data.groundProjection || false;
+                        if (useGroundProjection) {
+                            document.getElementById('ground-projection-toggle').checked = true;
+                        }
+                        loadSkybox(data.skyboxData, useGroundProjection);
+                    }
+
+                    // Load background color if saved
+                    if (data.backgroundColor) {
+                        document.getElementById('background-color').value = data.backgroundColor;
+                        updateBackgroundColor();
                     }
 
                     if (data.spotifyUrl) {
@@ -2202,8 +3132,10 @@
             const restartBtn = document.getElementById('restart-race-btn');
             const editBtn = document.getElementById('edit-track-btn');
             const speedControl = document.getElementById('camera-speed-control');
-            const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #add-custom-input, #toggle-transform-btn, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #save-track-btn, #load-track-input, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
+            const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #toggle-transform-btn, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #save-track-btn, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
             const editorLabels = document.querySelectorAll('label[for="add-custom-input"], label[for="load-track-input"]');
+            const fileInputs = document.querySelectorAll('#add-custom-input, #load-track-input');
+            const viewcube = document.getElementById('viewcube');
 
             if (isRaceMode) {
                 startBtn.style.display = 'none';
@@ -2212,6 +3144,8 @@
                 speedControl.style.display = 'block';
                 editorButtons.forEach(b => b.style.display = 'none');
                 editorLabels.forEach(l => l.style.display = 'none');
+                fileInputs.forEach(f => f.style.display = 'none');
+                if (viewcube) viewcube.style.display = 'none';
             } else {
                 startBtn.style.display = 'block';
                 restartBtn.style.display = 'none';
@@ -2219,6 +3153,9 @@
                 speedControl.style.display = 'none';
                 editorButtons.forEach(b => b.style.display = 'block');
                 editorLabels.forEach(l => l.style.display = 'block');
+                // Keep file inputs hidden - they should only appear when triggered
+                fileInputs.forEach(f => f.style.display = 'none');
+                if (viewcube) viewcube.style.display = 'block';
             }
         }
 
@@ -2938,6 +3875,81 @@
             // Update path points display
             updatePathPointsDisplay(piece);
             
+            // Load light settings
+            const lightSettings = document.getElementById('light-settings');
+            if (piece.isLight) {
+                lightSettings.style.display = 'block';
+                const light = piece.lightSettings || {
+                    color: 0xffffff, intensity: 2, distance: 30, angle: Math.PI/6, 
+                    penumbra: 0.3, decay: 2, castShadow: true
+                };
+                
+                document.getElementById('light-color').value = `#${light.color.toString(16).padStart(6, '0')}`;
+                document.getElementById('light-intensity').value = light.intensity;
+                document.getElementById('light-distance').value = light.distance;
+                document.getElementById('light-angle').value = (light.angle * 180 / Math.PI);
+                document.getElementById('light-penumbra').value = light.penumbra;
+                document.getElementById('light-decay').value = light.decay;
+                document.getElementById('light-cast-shadow').checked = light.castShadow;
+                
+                // Update value displays
+                document.getElementById('light-intensity-value').textContent = light.intensity;
+                document.getElementById('light-distance-value').textContent = light.distance;
+                document.getElementById('light-angle-value').textContent = Math.round(light.angle * 180 / Math.PI);
+                document.getElementById('light-penumbra-value').textContent = light.penumbra;
+                document.getElementById('light-decay-value').textContent = light.decay;
+                
+                // Show/hide settings based on light type
+                const isSpot = piece.lightType === 'spot';
+                const isDirectional = piece.lightType === 'directional';
+                const isStrobe = piece.lightType === 'strobe';
+                
+                document.getElementById('light-angle-setting').style.display = isSpot ? 'block' : 'none';
+                document.getElementById('light-penumbra-setting').style.display = isSpot ? 'block' : 'none';
+                document.getElementById('light-distance-setting').style.display = isDirectional ? 'none' : 'block';
+                document.getElementById('light-decay-setting').style.display = isDirectional ? 'none' : 'block';
+                document.getElementById('strobe-settings').style.display = isStrobe ? 'block' : 'none';
+                
+                if (isStrobe) {
+                    const strobeFreq = piece.lightSettings?.strobeFrequency || 8;
+                    document.getElementById('strobe-frequency').value = strobeFreq;
+                    document.getElementById('strobe-frequency-value').textContent = strobeFreq;
+                }
+            } else {
+                lightSettings.style.display = 'none';
+            }
+            
+            // Load particle settings
+            const particleSettings = document.getElementById('particle-settings');
+            if (piece.isParticleGen) {
+                particleSettings.style.display = 'block';
+                const particles = piece.particleSettings || {
+                    count: 200, spread: 2, velocity: 0.1, gravity: 0.005, 
+                    color: 0xffa500, size: 0.1, opacity: 0.8, additive: true
+                };
+                
+                document.getElementById('particle-count').value = particles.count;
+                document.getElementById('particle-size').value = particles.size || 0.1;
+                document.getElementById('particle-spread').value = particles.spread;
+                document.getElementById('particle-velocity').value = particles.velocity;
+                document.getElementById('particle-gravity').value = particles.gravity;
+                document.getElementById('particle-color').value = `#${particles.color.toString(16).padStart(6, '0')}`;
+                document.getElementById('particle-opacity').value = particles.opacity || 0.8;
+                document.getElementById('particle-additive').checked = particles.additive !== false;
+                document.getElementById('particle-type').value = particles.type || 'custom';
+                document.getElementById('particle-shape').value = particles.shape || 'point';
+                
+                // Update value displays
+                document.getElementById('particle-count-value').textContent = particles.count;
+                document.getElementById('particle-size-value').textContent = particles.size || 0.1;
+                document.getElementById('particle-spread-value').textContent = particles.spread;
+                document.getElementById('particle-velocity-value').textContent = particles.velocity;
+                document.getElementById('particle-gravity-value').textContent = particles.gravity;
+                document.getElementById('particle-opacity-value').textContent = particles.opacity || 0.8;
+            } else {
+                particleSettings.style.display = 'none';
+            }
+            
             // Show/hide settings based on enabled states
             document.getElementById('rotation-settings').style.display = rotSettings.enabled ? 'block' : 'none';
             document.getElementById('pathing-settings').style.display = pathSettings.enabled ? 'block' : 'none';
@@ -3104,6 +4116,55 @@
                     scale: document.getElementById('path-scale').checked
                 }
             };
+            
+            // Update light settings
+            if (piece.isLight) {
+                piece.lightSettings = {
+                    color: parseInt(document.getElementById('light-color').value.substring(1), 16),
+                    intensity: parseFloat(document.getElementById('light-intensity').value),
+                    distance: parseFloat(document.getElementById('light-distance').value),
+                    angle: parseFloat(document.getElementById('light-angle').value) * Math.PI / 180,
+                    penumbra: parseFloat(document.getElementById('light-penumbra').value),
+                    decay: parseFloat(document.getElementById('light-decay').value),
+                    castShadow: document.getElementById('light-cast-shadow').checked,
+                    strobeFrequency: piece.lightType === 'strobe' ? parseFloat(document.getElementById('strobe-frequency').value) : 8
+                };
+                
+                // Apply settings to actual light object
+                piece.group.traverse((child) => {
+                    if (child.isLight) {
+                        child.color.setHex(piece.lightSettings.color);
+                        child.intensity = piece.lightSettings.intensity;
+                        if (child.distance !== undefined) child.distance = piece.lightSettings.distance;
+                        if (child.angle !== undefined) child.angle = piece.lightSettings.angle;
+                        if (child.penumbra !== undefined) child.penumbra = piece.lightSettings.penumbra;
+                        if (child.decay !== undefined) child.decay = piece.lightSettings.decay;
+                        child.castShadow = piece.lightSettings.castShadow;
+                        
+                        // Update strobe frequency if applicable
+                        if (child.userData.isStrobe) {
+                            child.userData.strobeFrequency = piece.lightSettings.strobeFrequency;
+                        }
+                    }
+                });
+            }
+            
+            // Update particle settings
+            if (piece.isParticleGen) {
+                piece.particleSettings = {
+                    count: parseInt(document.getElementById('particle-count').value),
+                    size: parseFloat(document.getElementById('particle-size').value),
+                    spread: parseFloat(document.getElementById('particle-spread').value),
+                    velocity: parseFloat(document.getElementById('particle-velocity').value),
+                    gravity: parseFloat(document.getElementById('particle-gravity').value),
+                    color: parseInt(document.getElementById('particle-color').value.substring(1), 16),
+                    opacity: parseFloat(document.getElementById('particle-opacity').value),
+                    additive: document.getElementById('particle-additive').checked
+                };
+                
+                // Regenerate particle system with new settings
+                regenerateParticleSystem(piece);
+            }
             
             // Apply new material to mesh
             const mesh = piece.group.children[0];
@@ -3540,23 +4601,29 @@
             
             const type = selected.getAttribute('data-type');
             const value = selected.getAttribute('data-value');
+            const useGroundProjection = document.getElementById('ground-projection-toggle').checked;
             
-            if (type === 'gradient') {
+            if (type === 'background') {
+                // Clear skybox and use background color
+                currentSkyboxData = null;
+                scene.background = window.defaultBackgroundColor || new THREE.Color(0x202020);
+                scene.environment = null;
+                if (groundedSkybox) {
+                    scene.remove(groundedSkybox);
+                    groundedSkybox = null;
+                }
+            } else if (type === 'gradient') {
                 currentSkyboxData = { type: 'gradient', value: value };
-                const texture = createGradientSkybox(value);
-                texture.mapping = THREE.EquirectangularReflectionMapping;
-                scene.background = texture;
-                scene.environment = texture;
+                loadSkybox(currentSkyboxData, useGroundProjection);
             } else if (type === 'hdr') {
                 currentSkyboxData = { type: 'hdr', value: value };
                 // For HDR, we'll use procedural approximations
-                const texture = createGradientSkybox(value === 'studio' ? 'ocean' : value === 'forest' ? 'dawn' : 'sunset');
-                texture.mapping = THREE.EquirectangularReflectionMapping;
-                scene.background = texture;
-                scene.environment = texture;
+                const mappedValue = value === 'studio' ? 'ocean' : value === 'forest' ? 'dawn' : 'sunset';
+                currentSkyboxData = { type: 'gradient', value: mappedValue };
+                loadSkybox(currentSkyboxData, useGroundProjection);
             } else if (type === 'upload' && window.uploadedSkyboxTexture) {
-                scene.background = window.uploadedSkyboxTexture;
-                scene.environment = window.uploadedSkyboxTexture;
+                currentSkyboxData = { type: 'upload', data: window.uploadedSkyboxTexture.source.data.src };
+                loadSkybox(currentSkyboxData, useGroundProjection);
             }
             
             document.getElementById('skybox-selector').style.display = 'none';
@@ -3610,19 +4677,43 @@
             cameraAngle = 0;
         }
 
-        function loadSkybox(skyboxData) {
+        function loadSkybox(skyboxData, useGroundProjection = false) {
             if (!skyboxData) return;
+            
+            // Remove existing grounded skybox if present
+            if (groundedSkybox) {
+                scene.remove(groundedSkybox);
+                groundedSkybox = null;
+            }
             
             if (skyboxData.type === 'gradient' || skyboxData.type === 'hdr') {
                 const texture = createGradientSkybox(skyboxData.value);
                 texture.mapping = THREE.EquirectangularReflectionMapping;
-                scene.background = texture;
+                
+                if (useGroundProjection) {
+                    // Create ground projected skybox
+                    groundedSkybox = new GroundedSkybox(texture, 15, 100);
+                    groundedSkybox.position.y = 14.99; // Slightly below ground height
+                    scene.add(groundedSkybox);
+                    scene.background = null; // Remove background to show grounded skybox
+                } else {
+                    scene.background = texture;
+                }
                 scene.environment = texture;
             } else if (skyboxData.type === 'upload' && skyboxData.data) {
                 const loader = new THREE.TextureLoader();
                 loader.load(skyboxData.data, (texture) => {
                     texture.mapping = THREE.EquirectangularReflectionMapping;
-                    scene.background = texture;
+                    
+                    if (useGroundProjection) {
+                        // Create ground projected skybox
+                        groundedSkybox = new GroundedSkybox(texture, 15, 100);
+                        groundedSkybox.position.y = 14.99; // Slightly below ground height
+                        scene.add(groundedSkybox);
+                        scene.background = null; // Remove background to show grounded skybox
+                    } else {
+                        scene.background = texture;
+                    }
                     scene.environment = texture;
                     window.uploadedSkyboxTexture = texture;
                 });
@@ -3720,6 +4811,63 @@
                             piece.pathingSettings.playbackTime = 0;
                         }
                     }
+                }
+            });
+            
+            // Update strobe lights and particle systems
+            scene.traverse((object) => {
+                // Strobe light animation
+                if (object.isLight && object.userData.isStrobe) {
+                    object.userData.strobeTime += deltaTime;
+                    const strobeFreq = object.userData.strobeFrequency || 8;
+                    const isOn = Math.floor(object.userData.strobeTime * strobeFreq) % 2 === 0;
+                    object.intensity = isOn ? object.userData.originalIntensity || 4 : 0;
+                }
+                
+                // Particle system animation
+                if (object.userData.isParticleSystem) {
+                    object.userData.time += deltaTime;
+                    const settings = object.userData.settings || {
+                        spread: 2, velocity: 0.1, gravity: 0.005, color: 0xffa500
+                    };
+                    const positions = object.geometry.attributes.position.array;
+                    const velocities = object.geometry.attributes.velocity.array;
+                    const colors = object.geometry.attributes.color.array;
+                    
+                    for (let i = 0; i < positions.length; i += 3) {
+                        // Update positions
+                        positions[i] += velocities[i];
+                        positions[i + 1] += velocities[i + 1];
+                        positions[i + 2] += velocities[i + 2];
+                        
+                        // Apply configurable gravity to Y velocity
+                        velocities[i + 1] -= settings.gravity;
+                        
+                        // Reset particles that go out of bounds (any direction)
+                        const maxDistance = 5;
+                        if (Math.abs(positions[i]) > maxDistance || 
+                            Math.abs(positions[i + 1]) > maxDistance || 
+                            Math.abs(positions[i + 2]) > maxDistance) {
+                            
+                            // Reset to emitter position with random spread
+                            positions[i] = (Math.random() - 0.5) * settings.spread;
+                            positions[i + 1] = Math.random() * settings.spread;
+                            positions[i + 2] = (Math.random() - 0.5) * settings.spread;
+                            velocities[i] = (Math.random() - 0.5) * settings.velocity;
+                            velocities[i + 1] = Math.random() * settings.velocity * 1.5 + settings.velocity * 0.5;
+                            velocities[i + 2] = (Math.random() - 0.5) * settings.velocity;
+                        }
+                        
+                        // Use configured particle color (no more random color changes)
+                        const color = new THREE.Color(settings.color);
+                        colors[i] = color.r;
+                        colors[i + 1] = color.g;
+                        colors[i + 2] = color.b;
+                    }
+                    
+                    object.geometry.attributes.position.needsUpdate = true;
+                    object.geometry.attributes.velocity.needsUpdate = true;
+                    object.geometry.attributes.color.needsUpdate = true;
                 }
             });
             
@@ -3882,7 +5030,10 @@
                 }
             }
             
-            renderer.render(scene, camera);
+            // Update viewcube to reflect current camera orientation
+            updateViewCubeFromCamera();
+            
+            composer.render();
         }
 
         init();
@@ -3905,6 +5056,18 @@
     </div>
 
     <!-- Message Notification -->
+    <!-- ViewCube Navigation -->
+    <div id="viewcube">
+        <div class="viewcube-container">
+            <div class="viewcube-face viewcube-front" data-view="front">FRONT</div>
+            <div class="viewcube-face viewcube-back" data-view="back">BACK</div>
+            <div class="viewcube-face viewcube-right" data-view="right">RIGHT</div>
+            <div class="viewcube-face viewcube-left" data-view="left">LEFT</div>
+            <div class="viewcube-face viewcube-top" data-view="top">TOP</div>
+            <div class="viewcube-face viewcube-bottom" data-view="bottom">BOTTOM</div>
+        </div>
+    </div>
+
     <div id="message-notification"></div>
 
 </body>
