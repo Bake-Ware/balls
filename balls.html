@@ -262,6 +262,9 @@
                     <option value="directional-light">☀️ Directional Light</option>
                     <option value="particle-gen">✨ Particle Generator</option>
                 </optgroup>
+                <optgroup label="📹 Camera Controls">
+                    <option value="camera-set">📷 Camera Set</option>
+                </optgroup>
             </select>
             <input type="file" id="add-custom-input" accept=".obj" style="display: none;">
             <button id="start-race-btn" class="button-full-width" style="background: #28a745; border-color: #28a745; margin-top: 8px;">🏁 Start Race!</button>
@@ -691,6 +694,41 @@
             </div>
         </div>
         
+        <!-- Camera Settings Section -->
+        <div class="material-option" id="camera-settings" style="display: none;">
+            <label>📷 Camera Settings</label>
+            <hr style="border-color: #444; margin: 10px 0;">
+            
+            <div class="material-option">
+                <label for="camera-follow-mode">Follow Mode:</label>
+                <select id="camera-follow-mode">
+                    <option value="static">📍 Static</option>
+                    <option value="follow">👁️ Follow</option>
+                    <option value="rigid">🔒 Rigid</option>
+                    <option value="smooth">🌊 Smooth</option>
+                </select>
+            </div>
+            
+            <div class="material-option">
+                <button id="capture-camera-position" style="width: 100%; padding: 8px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    📸 Capture Current Camera Position
+                </button>
+            </div>
+            
+            <div class="material-option">
+                <button id="goto-camera-position" style="width: 100%; padding: 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    🎯 Go to Camera Position
+                </button>
+            </div>
+            
+            <div class="material-option">
+                <small style="color: #888;">
+                    Position: <span id="camera-position-display">Not set</span><br>
+                    Target: <span id="camera-target-display">Not set</span>
+                </small>
+            </div>
+        </div>
+        
         <!-- Particle Settings Section -->
         <div class="material-option" id="particle-settings" style="display: none;">
             <label>✨ Particle Settings</label>
@@ -889,6 +927,7 @@
         let raceRoster = [];
         let selectedPieces = [];
         let cameraMode = 'panning'; // panning, fpv, behind, ridealong, oncoming
+        let cameraSetActive = false; // Track if a camera set is controlling the view
         let currentSkyboxData = null;
         let multiSelectGroup = null;
         let previousLeadMarble = null;
@@ -1094,12 +1133,14 @@
             if (type === 'strobe-light') color = 0xFF6B35; // Orange for strobe
             if (type === 'directional-light') color = 0xFFE135; // Golden for directional
             if (type === 'particle-gen') color = 0xFF8C00; // Dark orange for particles
+            if (type === 'camera-set') color = 0x4169E1; // Royal blue for camera sets
             
-            // Set transparency for affectors
+            // Set transparency for affectors and camera sets
             const isAffector = config.isAffector || false;
             const isLight = config.isLight || false;
             const isParticleGen = config.isParticleGen || false;
-            const transparency = isAffector ? 0.7 : 0;
+            const isCameraSet = config.isCameraSet || false;
+            const transparency = (isAffector || isCameraSet) ? 0.7 : 0;
             
             const materialData = {
                 color: `#${color.toString(16).padStart(6, '0')}`,
@@ -1107,7 +1148,7 @@
                 metalness: 0,
                 roughness: 0.8,
                 bounciness: 0.3,
-                emissive: isAffector ? 0.3 : (isLight || isParticleGen ? 0.4 : 0), // Affectors and lights glow
+                emissive: (isAffector || isCameraSet) ? 0.3 : (isLight || isParticleGen ? 0.4 : 0), // Affectors, camera sets, and lights glow
                 emissiveColor: `#${color.toString(16).padStart(6, '0')}`,
                 textureType: 'none',
                 textureData: null
@@ -1192,6 +1233,31 @@
                 }
             }
 
+            // Add visual indicator for camera sets
+            if (config.isCameraSet) {
+                // Add a camera icon on top of the box
+                const cameraGeometry = new THREE.BoxGeometry(1.2, 0.8, 0.5);
+                const cameraMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x333333,
+                    emissive: 0x111144,
+                    emissiveIntensity: 0.4
+                });
+                const cameraIcon = new THREE.Mesh(cameraGeometry, cameraMaterial);
+                cameraIcon.position.set(0, 3.5, 0);
+                group.add(cameraIcon);
+                
+                // Add lens indicator (small cylinder)
+                const lensGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
+                const lensMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x000000,
+                    emissive: 0x002244 
+                });
+                const lensIndicator = new THREE.Mesh(lensGeometry, lensMaterial);
+                lensIndicator.position.set(0, 3.5, 0.3);
+                lensIndicator.rotation.x = Math.PI / 2;
+                group.add(lensIndicator);
+            }
+            
             // Add particle system for particle generators
             if (config.isParticleGen) {
                 const particleCount = 200;
@@ -1294,6 +1360,12 @@
                     velocity: 0.1,
                     gravity: 0.005,
                     color: 0xffa500 // Orange particles
+                },
+                isCameraSet: config.isCameraSet || false,
+                cameraSettings: {
+                    position: config.cameraPosition || new THREE.Vector3(0, 10, 10),
+                    target: config.cameraTarget || new THREE.Vector3(0, 0, 0),
+                    followMode: config.followMode || 'static' // 'static', 'follow', 'rigid', 'smooth'
                 }
             };
             updatePhysicsForPiece(newPiece);
@@ -1633,6 +1705,14 @@
                     return { 
                         geometry: new THREE.BoxGeometry(1, 1, 1),
                         isParticleGen: true
+                    };
+                case "camera-set":
+                    return { 
+                        geometry: new THREE.BoxGeometry(4, 6, 4),
+                        isCameraSet: true,
+                        cameraPosition: camera.position.clone(),
+                        cameraTarget: orbitControls.target.clone(),
+                        followMode: 'static' // 'static', 'follow', 'rigid', 'smooth'
                     };
             }
             return null;
@@ -2551,6 +2631,56 @@
             document.getElementById('particle-type').addEventListener('change', applyParticleTypePreset);
             document.getElementById('particle-shape').addEventListener('change', applyParticleSettingsRealTime);
             
+            // Camera controls
+            document.getElementById('capture-camera-position').addEventListener('click', () => {
+                if (!transformControls.object) return;
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (!piece || !piece.isCameraSet) return;
+                
+                // Capture current camera position and target
+                piece.cameraSettings.position = camera.position.clone();
+                piece.cameraSettings.target = orbitControls.target.clone();
+                
+                // Update display
+                document.getElementById('camera-position-display').textContent = 
+                    `(${piece.cameraSettings.position.x.toFixed(1)}, ${piece.cameraSettings.position.y.toFixed(1)}, ${piece.cameraSettings.position.z.toFixed(1)})`;
+                document.getElementById('camera-target-display').textContent = 
+                    `(${piece.cameraSettings.target.x.toFixed(1)}, ${piece.cameraSettings.target.y.toFixed(1)}, ${piece.cameraSettings.target.z.toFixed(1)})`;
+                    
+                showMessage('Camera position captured!', 'success');
+            });
+            
+            document.getElementById('goto-camera-position').addEventListener('click', () => {
+                if (!transformControls.object) return;
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (!piece || !piece.isCameraSet) return;
+                
+                // Animate camera to stored position
+                const startPos = camera.position.clone();
+                const startTarget = orbitControls.target.clone();
+                const duration = 1000; // 1 second animation
+                
+                cameraTransition = {
+                    active: true,
+                    startTime: performance.now(),
+                    duration: duration / 1000, // Convert to seconds
+                    startCameraPosition: startPos,
+                    targetCameraPosition: piece.cameraSettings.position.clone(),
+                    startTarget: startTarget,
+                    targetTarget: piece.cameraSettings.target.clone()
+                };
+                
+                showMessage('Moving to camera position...', 'info');
+            });
+            
+            document.getElementById('camera-follow-mode').addEventListener('change', () => {
+                if (!transformControls.object) return;
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (!piece || !piece.isCameraSet) return;
+                
+                piece.cameraSettings.followMode = document.getElementById('camera-follow-mode').value;
+            });
+            
             // Rotation settings toggle
             document.getElementById('piece-rotation-enabled').addEventListener('change', (e) => {
                 const rotationSettings = document.getElementById('rotation-settings');
@@ -2710,7 +2840,9 @@
                     lightType: p.lightType,
                     lightSettings: p.lightSettings,
                     isParticleGen: p.isParticleGen,
-                    particleSettings: p.particleSettings
+                    particleSettings: p.particleSettings,
+                    isCameraSet: p.isCameraSet,
+                    cameraSettings: p.cameraSettings
                 })),
                 customBalls: customBalls,
                 raceRoster: raceRoster,
@@ -2887,6 +3019,22 @@
                                 }
                             }
                             
+                            // Restore camera settings
+                            if (d.isCameraSet !== undefined) {
+                                piece.isCameraSet = d.isCameraSet;
+                                if (d.cameraSettings) {
+                                    piece.cameraSettings = {
+                                        position: new THREE.Vector3().fromArray(d.cameraSettings.position ? 
+                                            [d.cameraSettings.position.x, d.cameraSettings.position.y, d.cameraSettings.position.z] : 
+                                            [0, 10, 10]),
+                                        target: new THREE.Vector3().fromArray(d.cameraSettings.target ? 
+                                            [d.cameraSettings.target.x, d.cameraSettings.target.y, d.cameraSettings.target.z] : 
+                                            [0, 0, 0]),
+                                        followMode: d.cameraSettings.followMode || 'static'
+                                    };
+                                }
+                            }
+                            
                             // Restore particle settings
                             if (d.isParticleGen !== undefined) {
                                 piece.isParticleGen = d.isParticleGen;
@@ -3010,6 +3158,10 @@
             raceFinishers = [];
             raceFinished = false;
             document.getElementById('race-results').style.display = 'none';
+            
+            // Reset camera set control
+            cameraSetActive = false;
+            cameraMode = 'panning';
             
             const startPiece = trackPieces.find(p => p.type === 'start');
             if (startPiece) {
@@ -3950,6 +4102,25 @@
                 particleSettings.style.display = 'none';
             }
             
+            // Load camera settings
+            const cameraSettings = document.getElementById('camera-settings');
+            if (piece.isCameraSet) {
+                cameraSettings.style.display = 'block';
+                const cameras = piece.cameraSettings || {
+                    position: new THREE.Vector3(0, 10, 10),
+                    target: new THREE.Vector3(0, 0, 0),
+                    followMode: 'static'
+                };
+                
+                document.getElementById('camera-follow-mode').value = cameras.followMode;
+                document.getElementById('camera-position-display').textContent = 
+                    `(${cameras.position.x.toFixed(1)}, ${cameras.position.y.toFixed(1)}, ${cameras.position.z.toFixed(1)})`;
+                document.getElementById('camera-target-display').textContent = 
+                    `(${cameras.target.x.toFixed(1)}, ${cameras.target.y.toFixed(1)}, ${cameras.target.z.toFixed(1)})`;
+            } else {
+                cameraSettings.style.display = 'none';
+            }
+            
             // Show/hide settings based on enabled states
             document.getElementById('rotation-settings').style.display = rotSettings.enabled ? 'block' : 'none';
             document.getElementById('pathing-settings').style.display = pathSettings.enabled ? 'block' : 'none';
@@ -4203,6 +4374,107 @@
         }
 
         // ============= AFFECTOR SYSTEM =============
+        
+        function checkCameraZones() {
+            if (!isRaceMode) return;
+            
+            marbles.forEach(marble => {
+                if (marble.finished) return;
+                
+                trackPieces.forEach(piece => {
+                    if (!piece.isCameraSet) return;
+                    
+                    // Check if marble is inside camera zone
+                    const marblePos = marble.mesh.position;
+                    const cameraPos = piece.group.position;
+                    const cameraScale = piece.group.scale;
+                    
+                    // Simple bounding box check around camera set
+                    const relativePos = marblePos.clone().sub(cameraPos);
+                    
+                    // Camera trigger zone (rectangular area matching the box geometry)
+                    const bounds = {
+                        x: cameraScale.x * 2, // Half width of box (4 * 2 / 2)
+                        y: cameraScale.y * 3, // Half height of box (6 * 3 / 2) 
+                        z: cameraScale.z * 2  // Half depth of box (4 * 2 / 2)
+                    };
+                    
+                    const inside = Math.abs(relativePos.x) < bounds.x && 
+                                  Math.abs(relativePos.y) < bounds.y &&
+                                  Math.abs(relativePos.z) < bounds.z;
+                    
+                    if (inside) {
+                        applyCameraEffect(marble, piece);
+                    }
+                });
+            });
+        }
+        
+        function applyCameraEffect(marble, cameraSet) {
+            const settings = cameraSet.cameraSettings;
+            if (!settings) return;
+            
+            // Prevent rapid triggering - add cooldown
+            const now = performance.now();
+            if (cameraSet.lastTriggered && (now - cameraSet.lastTriggered) < 2000) return; // 2 second cooldown
+            cameraSet.lastTriggered = now;
+            
+            // Mark camera set as active
+            cameraSetActive = true;
+            
+            switch (settings.followMode) {
+                case 'static':
+                    // Immediately switch to this camera position
+                    cameraMode = 'static-camera-set';
+                    cameraTransition = {
+                        active: true,
+                        startTime: performance.now(),
+                        duration: 0.8, // 0.8 second transition
+                        startCameraPosition: camera.position.clone(),
+                        targetCameraPosition: settings.position.clone(),
+                        startTarget: orbitControls.target.clone(),
+                        targetTarget: settings.target.clone()
+                    };
+                    break;
+                    
+                case 'follow':
+                    // Follow this marble from the camera set position
+                    const offset = new THREE.Vector3().subVectors(settings.position, settings.target);
+                    cameraTransition = {
+                        active: true,
+                        startTime: performance.now(),
+                        duration: 0.8,
+                        startCameraPosition: camera.position.clone(),
+                        targetCameraPosition: marble.mesh.position.clone().add(offset),
+                        startTarget: orbitControls.target.clone(),
+                        targetTarget: marble.mesh.position.clone()
+                    };
+                    
+                    // Set follow mode for continued tracking
+                    setTimeout(() => {
+                        cameraMode = 'follow-camera-set';
+                        cameraSet.followingMarble = marble;
+                    }, 800);
+                    break;
+                    
+                case 'rigid':
+                    // Rigid follow - camera stays at exact offset
+                    const rigidOffset = new THREE.Vector3().subVectors(settings.position, settings.target);
+                    camera.position.copy(marble.mesh.position).add(rigidOffset);
+                    orbitControls.target.copy(marble.mesh.position);
+                    orbitControls.update();
+                    cameraMode = 'rigid-camera-set';
+                    cameraSet.followingMarble = marble;
+                    break;
+                    
+                case 'smooth':
+                    // Smooth follow with interpolation
+                    cameraMode = 'smooth-camera-set';
+                    cameraSet.followingMarble = marble;
+                    cameraSet.smoothOffset = new THREE.Vector3().subVectors(settings.position, settings.target);
+                    break;
+            }
+        }
         
         function checkAffectorZones() {
             marbles.forEach(marble => {
@@ -4671,6 +4943,9 @@
             const nextIndex = (currentIndex + 1) % modes.length;
             cameraMode = modes[nextIndex];
             
+            // Reset camera set control when manually changing camera mode
+            cameraSetActive = false;
+            
             // Camera mode changed - no display update needed for compact button
             
             // Reset camera angle for smooth transitions
@@ -4890,6 +5165,7 @@
                 checkFinishLine();
                 checkPathTriggers();
                 checkAffectorZones();
+                checkCameraZones();
 
                 // Find the lead marble (closest to any finish line)
                 let leadMarble = null;
@@ -4922,13 +5198,16 @@
                     leadMarble = marbles[0];
                 }
 
-                // Check if lead marble changed
-                if (leadMarble !== previousLeadMarble) {
-                    previousLeadMarble = leadMarble;
-                    cameraTransitionTime = 0; // Start transition
+                // Only use default camera logic if no camera set is active
+                if (!cameraSetActive) {
+                    // Check if lead marble changed
+                    if (leadMarble !== previousLeadMarble) {
+                        previousLeadMarble = leadMarble;
+                        cameraTransitionTime = 0; // Start transition
+                    }
                 }
 
-                if (leadMarble && !raceFinished) {
+                if (leadMarble && !raceFinished && !cameraSetActive) {
                     const marblePosition = leadMarble.mesh.position;
                     const marbleVelocity = leadMarble.body.velocity;
                     
@@ -4995,6 +5274,47 @@
                                 camera.position.copy(marblePosition).add(aheadOffset);
                                 camera.position.y += 3;
                                 camera.lookAt(marblePosition);
+                                break;
+                                
+                            case 'follow-camera-set':
+                                // Follow mode from camera set
+                                const followingCameraSet = trackPieces.find(p => p.isCameraSet && p.followingMarble === leadMarble);
+                                if (followingCameraSet) {
+                                    const followOffset = followingCameraSet.smoothOffset || new THREE.Vector3(10, 8, 10);
+                                    const targetCameraPos = marblePosition.clone().add(followOffset);
+                                    camera.position.lerp(targetCameraPos, deltaTime * 2);
+                                    camera.lookAt(marblePosition);
+                                }
+                                break;
+                                
+                            case 'rigid-camera-set':
+                                // Rigid follow from camera set
+                                const rigidCameraSet = trackPieces.find(p => p.isCameraSet && p.followingMarble === leadMarble);
+                                if (rigidCameraSet) {
+                                    const rigidOffset = new THREE.Vector3().subVectors(
+                                        rigidCameraSet.cameraSettings.position, 
+                                        rigidCameraSet.cameraSettings.target
+                                    );
+                                    camera.position.copy(marblePosition).add(rigidOffset);
+                                    orbitControls.target.copy(marblePosition);
+                                }
+                                break;
+                                
+                            case 'smooth-camera-set':
+                                // Smooth follow from camera set
+                                const smoothCameraSet = trackPieces.find(p => p.isCameraSet && p.followingMarble === leadMarble);
+                                if (smoothCameraSet && smoothCameraSet.smoothOffset) {
+                                    const smoothTargetPos = marblePosition.clone().add(smoothCameraSet.smoothOffset);
+                                    camera.position.lerp(smoothTargetPos, deltaTime * 1.5);
+                                    
+                                    const smoothTargetLook = marblePosition.clone();
+                                    orbitControls.target.lerp(smoothTargetLook, deltaTime * 2);
+                                }
+                                break;
+                                
+                            case 'static-camera-set':
+                                // Static camera set - camera stays at set position/target
+                                // Do nothing - camera position is maintained by transition or already set
                                 break;
                         }
                     }

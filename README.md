@@ -11,6 +11,8 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 ### 🏗️ Advanced Track Editor
 - **Track Pieces**: Start platform, straight tracks, curves, end platform, pipes, half-pipes, quarter bowls
 - **Obstacles**: Pinned balls, pyramids, cylinders, cubes, prisms, custom .obj models
+- **Physics Affectors**: Water zones, zero gravity, moon gravity, accelerators, brakes, ice surfaces
+- **Camera Sets**: Marble-triggered camera control points with 4 follow modes and position capture
 - **Multi-Selection**: Ctrl+click to select multiple pieces and transform them together
 - **Material Editor**: Customize color, transparency, metalness, roughness, glow effects, and textures
 - **Custom Textures**: Upload your own textures with base64 encoding for portability
@@ -33,8 +35,16 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
   - **Behind**: Chase camera following behind the marble
   - **Ride Along**: Smooth tracking at diagonal offset
   - **Oncoming**: Camera positioned ahead looking back
+- **📷 Camera Set Blocks**: Marble-triggered camera control points
+  - **Static Mode**: Camera jumps to preset position and stays there
+  - **Follow Mode**: Camera follows triggering marble from preset offset
+  - **Rigid Mode**: Camera maintains exact offset with no smoothing
+  - **Smooth Mode**: Camera smoothly interpolates to follow marble
+  - **Trigger Zones**: Rectangular activation areas that marbles pass through
+  - **Persistent Control**: Once activated, camera sets maintain control until overridden
+  - **Position Capture**: Save current viewport camera position with one click
 - **Smooth Transitions**: Cubic easing when switching between lead marbles
-- **Manual Override**: User can take control with mouse/orbit controls
+- **Manual Override**: User can take control with mouse/orbit controls or Camera button
 
 ### 🌌 Physics Affector Zones
 - **💧 Water Zone**: Simulates buoyancy and water resistance
@@ -102,8 +112,9 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 4. **Snap Controls**: Hold Shift while transforming for precise grid alignment
 5. **Materials**: Select a piece and click "Edit Material" to customize appearance
 6. **Affector Zones**: Add physics-modifying zones to create unique track effects
-7. **Pathing**: Record movement paths for animated track pieces
-8. **Save**: Use "Save Track" to export your creation
+7. **Camera Sets**: Place camera control points that activate when marbles pass through
+8. **Pathing**: Record movement paths for animated track pieces
+9. **Save**: Use "Save Track" to export your creation
 
 ### Ball Customization
 1. **Ball Maker**: Click "Ball Maker" to design custom marbles
@@ -239,6 +250,14 @@ balls/
 3. Adjust Ambient and Directional light intensity
 4. Add multiple light sources for complex shadows
 5. Use ViewCube to check lighting from all angles
+
+### Creating Cinematic Camera Sequences
+1. Add Camera Set pieces from "Camera Controls" section
+2. Position camera sets along the track where you want dramatic views
+3. Select each camera set and click "📸 Capture Current Camera Position"
+4. Choose follow modes: Static for fixed shots, Follow for dynamic tracking
+5. Test during races - marbles trigger camera changes as they pass through
+6. Use multiple camera sets to create complex filming sequences
 
 ## 🐛 Troubleshooting
 
