@@ -222,6 +222,14 @@
                 <option value="quarter-bowl">Quarter Bowl</option>
                 <option value="half-pipe">Half Pipe</option>
                 <option value="custom">📦 Custom (.obj)...</option>
+                <optgroup label="🌊 Physics Affectors">
+                    <option value="water">💧 Water Zone</option>
+                    <option value="zero-g">🌌 Zero Gravity</option>
+                    <option value="moon-g">🌙 Moon Gravity</option>
+                    <option value="accelerator">⚡ Accelerator</option>
+                    <option value="brakes">🛑 Brake Zone</option>
+                    <option value="ice">🧊 Ice Zone</option>
+                </optgroup>
             </select>
             <input type="file" id="add-custom-input" accept=".obj" style="display: none;">
             <button id="start-race-btn" class="button-full-width" style="background: #28a745; border-color: #28a745; margin-top: 8px;">🏁 Start Race!</button>
@@ -536,6 +544,17 @@
             <label>
                 <input type="checkbox" id="piece-raycast-mirror"> Raycast Mirror Surface
             </label>
+        </div>
+        
+        <div class="material-option" id="affector-settings" style="display: none;">
+            <label>🌊 Physics Affector Settings</label>
+            <div style="margin-top: 10px;">
+                <label for="piece-affector-intensity">Intensity: <span id="affector-intensity-value">5</span></label>
+                <input type="range" id="piece-affector-intensity" min="0" max="10" step="0.5" value="5">
+                <div style="font-size: 11px; color: #aaa; margin-top: 3px;">
+                    0 = No effect, 5 = Normal, 10 = Maximum intensity
+                </div>
+            </div>
         </div>
         
         <div class="material-option">
@@ -857,14 +876,26 @@
             if (type === 'quarter-bowl') color = 0x00BCD4; // Cyan for quarter bowl
             if (type === 'half-pipe') color = 0x8BC34A; // Light green for half pipe
             
+            // Affector colors - will be made semi-transparent
+            if (type === 'water') color = 0x1E88E5; // Blue for water
+            if (type === 'zero-g') color = 0x9C27B0; // Purple for zero-g
+            if (type === 'moon-g') color = 0xFFEB3B; // Yellow for moon gravity
+            if (type === 'accelerator') color = 0x4CAF50; // Green for accelerator
+            if (type === 'brakes') color = 0xF44336; // Red for brakes
+            if (type === 'ice') color = 0x00BCD4; // Cyan for ice
+            
+            // Set transparency for affectors
+            const isAffector = config.isAffector || false;
+            const transparency = isAffector ? 0.7 : 0;
+            
             const materialData = {
                 color: `#${color.toString(16).padStart(6, '0')}`,
-                transparency: 0,
+                transparency: transparency,
                 metalness: 0,
                 roughness: 0.8,
                 bounciness: 0.3,
-                emissive: 0,
-                emissiveColor: '#ffffff',
+                emissive: isAffector ? 0.3 : 0, // Affectors glow slightly
+                emissiveColor: `#${color.toString(16).padStart(6, '0')}`,
                 textureType: 'none',
                 textureData: null
             };
@@ -873,6 +904,25 @@
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             group.add(mesh);
+            
+            // Add directional arrow for accelerator
+            if (type === 'accelerator') {
+                // Create arrow geometry pointing forward (positive Z direction)
+                const arrowGeometry = new THREE.ConeGeometry(0.5, 2, 8);
+                const arrowMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0xffff00, // Yellow arrow
+                    emissive: 0x444400,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const arrowMesh = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                
+                // Position arrow at bottom of accelerator, pointing forward
+                arrowMesh.position.set(0, -1.5, 0); // Bottom of the box
+                arrowMesh.rotation.x = Math.PI / 2; // Point forward (Z direction)
+                
+                group.add(arrowMesh);
+            }
 
             group.position.copy(newPos);
             group.quaternion.copy(newQuat);
@@ -902,6 +952,12 @@
                     playbackTime: 0,
                     direction: 1,
                     triggered: false
+                },
+                isAffector: isAffector,
+                affectorType: config.affectorType || null,
+                affectorSettings: {
+                    strength: 5.0, // Default intensity (0-10 scale)
+                    direction: new THREE.Vector3(0, 0, 1) // Default forward direction for accelerator
                 }
             };
             updatePhysicsForPiece(newPiece);
@@ -917,6 +973,12 @@
                 piece.physicsBodies.forEach(b => world.removeBody(b));
             }
             piece.physicsBodies = [];
+            
+            // Affectors don't need collision bodies, they're invisible zones
+            if (piece.isAffector) {
+                console.log(`${piece.type} affector: No collision body needed`);
+                return;
+            }
             
             const mesh = piece.group.children[0];
             let shape;
@@ -1176,6 +1238,44 @@
                     curvedSurface.rotateZ(Math.PI); // Flip so opening faces up
                     
                     return { geometry: curvedSurface };
+                    
+                // Physics Affectors - Invisible/transparent zones that affect marble physics
+                case "water":
+                    return { 
+                        geometry: new THREE.BoxGeometry(8, 4, 8),
+                        isAffector: true,
+                        affectorType: 'water'
+                    };
+                case "zero-g":
+                    return { 
+                        geometry: new THREE.SphereGeometry(5, 16, 12),
+                        isAffector: true,
+                        affectorType: 'zero-g'
+                    };
+                case "moon-g":
+                    return { 
+                        geometry: new THREE.SphereGeometry(5, 16, 12),
+                        isAffector: true,
+                        affectorType: 'moon-g'
+                    };
+                case "accelerator":
+                    return { 
+                        geometry: new THREE.BoxGeometry(10, 2, 4),
+                        isAffector: true,
+                        affectorType: 'accelerator'
+                    };
+                case "brakes":
+                    return { 
+                        geometry: new THREE.BoxGeometry(6, 2, 6),
+                        isAffector: true,
+                        affectorType: 'brakes'
+                    };
+                case "ice":
+                    return { 
+                        geometry: new THREE.BoxGeometry(8, 1, 8),
+                        isAffector: true,
+                        affectorType: 'ice'
+                    };
             }
             return null;
         }
@@ -1578,9 +1678,14 @@
             document.getElementById('texture-upload').addEventListener('change', handleTextureUpload);
             
             // Material editor value display updates with real-time material application
-            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive', 'piece-rotation-speed'].forEach(id => {
+            ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive', 'piece-rotation-speed', 'piece-affector-intensity'].forEach(id => {
                 document.getElementById(id).addEventListener('input', (e) => {
-                    const valueId = id.replace('piece-', '').replace('-', '-') + '-value';
+                    let valueId;
+                    if (id === 'piece-affector-intensity') {
+                        valueId = 'affector-intensity-value';
+                    } else {
+                        valueId = id.replace('piece-', '').replace('-', '-') + '-value';
+                    }
                     const element = document.getElementById(valueId);
                     if (element) {
                         element.textContent = e.target.value;
@@ -1727,6 +1832,13 @@
                     materialData: p.materialData,
                     rotationSettings: p.rotationSettings,
                     raycastMirror: p.raycastMirror,
+                    isAffector: p.isAffector,
+                    affectorType: p.affectorType,
+                    affectorSettings: p.affectorSettings ? {
+                        ...p.affectorSettings,
+                        // Convert Vector3 direction to array for JSON serialization
+                        direction: p.affectorSettings.direction ? p.affectorSettings.direction.toArray() : [0, 0, 1]
+                    } : null,
                     pathingSettings: p.pathingSettings ? {
                         ...p.pathingSettings,
                         // Convert Vector3 and Quaternion objects to arrays for JSON serialization
@@ -1855,6 +1967,20 @@
                             if (d.raycastMirror !== undefined) {
                                 piece.raycastMirror = d.raycastMirror;
                             }
+                            if (d.isAffector !== undefined) {
+                                piece.isAffector = d.isAffector;
+                                piece.affectorType = d.affectorType;
+                                if (d.affectorSettings) {
+                                    piece.affectorSettings = {
+                                        ...piece.affectorSettings,
+                                        ...d.affectorSettings,
+                                        // Restore Vector3 if it was saved as array
+                                        direction: d.affectorSettings.direction && Array.isArray(d.affectorSettings.direction) 
+                                            ? new THREE.Vector3().fromArray(d.affectorSettings.direction)
+                                            : piece.affectorSettings.direction
+                                    };
+                                }
+                            }
                             if (d.pathingSettings) {
                                 piece.pathingSettings = {
                                     ...piece.pathingSettings,
@@ -1969,8 +2095,11 @@
             raceFinished = false;
             document.getElementById('race-results').style.display = 'none';
             updateRaceUI();
-            transformControls.enabled = false;
-            transformControls.visible = false;
+            
+            // Enable transform controls by default when entering edit mode
+            transformControls.enabled = true;
+            transformControls.visible = true;
+            document.getElementById('toggle-transform-btn').textContent = '🔧 Disable Transform';
             
             // Re-enable all orbit controls for edit mode
             orbitControls.enabled = true;
@@ -2769,6 +2898,29 @@
             // Load raycast mirror setting
             document.getElementById('piece-raycast-mirror').checked = piece.raycastMirror || false;
             
+            // Load affector settings
+            const affectorSettings = document.getElementById('affector-settings');
+            if (piece.isAffector) {
+                affectorSettings.style.display = 'block';
+                const intensity = piece.affectorSettings?.strength || 5;
+                document.getElementById('piece-affector-intensity').value = intensity;
+                document.getElementById('affector-intensity-value').textContent = intensity;
+                
+                // Update the label to show the affector type
+                const typeEmojis = {
+                    'water': '💧',
+                    'zero-g': '🌌', 
+                    'moon-g': '🌙',
+                    'accelerator': '⚡',
+                    'brakes': '🛑',
+                    'ice': '🧊'
+                };
+                const emoji = typeEmojis[piece.affectorType] || '🌊';
+                affectorSettings.querySelector('label').textContent = `${emoji} ${piece.affectorType} Affector Settings`;
+            } else {
+                affectorSettings.style.display = 'none';
+            }
+            
             // Load pathing settings
             const pathSettings = piece.pathingSettings || {
                 enabled: false, mode: 'loop', speed: 1,
@@ -2932,6 +3084,14 @@
             // Update raycast mirror setting
             piece.raycastMirror = document.getElementById('piece-raycast-mirror').checked;
             
+            // Update affector settings
+            if (piece.isAffector) {
+                piece.affectorSettings = {
+                    ...piece.affectorSettings,
+                    strength: parseFloat(document.getElementById('piece-affector-intensity').value)
+                };
+            }
+            
             // Update pathing settings
             piece.pathingSettings = {
                 ...piece.pathingSettings,
@@ -2981,6 +3141,122 @@
             }
         }
 
+        // ============= AFFECTOR SYSTEM =============
+        
+        function checkAffectorZones() {
+            marbles.forEach(marble => {
+                if (marble.finished) return;
+                
+                trackPieces.forEach(piece => {
+                    if (!piece.isAffector) return;
+                    
+                    // Check if marble is inside affector zone
+                    const marblePos = marble.mesh.position;
+                    const affectorPos = piece.group.position;
+                    const affectorScale = piece.group.scale;
+                    
+                    // Simple bounding box check (can be made more precise later)
+                    const relativePos = marblePos.clone().sub(affectorPos);
+                    
+                    let inside = false;
+                    if (piece.affectorType === 'zero-g' || piece.affectorType === 'moon-g') {
+                        // Spherical zones
+                        const distance = relativePos.length();
+                        const radius = Math.max(affectorScale.x, affectorScale.y, affectorScale.z) * 5; // Base radius from sphere
+                        inside = distance < radius;
+                    } else {
+                        // Box zones
+                        const bounds = {
+                            x: Math.max(affectorScale.x * 8, affectorScale.x * 10) / 2, // Based on geometry size
+                            y: Math.max(affectorScale.y * 4, affectorScale.y * 2) / 2,
+                            z: Math.max(affectorScale.z * 8, affectorScale.z * 6) / 2
+                        };
+                        
+                        inside = Math.abs(relativePos.x) < bounds.x && 
+                                Math.abs(relativePos.y) < bounds.y && 
+                                Math.abs(relativePos.z) < bounds.z;
+                    }
+                    
+                    if (inside) {
+                        applyAffectorEffect(marble, piece);
+                    }
+                });
+            });
+        }
+        
+        function applyAffectorEffect(marble, affector) {
+            const intensity = affector.affectorSettings.strength || 5; // 0-10 scale
+            const body = marble.body;
+            
+            // No effect if intensity is 0
+            if (intensity <= 0) return;
+            
+            // Normalize intensity to multiplier (0.1 to 2.0 range for most effects)
+            const multiplier = intensity / 5.0; // 5 = normal strength
+            
+            switch (affector.affectorType) {
+                case 'water':
+                    // Buoyancy and drag - stronger intensity = more buoyancy and drag
+                    const dragFactor = Math.max(1 - (0.04 * intensity), 0.3); // 0.96 at intensity 1, 0.6 at intensity 10
+                    body.velocity.x *= dragFactor;
+                    body.velocity.y *= dragFactor;
+                    body.velocity.z *= dragFactor;
+                    body.velocity.y += 3 * intensity; // 3 at intensity 1, 30 at intensity 10 (buoyancy)
+                    break;
+                    
+                case 'zero-g':
+                    // Cancel gravity - higher intensity = stronger anti-gravity
+                    body.velocity.y += 6 * intensity; // Counter gravity with varying strength
+                    const airResistance = Math.max(1 - (0.002 * intensity), 0.95); // Slight air resistance
+                    body.velocity.x *= airResistance;
+                    body.velocity.y *= airResistance;
+                    body.velocity.z *= airResistance;
+                    break;
+                    
+                case 'moon-g':
+                    // Reduced gravity - higher intensity = lower gravity
+                    body.velocity.y += 5 * intensity; // Reduce gravity effect
+                    break;
+                    
+                case 'accelerator':
+                    // Forward acceleration - intensity controls boost power
+                    // Start with forward direction (0, 0, 1) which is the default "forward" in 3D space
+                    const direction = new THREE.Vector3(0, 0, 1);
+                    // Apply the accelerator's current rotation to get the actual direction
+                    direction.applyQuaternion(affector.group.quaternion);
+                    direction.multiplyScalar(1 * intensity); // 1 at intensity 1, 10 at intensity 10 (10x weaker)
+                    body.velocity.x += direction.x;
+                    body.velocity.z += direction.z;
+                    break;
+                    
+                case 'brakes':
+                    // Friction/braking - higher intensity = stronger braking, but maintain minimum velocity for escape
+                    const brakeFactor = Math.max(1 - (0.08 * intensity), 0.1); // 0.92 at intensity 1, 0.2 at intensity 10
+                    const minSpeed = 2; // Minimum speed to ensure marbles can escape brake zones
+                    
+                    // Apply braking
+                    body.velocity.x *= brakeFactor;
+                    body.velocity.y *= brakeFactor;
+                    body.velocity.z *= brakeFactor;
+                    
+                    // Ensure minimum velocity magnitude (except for Y to allow natural falling)
+                    const horizontalSpeed = Math.sqrt(body.velocity.x * body.velocity.x + body.velocity.z * body.velocity.z);
+                    if (horizontalSpeed < minSpeed && horizontalSpeed > 0.1) {
+                        const scale = minSpeed / horizontalSpeed;
+                        body.velocity.x *= scale;
+                        body.velocity.z *= scale;
+                    }
+                    break;
+                    
+                case 'ice':
+                    // Reduced friction - higher intensity = more slippery
+                    const iceMultiplier = 0.004 * intensity; // 0.004 at intensity 1, 0.04 at intensity 10
+                    body.velocity.x += body.velocity.x * iceMultiplier;
+                    body.velocity.z += body.velocity.z * iceMultiplier;
+                    break;
+            }
+        }
+        
         // ============= PATHING SYSTEM =============
         
         let currentRecordingPiece = null;
@@ -3465,6 +3741,7 @@
 
                 checkFinishLine();
                 checkPathTriggers();
+                checkAffectorZones();
 
                 // Find the lead marble (closest to any finish line)
                 let leadMarble = null;
