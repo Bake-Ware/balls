@@ -9,11 +9,13 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 ## 🎮 Features
 
 ### 🏗️ Advanced Track Editor
-- **Primitive Shapes**: Start platform, straight tracks, curves, end platform, obstacles (ball, pyramid, cylinder, pipe, cube, prism)
+- **Track Pieces**: Start platform, straight tracks, curves, end platform, pipes, half-pipes, quarter bowls
+- **Obstacles**: Pinned balls, pyramids, cylinders, cubes, prisms, custom .obj models
 - **Multi-Selection**: Ctrl+click to select multiple pieces and transform them together
 - **Material Editor**: Customize color, transparency, metalness, roughness, glow effects, and textures
 - **Custom Textures**: Upload your own textures with base64 encoding for portability
 - **Transform Controls**: Move, rotate, and scale pieces with W/E/R hotkeys
+- **Snap to Grid**: Hold Shift while transforming for precise alignment
 
 ### ⚽ Ball Maker System
 - **Complete Customization**: Color, metalness, roughness, glow intensity, glow color
@@ -32,13 +34,39 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Smooth Transitions**: Cubic easing when switching between lead marbles
 - **Manual Override**: User can take control with mouse/orbit controls
 
+### 🌌 Physics Affector Zones
+- **💧 Water Zone**: Simulates buoyancy and water resistance
+- **🌌 Zero Gravity**: Removes gravitational effects completely
+- **🌙 Moon Gravity**: Reduced gravity simulation (1/6th Earth gravity)
+- **⚡ Accelerator**: Speed boost zones for dramatic acceleration
+- **🛑 Brake Zone**: Deceleration areas to slow down marbles
+- **🧊 Ice Zone**: Ultra-low friction surfaces for sliding effects
+- **Intensity Control**: Adjustable effect strength (0-10 scale)
+- **Real-time Physics**: Effects applied continuously while marbles are in zones
+
+### ⚙️ Advanced Pathing System
+- **Path Recording**: Record keyframe positions for animated track pieces
+- **Movement Types**: Translation, rotation, and scaling animations
+- **Playback Modes**:
+  - 🔄 **Loop**: Continuous repeating movement
+  - 🔃 **Loop Reversible**: Back-and-forth oscillation
+  - 👆 **Once on Touch**: Trigger animation when marble touches piece
+  - ⏯️ **Manual Control**: User-activated animations
+- **Speed Control**: Adjustable playback speed for perfect timing
+- **Multi-point Paths**: Create complex movement sequences with multiple keyframes
+
 ### 🌌 Environment System
 - **Skybox Selector**: Procedural skyboxes (Sunset, Ocean, Space, Dawn)
 - **Custom Upload**: Upload 360° panoramic images
 - **Environment Lighting**: Skyboxes affect scene lighting and reflections
 - **Save Integration**: Skyboxes saved with track files
 
-### 🏆 Race Features
+### 🏆 Tournament & Race Features
+- **Tournament Mode**: Multi-track tournaments with automatic progression
+- **Individual Track Loading**: Build tournaments by loading tracks one at a time
+- **Comprehensive Scoring**: 3 points for 1st, 2 points for 2nd, 1 point for 3rd
+- **Tournament Results**: Final leaderboard showing overall winners
+- **Race Timing**: 30-second delay after first marble finishes before advancing
 - **Real-time Physics**: Accurate marble physics with Cannon.js
 - **Instant Results**: Race results appear immediately when first marble finishes
 - **Dynamic Updates**: Results update live as more marbles finish
@@ -61,11 +89,14 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 4. Use "Camera" button to cycle through viewing modes
 
 ### Track Building
-1. **Add Pieces**: Click buttons to add track segments and obstacles
+1. **Add Pieces**: Use dropdown selector to add track segments and obstacles
 2. **Enable Transform**: Click "Enable Transform" and select pieces to move/rotate/scale
 3. **Multi-Select**: Hold Ctrl and click multiple pieces to transform together
-4. **Materials**: Select a piece and click "Edit Material" to customize appearance
-5. **Save**: Use "Save Track" to export your creation
+4. **Snap Controls**: Hold Shift while transforming for precise grid alignment
+5. **Materials**: Select a piece and click "Edit Material" to customize appearance
+6. **Affector Zones**: Add physics-modifying zones to create unique track effects
+7. **Pathing**: Record movement paths for animated track pieces
+8. **Save**: Use "Save Track" to export your creation
 
 ### Ball Customization
 1. **Ball Maker**: Click "Ball Maker" to design custom marbles
@@ -92,12 +123,16 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Real-time Physics**: 60 FPS physics simulation with visual synchronization
 - **Material System**: PBR (Physically Based Rendering) materials with custom shaders
 - **Event-Driven**: Clean separation between UI interactions and game logic
+- **Affector System**: Real-time physics modification zones with continuous effect application
+- **Animation Engine**: Keyframe-based pathing system with multiple playback modes
 
 ### Performance
+- **SAP Broadphase**: Advanced collision detection algorithm for better performance
 - **Optimized Physics**: Efficient collision detection using exact geometry
 - **LOD System**: Adaptive detail based on viewing distance
 - **Texture Caching**: Smart texture management and reuse
 - **Memory Management**: Proper cleanup of physics bodies and materials
+- **Zone Optimization**: Efficient affector zone detection and application
 
 ## 🎯 Advanced Features
 
