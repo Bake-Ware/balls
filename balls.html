@@ -139,6 +139,18 @@
         .roster-ball-preview { width: 25px; height: 25px; border-radius: 50%; margin-right: 10px; border: 1px solid #666; }
         .roster-ball-name { flex-grow: 1; font-size: 14px; }
         .roster-stats { font-size: 12px; color: #ccc; margin-left: 10px; }
+        
+        /* Object Tree Styles */
+        .object-item {
+            display: flex; align-items: center; padding: 4px 8px; margin: 1px 0;
+            background: #3a3a3a; border-radius: 3px; cursor: pointer;
+            border-left: 3px solid transparent; font-size: 12px;
+        }
+        .object-item:hover { background: #4a4a4a; }
+        .object-item.selected { background: #007bff; border-left-color: #ffd700; }
+        .object-icon { margin-right: 6px; font-size: 14px; }
+        .object-name { flex-grow: 1; }
+        .object-type { font-size: 10px; color: #888; margin-left: 5px; }
         #material-editor {
             position: fixed; top: 0; right: 0; height: 100vh; width: 450px;
             background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; 
@@ -235,6 +247,7 @@
             <select id="piece-type-selector" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px;">
                 <option value="">Select piece type...</option>
                 <option value="start">Start Platform</option>
+                <option value="ball-set">🏁 Ball Set</option>
                 <option value="straight">Straight</option>
                 <option value="curve">Curve</option>
                 <option value="end">End Platform</option>
@@ -282,6 +295,10 @@
                 </div>
                 
                 <div class="button-grid" style="margin-top: 8px;">
+                    <button id="export-blueprint-btn" style="display: none; background: #28a745; border-color: #28a745;">📦 Export Blueprint</button>
+                </div>
+                
+                <div class="button-grid" style="margin-top: 8px;">
                     <button id="save-track-btn">💾 Save</button>
                     <label for="load-track-input" style="margin: 0; padding: 8px 4px; font-size: 12px;">📂 Load</label>
                 </div>
@@ -301,6 +318,12 @@
             <div class="speed-control" id="camera-speed-control" style="display: none;">
                 <label for="camera-speed-slider">Camera Speed</label>
                 <input type="range" id="camera-speed-slider" min="0.1" max="2" step="0.1" value="1">
+            </div>
+            <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="object-tree">📋 Object Tree ▼</div>
+            <div id="object-tree" class="collapsible-content">
+                <div id="object-list" style="max-height: 200px; overflow-y: auto; background: #2a2a2a; border-radius: 4px; padding: 5px;">
+                    <div style="color: #888; text-align: center; padding: 20px;">No objects in scene</div>
+                </div>
             </div>
             <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="lighting-controls">💡 Lighting ▼</div>
             <div id="lighting-controls" class="collapsible-content">
@@ -1111,6 +1134,7 @@
             if (type === 'start') color = 0x4CAF50; // Bright green for start
             if (type === 'end') color = 0xF44336; // Red for end/finish line
             if (type === 'ball') color = 0x2196F3; // Blue for pinned balls
+            if (type === 'ball-set') color = 0x00FF00; // Green for placement balls
             if (type === 'pyramid') color = 0xFF9800; // Orange for pyramid
             if (type === 'cylinder') color = 0x9C27B0; // Purple for cylinder
             if (type === 'pipe') color = 0x607D8B; // Blue Grey for pipe
@@ -1153,11 +1177,20 @@
                 textureType: 'none',
                 textureData: null
             };
-            const floorMat = createPieceMaterial(materialData);
-            const mesh = new THREE.Mesh(config.geometry, floorMat);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            group.add(mesh);
+            // Only create platform mesh if geometry exists (not for ball-sets)
+            if (config.geometry) {
+                const floorMat = createPieceMaterial(materialData);
+                const mesh = new THREE.Mesh(config.geometry, floorMat);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                group.add(mesh);
+            }
+            
+            // Ball sets are individual placement balls
+            if (type === 'ball-set') {
+                // Add preview balls showing all roster balls
+                addPreviewBallsToSet(group);
+            }
             
             // Add directional arrow for accelerator
             if (type === 'accelerator') {
@@ -1366,12 +1399,15 @@
                     position: config.cameraPosition || new THREE.Vector3(0, 10, 10),
                     target: config.cameraTarget || new THREE.Vector3(0, 0, 0),
                     followMode: config.followMode || 'static' // 'static', 'follow', 'rigid', 'smooth'
-                }
+                },
+                isBallSet: config.isBallSet || false,
+                isPlacementBall: config.isPlacementBall || false
             };
             updatePhysicsForPiece(newPiece);
             
             trackPieces.push(newPiece);
             scene.add(group);
+            updateObjectTree();
         }
         
         function updatePhysicsForPiece(piece) {
@@ -1382,9 +1418,9 @@
             }
             piece.physicsBodies = [];
             
-            // Affectors don't need collision bodies, they're invisible zones
-            if (piece.isAffector) {
-                console.log(`${piece.type} affector: No collision body needed`);
+            // Affectors and ball-sets don't need collision bodies
+            if (piece.isAffector || piece.isBallSet) {
+                console.log(`${piece.type}: No collision body needed`);
                 return;
             }
             
@@ -1510,6 +1546,12 @@
                     return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
                 case "ball":
                     return { geometry: new THREE.SphereGeometry(2, 16, 16), pinned: true };
+                case "ball-set":
+                    return { 
+                        geometry: new THREE.SphereGeometry(0.4, 16, 16), // Individual ball geometry
+                        isBallSet: true,
+                        isPlacementBall: true
+                    };
                 case "pyramid":
                     return { geometry: new THREE.ConeGeometry(3, 6, 8) };
                 case "cylinder":
@@ -2060,22 +2102,29 @@
             if (selectedPieces.length > 0) {
                 selectedPieces.forEach(piece => {
                     transformControls.detach();
+                    
+                    
                     scene.remove(piece.group);
                     piece.physicsBodies.forEach(b => world.removeBody(b));
                     trackPieces = trackPieces.filter(p => p !== piece);
                 });
                 selectedPieces = [];
                 updateSelectionUI();
+                updateObjectTree();
             } else if (transformControls.object) {
                 const piece = trackPieces.find(p => p.group === transformControls.object);
                 if (piece) {
                     transformControls.detach();
+                    
+                    
                     scene.remove(piece.group);
                     piece.physicsBodies.forEach(b => world.removeBody(b));
                     trackPieces = trackPieces.filter(p => p !== piece);
+                    updateObjectTree();
                 }
             }
         }
+        
         
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -2110,7 +2159,18 @@
             // Only handle selection if this was a click (not a drag)
             pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
             raycaster.setFromCamera(pointer, camera);
-            const intersects = raycaster.intersectObjects(trackPieces.map(p => p.group), true);
+            
+            // Filter out preview balls from selection raycast
+            const selectableObjects = [];
+            trackPieces.forEach(p => {
+                p.group.traverse((child) => {
+                    if (child.isMesh && !child.userData.isPreviewBall) {
+                        selectableObjects.push(child);
+                    }
+                });
+            });
+            
+            const intersects = raycaster.intersectObjects(selectableObjects, false);
             
             if (intersects.length > 0) {
                 let object = intersects[0].object;
@@ -2217,6 +2277,8 @@
 
         function updateSelectionUI() {
             const selectionInfo = document.getElementById('selection-info');
+            const exportBtn = document.getElementById('export-blueprint-btn');
+            
             if (selectionInfo) {
                 if (selectedPieces.length > 1) {
                     selectionInfo.textContent = `${selectedPieces.length} pieces selected`;
@@ -2226,6 +2288,14 @@
                     selectionInfo.textContent = '';
                 }
             }
+            
+            // Show export button only when multiple pieces are selected
+            if (exportBtn) {
+                exportBtn.style.display = selectedPieces.length > 1 ? 'block' : 'none';
+            }
+            
+            // Update object tree to reflect selection changes
+            updateObjectTree();
         }
 
         function updateCameraTarget(piece, smooth = false) {
@@ -2538,33 +2608,18 @@
             document.getElementById('duplicate-piece-btn').addEventListener('click', () => {
                 if (selectedPieces.length > 0) {
                     selectedPieces.forEach(piece => {
-                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
-                        addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
-                        // Copy material data to new piece
-                        const newPiece = trackPieces[trackPieces.length - 1];
-                        newPiece.materialData = {...piece.materialData};
-                        const mesh = newPiece.group.children[0];
-                        if (mesh && mesh.isMesh) {
-                            mesh.material = createPieceMaterial(newPiece.materialData);
-                        }
+                        duplicatePiece(piece);
                     });
                 } else if(transformControls.object){
                     const piece = trackPieces.find(p => p.group === transformControls.object);
                     if(piece) {
-                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
-                        addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
-                        // Copy material data to new piece
-                        const newPiece = trackPieces[trackPieces.length - 1];
-                        newPiece.materialData = {...piece.materialData};
-                        const mesh = newPiece.group.children[0];
-                        if (mesh && mesh.isMesh) {
-                            mesh.material = createPieceMaterial(newPiece.materialData);
-                        }
+                        duplicatePiece(piece);
                     }
                 }
             });
             document.getElementById('remove-piece-btn').addEventListener('click', removeSelectedPiece);
             document.getElementById('edit-material-btn').addEventListener('click', openMaterialEditor);
+            document.getElementById('export-blueprint-btn').addEventListener('click', exportBlueprint);
             document.getElementById('close-material-editor-btn').addEventListener('click', () => {
                 const editor = document.getElementById('material-editor');
                 editor.classList.remove('show');
@@ -2716,6 +2771,17 @@
                 }
             });
             
+            // Export dialog event listeners
+            document.getElementById('export-confirm-btn').addEventListener('click', performBlueprintExport);
+            document.getElementById('export-cancel-btn').addEventListener('click', () => {
+                document.getElementById('export-dialog').style.display = 'none';
+            });
+            document.getElementById('export-filename').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performBlueprintExport();
+                }
+            });
+            
             // Select all button
             document.getElementById('select-all-btn').addEventListener('click', () => {
                 clearAllSelections();
@@ -2747,6 +2813,46 @@
             renderer.domElement.addEventListener('pointerdown', onPointerDown);
             renderer.domElement.addEventListener('pointermove', onPointerMove);
             renderer.domElement.addEventListener('pointerup', onPointerUp);
+            let isCtrlDuplicating = false;
+            let originalPiecesToDuplicate = [];
+            let duplicatedPieces = [];
+            
+            transformControls.addEventListener('mouseDown', () => {
+                // Check if ctrl is pressed when starting drag
+                if (window.event && window.event.ctrlKey && transformControls.object) {
+                    isCtrlDuplicating = true;
+                    originalPiecesToDuplicate = [];
+                    duplicatedPieces = [];
+                    
+                    if (selectedPieces.length > 0) {
+                        // Duplicate all selected pieces
+                        selectedPieces.forEach(piece => {
+                            originalPiecesToDuplicate.push(piece);
+                            const newPiece = duplicatePiece(piece, new THREE.Vector3(0, 0, 0)); // No offset
+                            duplicatedPieces.push(newPiece);
+                        });
+                        
+                        // Clear selection and select the duplicated pieces
+                        clearAllSelections();
+                        duplicatedPieces.forEach(piece => {
+                            addToSelection(piece);
+                        });
+                        createMultiSelectGroup();
+                        transformControls.attach(multiSelectGroup);
+                    } else {
+                        // Single piece duplication
+                        const piece = trackPieces.find(p => p.group === transformControls.object);
+                        if (piece) {
+                            originalPiecesToDuplicate.push(piece);
+                            const newPiece = duplicatePiece(piece, new THREE.Vector3(0, 0, 0)); // No offset
+                            duplicatedPieces.push(newPiece);
+                            transformControls.attach(newPiece.group);
+                        }
+                    }
+                    showMessage('Ctrl+Drag: Moving copy of selected pieces', 'info');
+                }
+            });
+            
             transformControls.addEventListener('dragging-changed', event => orbitControls.enabled = !event.value);
             transformControls.addEventListener('change', updateMultiSelectPositions);
             transformControls.addEventListener('mouseUp', () => { 
@@ -2759,6 +2865,13 @@
                     selectedPieces.forEach(piece => updatePhysicsForPiece(piece));
                     // Smoothly update camera target to follow the moved pieces
                     updateCameraTargetForMultiSelect(true);
+                }
+                
+                // Reset ctrl duplication state
+                if (isCtrlDuplicating) {
+                    isCtrlDuplicating = false;
+                    originalPiecesToDuplicate = [];
+                    duplicatedPieces = [];
                 }
             });
             window.addEventListener('keydown', (e) => {
@@ -2784,6 +2897,15 @@
                     transformControls.translationSnap = null;
                     transformControls.rotationSnap = null;
                     transformControls.scaleSnap = null;
+                }
+            });
+            
+            // Object tree event listeners
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.object-item')) {
+                    const item = e.target.closest('.object-item');
+                    const pieceIndex = parseInt(item.dataset.pieceIndex);
+                    selectPieceFromTree(pieceIndex, e.ctrlKey);
                 }
             });
             
@@ -2842,7 +2964,9 @@
                     isParticleGen: p.isParticleGen,
                     particleSettings: p.particleSettings,
                     isCameraSet: p.isCameraSet,
-                    cameraSettings: p.cameraSettings
+                    cameraSettings: p.cameraSettings,
+                    isBallSet: p.isBallSet,
+                    isPlacementBall: p.isPlacementBall
                 })),
                 customBalls: customBalls,
                 raceRoster: raceRoster,
@@ -2863,6 +2987,271 @@
             showMessage(`Track saved as "${finalFilename}"`, 'success');
         }
         
+        function exportBlueprint() {
+            if (selectedPieces.length < 2) {
+                showMessage('Please select multiple pieces to export as blueprint', 'error');
+                return;
+            }
+            
+            // Show export dialog
+            document.getElementById('export-dialog').style.display = 'block';
+            document.getElementById('export-filename').focus();
+        }
+        
+        function performBlueprintExport() {
+            const filename = document.getElementById('export-filename').value.trim() || 'blueprint';
+            const finalFilename = filename.endsWith('.obj') ? filename : `${filename}.obj`;
+            
+            // Calculate center point of selection for relative positioning
+            const center = new THREE.Vector3();
+            selectedPieces.forEach(piece => {
+                center.add(piece.group.position);
+            });
+            center.divideScalar(selectedPieces.length);
+            
+            let objContent = '# Blueprint exported from 3D Marble Race Game\n';
+            objContent += `# Generated on ${new Date().toISOString()}\n`;
+            objContent += `# Contains ${selectedPieces.length} pieces merged into one object\n\n`;
+            objContent += 'o merged_blueprint\n\n';
+            
+            let allVertices = [];
+            let allNormals = [];
+            let allFaces = [];
+            let vertexOffset = 0;
+            let materialInfo = [];
+            
+            // First pass: collect all geometry data
+            selectedPieces.forEach((piece, pieceIndex) => {
+                const mesh = piece.group.children.find(child => child.isMesh && child.geometry);
+                if (!mesh) return;
+                
+                objContent += `# Piece ${pieceIndex + 1}: ${piece.type}\n`;
+                
+                // Get geometry and apply transforms
+                const geometry = mesh.geometry.clone();
+                const matrix = new THREE.Matrix4();
+                
+                // Calculate relative position from center
+                const relativePos = piece.group.position.clone().sub(center);
+                matrix.compose(relativePos, piece.group.quaternion, piece.group.scale);
+                geometry.applyMatrix4(matrix);
+                
+                // Collect vertices
+                const vertices = geometry.attributes.position.array;
+                for (let i = 0; i < vertices.length; i += 3) {
+                    allVertices.push(vertices[i], vertices[i + 1], vertices[i + 2]);
+                }
+                
+                // Collect normals if available
+                if (geometry.attributes.normal) {
+                    const normals = geometry.attributes.normal.array;
+                    for (let i = 0; i < normals.length; i += 3) {
+                        allNormals.push(normals[i], normals[i + 1], normals[i + 2]);
+                    }
+                }
+                
+                // Collect faces with proper vertex offset
+                const vertexCount = vertices.length / 3;
+                if (geometry.index) {
+                    const indices = geometry.index.array;
+                    for (let i = 0; i < indices.length; i += 3) {
+                        const v1 = indices[i] + vertexOffset + 1;
+                        const v2 = indices[i + 1] + vertexOffset + 1;
+                        const v3 = indices[i + 2] + vertexOffset + 1;
+                        allFaces.push([v1, v2, v3]);
+                    }
+                } else {
+                    // No indices, treat as triangle soup
+                    for (let i = 0; i < vertexCount; i += 3) {
+                        const v1 = i + vertexOffset + 1;
+                        const v2 = i + 1 + vertexOffset + 1;
+                        const v3 = i + 2 + vertexOffset + 1;
+                        allFaces.push([v1, v2, v3]);
+                    }
+                }
+                
+                vertexOffset += vertexCount;
+                
+                // Store material info
+                if (piece.materialData) {
+                    materialInfo.push({
+                        type: piece.type,
+                        data: piece.materialData
+                    });
+                }
+            });
+            
+            // Write all vertices
+            objContent += '\n# Vertices\n';
+            for (let i = 0; i < allVertices.length; i += 3) {
+                objContent += `v ${allVertices[i].toFixed(6)} ${allVertices[i + 1].toFixed(6)} ${allVertices[i + 2].toFixed(6)}\n`;
+            }
+            
+            // Write all normals
+            if (allNormals.length > 0) {
+                objContent += '\n# Normals\n';
+                for (let i = 0; i < allNormals.length; i += 3) {
+                    objContent += `vn ${allNormals[i].toFixed(6)} ${allNormals[i + 1].toFixed(6)} ${allNormals[i + 2].toFixed(6)}\n`;
+                }
+            }
+            
+            // Write all faces
+            objContent += '\n# Faces\n';
+            allFaces.forEach(face => {
+                if (allNormals.length > 0) {
+                    objContent += `f ${face[0]}//${face[0]} ${face[1]}//${face[1]} ${face[2]}//${face[2]}\n`;
+                } else {
+                    objContent += `f ${face[0]} ${face[1]} ${face[2]}\n`;
+                }
+            });
+            
+            // Add material info as comments
+            if (materialInfo.length > 0) {
+                objContent += '\n# Material Information\n';
+                materialInfo.forEach((mat, index) => {
+                    objContent += `# Piece ${index + 1} (${mat.type}): color=${mat.data.color}, metalness=${mat.data.metalness}, roughness=${mat.data.roughness}\n`;
+                });
+            }
+            
+            // Create and download the file
+            const blob = new Blob([objContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = finalFilename;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('export-dialog').style.display = 'none';
+            showMessage(`Blueprint exported as "${finalFilename}" with ${selectedPieces.length} pieces!`, 'success');
+        }
+        
+        function duplicatePiece(originalPiece, offsetPosition = new THREE.Vector3(0, 2, 0)) {
+            const newPos = originalPiece.group.position.clone().add(offsetPosition);
+            addPiece(originalPiece.type, {
+                position: newPos, 
+                quaternion: originalPiece.group.quaternion.clone(), 
+                scale: originalPiece.group.scale.clone()
+            });
+            
+            // Copy all properties to new piece
+            const newPiece = trackPieces[trackPieces.length - 1];
+            newPiece.materialData = {...originalPiece.materialData};
+            
+            // Copy special properties
+            if (originalPiece.isAffector) {
+                newPiece.isAffector = true;
+                newPiece.affectorType = originalPiece.affectorType;
+                newPiece.affectorIntensity = originalPiece.affectorIntensity;
+            }
+            if (originalPiece.hasPath) {
+                newPiece.hasPath = true;
+                newPiece.keyframes = [...originalPiece.keyframes];
+                newPiece.pathSpeed = originalPiece.pathSpeed;
+                newPiece.pathType = originalPiece.pathType;
+            }
+            if (originalPiece.isLight) {
+                newPiece.isLight = true;
+                newPiece.lightSettings = {...originalPiece.lightSettings};
+            }
+            if (originalPiece.isParticleGen) {
+                newPiece.isParticleGen = true;
+                newPiece.particleSettings = {...originalPiece.particleSettings};
+            }
+            if (originalPiece.isCameraSet) {
+                newPiece.isCameraSet = true;
+                newPiece.cameraSettings = {...originalPiece.cameraSettings};
+            }
+            if (originalPiece.isBallSet) {
+                newPiece.isBallSet = true;
+                newPiece.isPlacementBall = originalPiece.isPlacementBall;
+            }
+            
+            // Apply material and recreate any special features
+            const mesh = newPiece.group.children[0];
+            if (mesh && mesh.isMesh) {
+                mesh.material = createPieceMaterial(newPiece.materialData);
+            }
+            
+            // Recreate ball set previews if needed
+            if (newPiece.isBallSet) {
+                addPreviewBallsToSet(newPiece.group);
+            }
+            
+            return newPiece;
+        }
+
+        function updateObjectTree() {
+            const objectList = document.getElementById('object-list');
+            if (!objectList) return;
+            
+            if (trackPieces.length === 0) {
+                objectList.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No objects in scene</div>';
+                return;
+            }
+            
+            let html = '';
+            trackPieces.forEach((piece, index) => {
+                const isSelected = selectedPieces.includes(piece);
+                const icon = getPieceIcon(piece.type);
+                const specialInfo = getPieceSpecialInfo(piece);
+                
+                html += `
+                    <div class="object-item ${isSelected ? 'selected' : ''}" data-piece-index="${index}">
+                        <span class="object-icon">${icon}</span>
+                        <span class="object-name">${piece.type}</span>
+                        <span class="object-type">${specialInfo}</span>
+                    </div>
+                `;
+            });
+            
+            objectList.innerHTML = html;
+        }
+        
+        function getPieceIcon(type) {
+            const icons = {
+                'start': '🏁', 'end': '🏁', 'straight': '▬', 'curve': '↰',
+                'pipe': '⭕', 'halfpipe': '⌒', 'quarter': '⌓', 
+                'ball': '⚫', 'ball-set': '🏁', 'pyramid': '🔺', 'cylinder': '⭕', 'cube': '⬜',
+                'prism': '🔶', 'accelerator': '⚡', 'brake': '🛑', 'water': '💧',
+                'gravity': '🌌', 'moon': '🌙', 'ice': '🧊',
+                'light': '💡', 'particle': '✨', 'camera': '📷', 'custom': '📦'
+            };
+            return icons[type] || '📦';
+        }
+        
+        function getPieceSpecialInfo(piece) {
+            if (piece.isAffector) return piece.affectorType;
+            if (piece.isLight) return piece.lightSettings?.type || 'light';
+            if (piece.isParticleGen) return 'particles';
+            if (piece.isCameraSet) return 'camera';
+            if (piece.isBallSet) return 'ball set';
+            if (piece.hasPath) return 'animated';
+            return '';
+        }
+        
+        function selectPieceFromTree(pieceIndex, ctrlKey = false) {
+            const piece = trackPieces[pieceIndex];
+            if (!piece) return;
+            
+            if (ctrlKey) {
+                // Ctrl+click: toggle selection
+                if (selectedPieces.includes(piece)) {
+                    removeFromSelection(piece);
+                } else {
+                    addToSelection(piece);
+                }
+            } else {
+                // Regular click: select only this piece
+                clearAllSelections();
+                addToSelection(piece);
+                transformControls.attach(piece.group);
+            }
+            
+            updateObjectTree();
+            updateSelectionUI();
+        }
+
         function showMessage(text, type = 'info') {
             const notification = document.getElementById('message-notification');
             notification.textContent = text;
@@ -3062,6 +3451,14 @@
                                 }
                             }
                             
+                            // Restore ball set settings
+                            if (d.isBallSet !== undefined) {
+                                piece.isBallSet = d.isBallSet;
+                            }
+                            if (d.isPlacementBall !== undefined) {
+                                piece.isPlacementBall = d.isPlacementBall;
+                            }
+                            
                             // Apply material with raycast mirror settings
                             const mesh = piece.group.children[0];
                             if (mesh && mesh.isMesh) {
@@ -3100,6 +3497,9 @@
                         document.getElementById('spotify-url').value = data.spotifyUrl;
                         embedSpotify();
                     }
+                    
+                    // Update object tree after loading
+                    updateObjectTree();
                 }
             };
             reader.readAsText(file);
@@ -3140,16 +3540,29 @@
             transformControls.detach();
             transformControls.visible = false;
             
+            // Clear preview balls when starting race
+            clearPreviewBalls();
+            
             // Configure orbit controls for race mode - disable rotation but allow pan and zoom
             orbitControls.enabled = true;
             orbitControls.enableRotate = false;
             orbitControls.enablePan = true;
             orbitControls.enableZoom = true;
             
-            const startPiece = trackPieces.find(p => p.type === 'start');
-            if(!startPiece) { showMessage("A 'Start' piece is required to race!", 'error'); isRaceMode = false; return; }
+            // Find all placement balls
+            const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+            if(placementBalls.length === 0) { 
+                showMessage("At least one 'Ball Set' placement ball is required to race!", 'error'); 
+                isRaceMode = false; 
+                return; 
+            }
 
-            spawnMarbles(startPiece);
+            // Hide placement balls during race
+            placementBalls.forEach(ball => {
+                ball.group.visible = false;
+            });
+
+            spawnMarblesFromPlacements(placementBalls);
         }
 
         function restartRace() {
@@ -3163,9 +3576,13 @@
             cameraSetActive = false;
             cameraMode = 'panning';
             
-            const startPiece = trackPieces.find(p => p.type === 'start');
-            if (startPiece) {
-                spawnMarbles(startPiece);
+            const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+            if (placementBalls.length > 0) {
+                // Hide placement balls during race
+                placementBalls.forEach(ball => {
+                    ball.group.visible = false;
+                });
+                spawnMarblesFromPlacements(placementBalls);
             }
         }
 
@@ -3177,6 +3594,12 @@
             raceFinished = false;
             document.getElementById('race-results').style.display = 'none';
             updateRaceUI();
+            
+            // Show placement balls when returning to edit mode
+            const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+            placementBalls.forEach(ball => {
+                ball.group.visible = true;
+            });
             
             // Enable transform controls by default when entering edit mode
             transformControls.enabled = true;
@@ -3229,6 +3652,73 @@
             }
         }
 
+        function spawnMarblesFromPlacements(placementBalls) {
+            // If no roster, create a default one
+            if (raceRoster.length === 0) {
+                for (let i = 0; i < 6; i++) {
+                    raceRoster.push(generateRandomBall());
+                }
+            }
+            
+            // Spawn all roster balls in line formation at each placement position
+            placementBalls.forEach((placementBall, placementIndex) => {
+                raceRoster.forEach((ballConfig, rosterIndex) => {
+                    const material = createBallMaterial(ballConfig);
+                    
+                    // Calculate local position in line formation
+                    const localPos = new THREE.Vector3(
+                        rosterIndex * 1.0 - ((raceRoster.length - 1) * 0.5), // X offset for line
+                        1, // Y offset for drop height
+                        0  // Z stays at placement position
+                    );
+                    
+                    // Transform local position to world coordinates using placement ball's transform
+                    const worldPos = localPos.clone();
+                    worldPos.applyMatrix4(placementBall.group.matrixWorld);
+                    
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), material);
+                    mesh.castShadow = true;
+                    scene.add(mesh);
+                    
+                    // Create nameplate
+                    const nameplate = createNameplate(ballConfig.name);
+                    scene.add(nameplate);
+                    
+                    const sphereShape = new CANNON.Sphere(0.39);
+                    const body = new CANNON.Body({ 
+                        mass: 1.2, 
+                        shape: sphereShape, 
+                        position: worldPos, 
+                        material: marbleCannonMaterial 
+                    });
+                    
+                    body.material.friction = 0.3;
+                    body.material.restitution = 0.4;
+                    body.userData = { 
+                        isMarble: true, 
+                        name: ballConfig.name, 
+                        finished: false,
+                        ballSetIndex: placementIndex,
+                        originalSetIndex: rosterIndex,
+                        ballType: ballConfig.name // For collision-based camera switching
+                    };
+                    
+                    world.addBody(body);
+                    marbles.push({ 
+                        mesh, 
+                        body, 
+                        name: ballConfig.name, 
+                        color: ballConfig.color, 
+                        finished: false, 
+                        nameplate,
+                        ballSetIndex: placementIndex,
+                        ballType: ballConfig.name,
+                        rosterIndex: rosterIndex
+                    });
+                });
+            });
+        }
+
         function createNameplate(name) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -3276,6 +3766,57 @@
                 world.removeBody(marble.body);
             });
             marbles = [];
+        }
+
+        function addPreviewBallsToSet(group) {
+            // Clear existing preview balls from this group
+            const existingPreviews = group.children.filter(child => child.userData.isPreviewBall);
+            existingPreviews.forEach(preview => group.remove(preview));
+            
+            // If no roster, create a default one for preview
+            let previewRoster = raceRoster;
+            if (previewRoster.length === 0) {
+                previewRoster = [];
+                for (let i = 0; i < 6; i++) {
+                    previewRoster.push(generateRandomBall());
+                }
+            }
+            
+            // Create preview balls for all roster balls
+            previewRoster.forEach((ballConfig, index) => {
+                const material = createBallMaterial(ballConfig);
+                material.transparent = true;
+                material.opacity = 0.6; // Semi-transparent preview
+                
+                const previewMesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), material);
+                previewMesh.userData.isPreviewBall = true;
+                previewMesh.userData.rosterIndex = index;
+                
+                // Position in line formation (local coordinates)
+                previewMesh.position.x = index * 1.0 - ((previewRoster.length - 1) * 0.5);
+                previewMesh.position.y = 0.5;
+                previewMesh.position.z = 0;
+                
+                group.add(previewMesh);
+            });
+        }
+
+        function updateAllBallSetPreviews() {
+            // Update preview balls for all ball sets when roster changes
+            const ballSets = trackPieces.filter(p => p.type === 'ball-set');
+            ballSets.forEach(ballSet => {
+                addPreviewBallsToSet(ballSet.group);
+            });
+        }
+
+        function clearPreviewBalls() {
+            // Preview balls are now part of ball set groups, so they'll be cleared when ball sets are removed
+            // This function is mainly for race mode transitions
+        }
+
+        function recreatePreviewBalls() {
+            // Update all ball set previews when called
+            updateAllBallSetPreviews();
         }
 
         function updateRaceUI() {
@@ -3940,6 +4481,9 @@
             
             // Update ballCount for backwards compatibility
             ballCount = raceRoster.length;
+            
+            // Update ball set previews when roster changes
+            updateAllBallSetPreviews();
         }
 
         function removeFromRoster(index) {
@@ -4590,6 +5134,51 @@
             }
         }
         
+        function checkBallCollisions() {
+            // Check for collisions between marbles
+            for (let i = 0; i < marbles.length; i++) {
+                for (let j = i + 1; j < marbles.length; j++) {
+                    const marble1 = marbles[i];
+                    const marble2 = marbles[j];
+                    
+                    if (marble1.finished || marble2.finished) continue;
+                    
+                    // Calculate distance between marbles
+                    const distance = marble1.mesh.position.distanceTo(marble2.mesh.position);
+                    const collisionDistance = 1.0; // Collision radius
+                    
+                    if (distance < collisionDistance) {
+                        // Check if marbles are of the same type (same ball name/type)
+                        if (marble1.ballType === marble2.ballType) {
+                            // When same-type marbles collide, switch camera focus to the one that has traveled further
+                            const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+                            
+                            let marble1Distance = 0;
+                            let marble2Distance = 0;
+                            
+                            if (marble1.ballSetIndex < placementBalls.length) {
+                                const placementBall1 = placementBalls[marble1.ballSetIndex];
+                                marble1Distance = marble1.mesh.position.distanceTo(placementBall1.group.position);
+                            }
+                            
+                            if (marble2.ballSetIndex < placementBalls.length) {
+                                const placementBall2 = placementBalls[marble2.ballSetIndex];
+                                marble2Distance = marble2.mesh.position.distanceTo(placementBall2.group.position);
+                            }
+                            
+                            // Force camera to focus on the marble that has traveled further
+                            const furtherMarble = marble1Distance > marble2Distance ? marble1 : marble2;
+                            if (furtherMarble !== previousLeadMarble) {
+                                previousLeadMarble = furtherMarble;
+                                cameraTransitionTime = 0; // Force immediate camera transition
+                                console.log(`Camera switching to ${furtherMarble.name} due to collision with same-type marble`);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         // ============= PATHING SYSTEM =============
         
         let currentRecordingPiece = null;
@@ -5161,39 +5750,38 @@
                         m.nameplate.position.y += 1.5;
                     }
                 });
+                
 
                 checkFinishLine();
                 checkPathTriggers();
                 checkAffectorZones();
                 checkCameraZones();
+                checkBallCollisions();
 
-                // Find the lead marble (closest to any finish line)
+                // Find the furthest marble from their starting positions  
                 let leadMarble = null;
-                let minDistanceToFinish = Infinity;
+                let maxDistanceFromStart = -1;
                 
-                const endPieces = trackPieces.filter(p => p.type === 'end');
+                const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
                 
                 marbles.forEach(marble => {
-                    if (!marble.finished && endPieces.length > 0) {
-                        // Find the closest distance to any end piece
-                        let closestDistance = Infinity;
-                        
-                        endPieces.forEach(endPiece => {
-                            const distance = marble.mesh.position.distanceTo(endPiece.group.position);
-                            if (distance < closestDistance) {
-                                closestDistance = distance;
+                    if (!marble.finished) {
+                        // Calculate distance from marble's original placement position
+                        const originalSetIndex = marble.ballSetIndex;
+                        if (originalSetIndex < placementBalls.length) {
+                            const placementBall = placementBalls[originalSetIndex];
+                            const distanceFromStart = marble.mesh.position.distanceTo(placementBall.group.position);
+                            
+                            // This marble is the leader if it's traveled furthest from its start
+                            if (distanceFromStart > maxDistanceFromStart) {
+                                maxDistanceFromStart = distanceFromStart;
+                                leadMarble = marble;
                             }
-                        });
-                        
-                        // This marble is the leader if it's closest to any finish line
-                        if (closestDistance < minDistanceToFinish) {
-                            minDistanceToFinish = closestDistance;
-                            leadMarble = marble;
                         }
                     }
                 });
 
-                // If no unfinished marbles or no end pieces, use the first marble
+                // If no unfinished marbles, use the first marble
                 if (!leadMarble && marbles.length > 0) {
                     leadMarble = marbles[0];
                 }
@@ -5323,6 +5911,7 @@
                 // Update orbit controls for middle mouse panning
                 orbitControls.update();
             } else {
+                // Edit mode - no physics needed, just orbit controls
                 orbitControls.update();
             }
             
@@ -5372,6 +5961,21 @@
         <div class="button-group">
             <button class="save-confirm" id="save-confirm-btn">💾 Save</button>
             <button class="save-cancel" id="save-cancel-btn">❌ Cancel</button>
+        </div>
+    </div>
+
+    <div id="export-dialog" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.95); color: white; padding: 30px; border-radius: 10px; z-index: 200; display: none; border: 2px solid #28a745; box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);">
+        <h3>📦 Export Blueprint</h3>
+        <div>
+            <label for="export-filename">Filename:</label>
+            <input type="text" id="export-filename" placeholder="Enter filename..." value="blueprint" style="width: 250px; padding: 8px; margin: 10px 0; background: #2a2a2a; color: white; border: 1px solid #28a745; border-radius: 4px;">
+            <div style="font-size: 12px; color: #ccc; margin-top: 5px;">
+                .obj extension will be added automatically
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="export-confirm-btn" style="background: #28a745; border-color: #28a745; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer;">📦 Export</button>
+            <button id="export-cancel-btn" style="background: #6c757d; border-color: #6c757d; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer;">❌ Cancel</button>
         </div>
     </div>
 
