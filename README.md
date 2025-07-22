@@ -25,6 +25,19 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **ViewCube Navigation**: 3D orientation cube for quick orthographic view switching (Front, Back, Left, Right, Top, Bottom)
 - **Real-time Orientation**: ViewCube reflects current camera position with smooth transitions
 
+### 🖌️ Surface Painting System
+- **🎨 Face-Level Painting**: Click individual faces on any 3D object to paint them with custom colors
+- **Per-Face Material Control**: Each face can have unique color, transparency, metalness, roughness, and glow properties
+- **🌈 Vertex Color System**: Advanced vertex coloring with full PBR material support
+- **Real-time Visual Feedback**: Immediate color application with smooth transitions
+- **Procedural Textures**: Apply polka dots, stripes, marble patterns, or upload custom textures to individual faces
+- **🧽 Selective Clearing**: Clear all face paint from selected objects or start fresh anytime
+- **Material Preservation**: Original object materials are preserved and can be restored
+- **Multi-Object Support**: Paint faces across different object types (track pieces, obstacles, custom models)
+- **🎭 Creative Customization**: Create unique artistic designs, racing stripes, team colors, or decorative patterns
+- **Precision Control**: Crosshair cursor for accurate face selection and painting
+- **Undo Functionality**: Clear all paint button to reset objects to original appearance
+
 ### ⚽ Ball Maker & Advanced Placement System
 - **Complete Customization**: Color, metalness, roughness, glow intensity, glow color
 - **Procedural Textures**: Polka dots, stripes, marble patterns
@@ -160,9 +173,10 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 5. **Smart Duplication**: Use "📋 Duplicate" button or Ctrl+drag to copy pieces
 6. **Transform Controls**: Move/rotate/scale with W/E/R hotkeys, Shift for grid snap
 7. **Materials**: Select pieces and click "🎨 Object" to customize appearance
-8. **Export Blueprints**: Select multiple pieces and click "📦 Export Blueprint" to save as OBJ
-9. **Special Features**: Add affector zones, camera sets, lights, and particle effects
-10. **Save**: Use "💾 Save" to export your complete track
+8. **Surface Painting**: Select any object and click "🖌️ Face Paint" to paint individual faces with custom colors and textures
+9. **Export Blueprints**: Select multiple pieces and click "📦 Export Blueprint" to save as OBJ
+10. **Special Features**: Add affector zones, camera sets, lights, and particle effects
+11. **Save**: Use "💾 Save" to export your complete track
 
 ### Ball Customization & Racing
 1. **Ball Maker**: Click "⚽ Balls" to design custom marbles
@@ -193,12 +207,14 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Modular Design**: Separate systems for editor, physics, rendering, UI
 - **Real-time Physics**: 60 FPS physics simulation with visual synchronization
 - **Material System**: PBR (Physically Based Rendering) materials with custom shaders
+- **Vertex Color System**: Advanced per-face painting with BufferGeometry vertex color attributes
 - **Event-Driven**: Clean separation between UI interactions and game logic
 - **Affector System**: Real-time physics modification zones with continuous effect application
 - **Animation Engine**: Keyframe-based pathing system with multiple playback modes
 - **Post-Processing Pipeline**: Bloom effects with emissive materials for enhanced visuals
 - **Real-time UI Updates**: Instant feedback system without apply buttons for smooth editing
 - **3D Navigation**: ViewCube with spherical coordinate camera positioning
+- **Face-Level Rendering**: Individual face material control with raycasting for precise selection
 
 ### Performance
 - **SAP Broadphase**: Advanced collision detection algorithm for better performance
@@ -261,6 +277,13 @@ balls/
 - **Middle Mouse**: Pan camera
 - **Scroll**: Zoom camera
 
+### Surface Painting Mode
+- **🖌️ Face Paint Button**: Activate face painting mode (select object first)
+- **Mouse Click**: Paint individual faces with current paint settings
+- **Crosshair Cursor**: Precise face selection targeting
+- **🗑️ Clear All**: Remove all face paint from selected object
+- **❌ Close**: Exit face painting mode and re-enable transform controls
+
 ### Race Mode
 - **Camera Button**: Cycle through camera modes
 - **Middle Mouse**: Pan during race (when enabled)
@@ -281,6 +304,17 @@ balls/
 3. Add Pipe pieces for the loop
 4. Use material editor to make pipes transparent
 5. Add End platform after loop
+
+### Creating Custom Surface Designs with Face Painting
+1. Select any track piece or obstacle you want to customize
+2. Click "🖌️ Face Paint" to open the Surface Painting panel
+3. Choose your paint color and adjust transparency, metalness, roughness
+4. Set glow intensity and glow color for emissive effects
+5. Select texture type: None, Upload Custom, Polka Dots, Stripes, or Marble
+6. Click individual faces on the 3D object to apply your custom paint
+7. Each face can have completely different materials and colors
+8. Use "🗑️ Clear All" to reset the object to its original appearance
+9. Perfect for creating racing stripes, team colors, artistic patterns, or unique designs
 
 ### Night Race Scene with Lighting Effects
 1. Open Skybox Selector and choose "Space" skybox
