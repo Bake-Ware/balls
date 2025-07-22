@@ -1,0 +1,32 @@
+{
+  "pieces": [
+    {
+      "type": "union_result",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "quaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "affectorSettings": null,
+      "pathingSettings": null
+    }
+  ],
+  "customBalls": [],
+  "raceRoster": [],
+  "skyboxData": null,
+  "backgroundColor": "#202020",
+  "groundProjection": false,
+  "spotifyUrl": "",
+  "pieceNames": []
+}

@@ -139,6 +139,32 @@
         .roster-ball-preview { width: 25px; height: 25px; border-radius: 50%; margin-right: 10px; border: 1px solid #666; }
         .roster-ball-name { flex-grow: 1; font-size: 14px; }
         .roster-stats { font-size: 12px; color: #ccc; margin-left: 10px; }
+        
+        /* Object Tree Styles */
+        .object-item {
+            display: flex; align-items: center; padding: 4px 8px; margin: 1px 0;
+            background: #3a3a3a; border-radius: 3px; cursor: pointer;
+            border-left: 3px solid transparent; font-size: 12px;
+        }
+        .object-item:hover { background: #4a4a4a; }
+        .object-item.selected { background: #007bff; border-left-color: #ffd700; }
+        .object-icon { margin-right: 6px; font-size: 14px; }
+        .object-name { flex-grow: 1; }
+        .object-type { font-size: 10px; color: #888; margin-left: 5px; }
+        
+        /* Object Tree Collapsible Section Styles */
+        #object-tree-section.collapsed {
+            max-height: 0;
+        }
+        #object-list {
+            height: calc(100vh - 400px);
+            min-height: 200px;
+            overflow-y: auto;
+            background: #2a2a2a;
+            border-radius: 4px;
+            padding: 5px;
+            margin-top: 8px;
+        }
         #material-editor {
             position: fixed; top: 0; right: 0; height: 100vh; width: 450px;
             background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; 
@@ -175,7 +201,7 @@
         #message-notification {
             position: fixed; top: 20px; right: 20px; z-index: 400;
             padding: 15px 20px; border-radius: 5px; color: white; font-weight: bold;
-            transform: translateX(100%); transition: transform 0.3s ease-in-out;
+            transform: translateX(calc(100% + 40px)); transition: transform 0.3s ease-in-out;
             max-width: 300px; word-wrap: break-word;
         }
         #message-notification.show { transform: translateX(0); }
@@ -225,128 +251,6 @@
         .skybox-option.selected { background: #007bff; }
         .skybox-preview { width: 100px; height: 60px; border: 2px solid #666; margin: 5px auto; background-size: cover; border-radius: 3px; }
         .skybox-name { font-size: 12px; margin-top: 5px; }
-        
-        /* Object Tree Styles - Two Level Hierarchy */
-        .tree-main-category {
-            margin-bottom: 6px;
-        }
-        
-        .tree-main-category-header {
-            display: flex;
-            align-items: center;
-            padding: 8px 10px;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 5px;
-            margin-bottom: 3px;
-            transition: all 0.2s ease;
-            font-weight: bold;
-            font-size: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-        
-        .tree-main-category-header:hover {
-            background: rgba(255, 255, 255, 0.18);
-            border-color: rgba(255, 255, 255, 0.25);
-        }
-        
-        .tree-main-category-content {
-            margin-left: 12px;
-            border-left: 2px solid rgba(255, 255, 255, 0.15);
-            padding-left: 10px;
-            margin-top: 4px;
-        }
-        
-        .tree-sub-category {
-            margin-bottom: 3px;
-        }
-        
-        .tree-sub-category-header {
-            display: flex;
-            align-items: center;
-            padding: 5px 8px;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 3px;
-            margin-bottom: 2px;
-            transition: all 0.2s ease;
-            font-weight: 600;
-            font-size: 12px;
-        }
-        
-        .tree-sub-category-header:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .tree-sub-category-content {
-            margin-left: 10px;
-            border-left: 1px solid rgba(255, 255, 255, 0.08);
-            padding-left: 8px;
-        }
-        
-        .tree-expand {
-            margin-right: 6px;
-            font-size: 12px;
-            width: 12px;
-            text-align: center;
-        }
-        
-        .tree-category-name {
-            flex: 1;
-            color: #fff;
-        }
-        
-        .tree-category-count {
-            font-size: 11px;
-            color: #aaa;
-            font-weight: normal;
-        }
-        
-        .tree-item {
-            display: flex;
-            align-items: center;
-            padding: 3px 8px;
-            margin: 1px 0;
-            cursor: pointer;
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.2s ease;
-            font-size: 12px;
-        }
-        
-        .tree-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-        
-        .tree-item.selected {
-            background: rgba(0, 123, 255, 0.3);
-            border-color: #ffd700;
-            border-width: 2px;
-        }
-        
-        .tree-indent {
-            width: 12px;
-            margin-right: 4px;
-        }
-        
-        .object-icon {
-            margin-right: 6px;
-            font-size: 14px;
-        }
-        
-        .object-name {
-            flex: 1;
-            font-size: 12px;
-            color: #fff;
-        }
-        
-        .object-type {
-            font-size: 10px;
-            color: #aaa;
-            margin-left: 4px;
-        }
     </style>
 </head>
 <body>
@@ -357,6 +261,7 @@
             <select id="piece-type-selector" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px;">
                 <option value="">Select piece type...</option>
                 <option value="start">Start Platform</option>
+                <option value="ball-set">🏁 Ball Set</option>
                 <option value="straight">Straight</option>
                 <option value="curve">Curve</option>
                 <option value="end">End Platform</option>
@@ -387,16 +292,16 @@
                 <optgroup label="📹 Camera Controls">
                     <option value="camera-set">📷 Camera Set</option>
                 </optgroup>
-                <optgroup label="🎯 Ball Placement">
-                    <option value="ball-set">🏁 Ball Set</option>
-                </optgroup>
             </select>
             <input type="file" id="add-custom-input" accept=".obj" style="display: none;">
             <button id="start-race-btn" class="button-full-width" style="background: #28a745; border-color: #28a745; margin-top: 8px;">🏁 Start Race!</button>
             
             <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="editor-tools">🛠️ Editor Tools (W,E,R) ▼</div>
             <div id="editor-tools" class="collapsible-content">
-                <button id="toggle-transform-btn" class="button-full-width" style="background: #007bff; border-color: #007bff;">🎯 Disable Transform</button>
+                <div class="button-grid" style="margin-top: 0;">
+                    <button id="toggle-transform-btn" style="background: #007bff; border-color: #007bff;">🎯 Transform</button>
+                    <button id="toggle-paint-btn" style="background: #e74c3c; border-color: #e74c3c;">🖌️ Paint</button>
+                </div>
                 <div id="selection-info" style="color: #ffd700; font-size: 12px; margin: 5px 0; text-align: center;"></div>
                 
                 <div class="button-grid" style="margin-top: 8px;">
@@ -404,6 +309,21 @@
                     <button id="duplicate-piece-btn">📋 Duplicate</button>
                     <button id="remove-piece-btn">🗑️ Remove</button>
                     <button id="edit-material-btn">🎨 Object</button>
+                </div>
+                
+                <div class="button-grid" style="margin-top: 8px;">
+                    <button id="union-btn" title="Union - Combine two pieces (select 2 pieces)" style="background: #28a745; border-color: #28a745;">➕ Union</button>
+                    <button id="subtract-btn" title="Subtract - Shift+click targets, Alt+click tools" style="background: #dc3545; border-color: #dc3545;">➖ Subtract</button>
+                    <button id="intersect-btn" title="Intersect - Keep only overlapping parts (select 2 pieces)" style="background: #ffc107; border-color: #ffc107; color: black;">⚡ Intersect</button>
+                </div>
+                
+                <div id="target-tool-info" style="color: #ffd700; font-size: 11px; margin: 5px 0; text-align: center; display: none;">
+                    Targets: <span id="target-count">0</span> | Tools: <span id="tool-count">0</span>
+                    <br><button id="clear-target-tool-btn" style="font-size: 10px; margin-top: 2px; padding: 2px 8px;">Clear All</button>
+                </div>
+                
+                <div class="button-grid" style="margin-top: 8px;">
+                    <button id="export-blueprint-btn" style="display: none; background: #28a745; border-color: #28a745;">📦 Export Blueprint</button>
                 </div>
                 
                 <div class="button-grid" style="margin-top: 8px;">
@@ -421,18 +341,14 @@
                     <button id="open-tournament-btn">🏁 Tournament</button>
                 </div>
             </div>
-            <button id="restart-race-btn" class="button-full-width" style="display: none; background: #ffc107; border-color: #ffc107; color: #212529; margin-top: 8px;">🔄 Restart Race</button>
-            <button id="edit-track-btn" class="button-full-width" style="display: none; background: #6c757d; border-color: #6c757d; margin-top: 8px;">✏️ Edit Track</button>
             <div class="speed-control" id="camera-speed-control" style="display: none;">
                 <label for="camera-speed-slider">Camera Speed</label>
                 <input type="range" id="camera-speed-slider" min="0.1" max="2" step="0.1" value="1">
             </div>
-            
             <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="object-tree-section">📋 Object Tree ▼</div>
             <div id="object-tree-section" class="collapsible-content">
                 <div id="object-list"></div>
             </div>
-            
             <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="lighting-controls">💡 Lighting ▼</div>
             <div id="lighting-controls" class="collapsible-content">
                 <div class="speed-control">
@@ -451,6 +367,8 @@
                 </div>
             </div>
         </div>
+        <button id="restart-race-btn" class="button-full-width" style="display: none; background: #ffc107; border-color: #ffc107; color: #212529; margin-top: 8px;">🔄 Restart Race</button>
+        <button id="edit-track-btn" class="button-full-width" style="display: none; background: #6c757d; border-color: #6c757d; margin-top: 8px;">✏️ Edit Track</button>
     </div>
 
     <div id="spotify-panel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px; z-index: 200; display: none; text-align: left; min-width: 400px;">
@@ -825,6 +743,41 @@
             </div>
         </div>
         
+        <!-- Camera Settings Section -->
+        <div class="material-option" id="camera-settings" style="display: none;">
+            <label>📷 Camera Settings</label>
+            <hr style="border-color: #444; margin: 10px 0;">
+            
+            <div class="material-option">
+                <label for="camera-follow-mode">Follow Mode:</label>
+                <select id="camera-follow-mode">
+                    <option value="static">📍 Static</option>
+                    <option value="follow">👁️ Follow</option>
+                    <option value="rigid">🔒 Rigid</option>
+                    <option value="smooth">🌊 Smooth</option>
+                </select>
+            </div>
+            
+            <div class="material-option">
+                <button id="capture-camera-position" style="width: 100%; padding: 8px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    📸 Capture Current Camera Position
+                </button>
+            </div>
+            
+            <div class="material-option">
+                <button id="goto-camera-position" style="width: 100%; padding: 8px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    🎯 Go to Camera Position
+                </button>
+            </div>
+            
+            <div class="material-option">
+                <small style="color: #888;">
+                    Position: <span id="camera-position-display">Not set</span><br>
+                    Target: <span id="camera-target-display">Not set</span>
+                </small>
+            </div>
+        </div>
+        
         <!-- Particle Settings Section -->
         <div class="material-option" id="particle-settings" style="display: none;">
             <label>✨ Particle Settings</label>
@@ -894,34 +847,6 @@
                     <input type="checkbox" id="particle-additive" checked> Additive Blending
                 </label>
                 <div style="font-size: 11px; color: #aaa;">Makes particles glow and blend together</div>
-            </div>
-        </div>
-        
-        <!-- Camera Settings Section -->
-        <div class="material-option" id="camera-settings" style="display: none;">
-            <label>📷 Camera Settings</label>
-            <hr style="border-color: #444; margin: 10px 0;">
-            
-            <div class="material-option">
-                <label for="camera-follow-mode">Follow Mode:</label>
-                <select id="camera-follow-mode">
-                    <option value="static">Static - Fixed position</option>
-                    <option value="follow">Follow - Offset from ball</option>
-                    <option value="rigid">Rigid - Exact offset</option>
-                    <option value="smooth">Smooth - Interpolated follow</option>
-                </select>
-            </div>
-            
-            <div class="material-option">
-                <button id="capture-camera-position" style="padding: 8px 15px; background: #007bff; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">📷 Capture Position</button>
-                <button id="goto-camera-position" style="padding: 8px 15px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">🎯 Go To Position</button>
-            </div>
-            
-            <div class="material-option">
-                <small style="color: #888;">
-                    Position: <span id="camera-position-display">Not set</span><br>
-                    Target: <span id="camera-target-display">Not set</span>
-                </small>
             </div>
         </div>
         
@@ -1013,30 +938,168 @@
     { "imports": {
             "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
             "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/",
-            "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+            "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js",
+            "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.6.0/build/index.module.js",
+            "three-bvh-csg": "https://unpkg.com/three-bvh-csg@0.0.17/build/index.module.js"
     }}
     </script>
 
     <script type="module">
+        // CSG v2.0 - Using three-bvh-csg library for proper Boolean operations
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
         import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
         import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+        import { SUBTRACTION, INTERSECTION, ADDITION, Brush, Evaluator } from 'three-bvh-csg';
+        import { MeshBVH } from 'three-mesh-bvh';
         import { GroundedSkybox } from 'three/addons/objects/GroundedSkybox.js';
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         
-        // Simple CSG operations using BufferGeometryUtils
-        function createCSGGeometry(operation, geomA, geomB) {
-            // For now, we'll create composite geometries manually
-            // This is a simplified approach without full CSG
-            return BufferGeometryUtils.mergeGeometries([geomA, geomB]);
+        // Helper function to avoid duplicating code
+        function removePiece(pieceToRemove) {
+            const index = trackPieces.indexOf(pieceToRemove);
+            if (index > -1) {
+                safeDetachTransformControls();
+                pieceNames.delete(pieceToRemove);
+                scene.remove(pieceToRemove.group);
+                pieceToRemove.physicsBodies.forEach(b => world.removeBody(b));
+                trackPieces.splice(index, 1);
+            }
         }
+        
+        // Simple visual fallback for subtract - creates a notched/cut version
+        function createVisualSubtractResult(originalGeometry, targetPiece) {
+            console.log('Creating visual subtract result');
+            
+            // Create a modified version that looks like it has been cut
+            const geometry = originalGeometry.clone();
+            const positions = geometry.attributes.position;
+            const posArray = positions.array;
+            
+            // Scale down parts of the geometry to simulate a cut
+            for (let i = 0; i < posArray.length; i += 3) {
+                const x = posArray[i];
+                const y = posArray[i + 1];
+                const z = posArray[i + 2];
+                
+                // Create a "notch" effect by scaling vertices in a region
+                if (x > -0.5 && x < 0.5 && y > -0.5) {
+                    posArray[i + 1] *= 0.7; // Scale Y coordinate to create indent
+                }
+            }
+            
+            geometry.attributes.position.needsUpdate = true;
+            geometry.computeVertexNormals();
+            
+            return geometry;
+        }
+
+        // Geometric fallback subtract function
+        function performGeometricSubtraction(targetGeometry, targetGroup, toolPieces) {
+            const targetPositions = targetGeometry.attributes.position.array;
+            const resultPositions = [];
+            
+            // Create combined tool bounding box in world space
+            const combinedToolBox = new THREE.Box3();
+            
+            toolPieces.forEach(toolPiece => {
+                const toolMesh = toolPiece.group.children.find(child => child.isMesh);
+                if (!toolMesh) return;
+                
+                // Get tool bounding box in world space
+                toolPiece.group.updateMatrixWorld();
+                const toolGeometry = toolMesh.geometry.clone();
+                toolGeometry.applyMatrix4(toolPiece.group.matrixWorld);
+                
+                const toolBox = new THREE.Box3().setFromBufferAttribute(toolGeometry.attributes.position);
+                // Expand tool box for better intersection testing
+                toolBox.expandByScalar(2.5);
+                combinedToolBox.union(toolBox);
+            });
+            
+            if (combinedToolBox.isEmpty()) {
+                return targetGeometry.clone();
+            }
+            
+            // Transform target geometry to world space for testing
+            targetGroup.updateMatrixWorld();
+            const worldTargetGeom = targetGeometry.clone();
+            worldTargetGeom.applyMatrix4(targetGroup.matrixWorld);
+            const worldTargetPositions = worldTargetGeom.attributes.position.array;
+            
+            let removedCount = 0;
+            let keptCount = 0;
+            
+            // Test each triangle
+            for (let i = 0; i < worldTargetPositions.length; i += 9) {
+                const v1 = new THREE.Vector3(worldTargetPositions[i], worldTargetPositions[i + 1], worldTargetPositions[i + 2]);
+                const v2 = new THREE.Vector3(worldTargetPositions[i + 3], worldTargetPositions[i + 4], worldTargetPositions[i + 5]);
+                const v3 = new THREE.Vector3(worldTargetPositions[i + 6], worldTargetPositions[i + 7], worldTargetPositions[i + 8]);
+                
+                // Count vertices inside combined tool box
+                let insideCount = 0;
+                if (combinedToolBox.containsPoint(v1)) insideCount++;
+                if (combinedToolBox.containsPoint(v2)) insideCount++;
+                if (combinedToolBox.containsPoint(v3)) insideCount++;
+                
+                // Keep triangle if most vertices are outside the tool (balanced approach)
+                if (insideCount <= 1) {
+                    // Use original target positions (not world space)
+                    resultPositions.push(
+                        targetPositions[i], targetPositions[i + 1], targetPositions[i + 2],
+                        targetPositions[i + 3], targetPositions[i + 4], targetPositions[i + 5],
+                        targetPositions[i + 6], targetPositions[i + 7], targetPositions[i + 8]
+                    );
+                    keptCount++;
+                } else {
+                    removedCount++;
+                }
+            }
+            
+            console.log(`Geometric subtract: removed ${removedCount} triangles, kept ${keptCount}`);
+            console.log('Combined tool box:', combinedToolBox);
+            console.log('Target piece position:', targetGroup.position);
+            
+            // Debug: Check if any vertices are actually inside the tool box
+            let totalInside = 0;
+            for (let i = 0; i < worldTargetPositions.length; i += 3) {
+                const v = new THREE.Vector3(worldTargetPositions[i], worldTargetPositions[i + 1], worldTargetPositions[i + 2]);
+                if (combinedToolBox.containsPoint(v)) totalInside++;
+            }
+            console.log(`Debug: ${totalInside} out of ${worldTargetPositions.length/3} vertices are inside tool box`);
+            
+            // Debug: Show some actual vertex positions
+            console.log('First few target vertices in world space:');
+            for (let i = 0; i < Math.min(worldTargetPositions.length, 9); i += 3) {
+                const v = new THREE.Vector3(worldTargetPositions[i], worldTargetPositions[i + 1], worldTargetPositions[i + 2]);
+                console.log(`Vertex ${i/3}: (${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)})`);
+            }
+            
+            if (resultPositions.length === 0) {
+                // Return a small placeholder if everything was removed
+                return new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            }
+            
+            const result = new THREE.BufferGeometry();
+            result.setAttribute('position', new THREE.Float32BufferAttribute(resultPositions, 3));
+            result.computeVertexNormals();
+            
+            return result;
+        }
+        
+        
         import * as CANNON from 'cannon-es';
 
         let scene, camera, renderer, orbitControls, transformControls, world, clock, ambientLight, directionalLight, groundedSkybox, composer, bloomPass;
+        
+        function safeDetachTransformControls() {
+            if (transformControls && transformControls.object) {
+                transformControls.detach();
+            }
+        }
         let trackPieces = [];
         let marbles = [];
         const raycaster = new THREE.Raycaster();
@@ -1053,7 +1116,13 @@
         let cameraMode = 'panning'; // panning, fpv, behind, ridealong, oncoming
         let cameraSetActive = false; // Track if a camera set is controlling the view
         let pieceNames = new Map(); // Custom names for pieces
+        let paintMode = false; // Track if painting mode is active
+        let selectedFace = null; // Track selected face for painting
+        let faceWireframe = null; // Wireframe outline for selected face
+        let targetPieces = []; // Target pieces for Boolean operations
+        let toolPieces = []; // Tool pieces for Boolean operations
         let currentSkyboxData = null;
+        let csgEvaluator = new Evaluator(); // CSG evaluator instance
         let multiSelectGroup = null;
         let previousLeadMarble = null;
         let cameraTransitionTime = 0;
@@ -1131,6 +1200,30 @@
             transformControls.enabled = true;
             transformControls.visible = true;
             
+            // Override updateMatrixWorld to prevent null reference errors
+            const originalUpdateMatrixWorld = transformControls.updateMatrixWorld;
+            transformControls.updateMatrixWorld = function(force) {
+                if (this.object) {
+                    originalUpdateMatrixWorld.call(this, force);
+                }
+            };
+            
+            // Override pointerMove to prevent null reference errors
+            const originalPointerMove = transformControls.pointerMove;
+            transformControls.pointerMove = function(pointer) {
+                if (this.object) {
+                    originalPointerMove.call(this, pointer);
+                }
+            };
+            
+            // Override pointerDown to prevent null reference errors
+            const originalPointerDown = transformControls.pointerDown;
+            transformControls.pointerDown = function(pointer) {
+                if (this.object) {
+                    originalPointerDown.call(this, pointer);
+                }
+            };
+            
             scene.add(transformControls);
 
             world = new CANNON.World({ gravity: new CANNON.Vec3(0, -30, 0) });
@@ -1151,9 +1244,6 @@
             
             setupEventListeners();
             addPiece("start", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
-            
-            // Initialize object tree
-            updateObjectTree();
             
             animate();
         }
@@ -1208,9 +1298,6 @@
                 contactEquationStiffness: 1e8,
                 contactEquationRelaxation: 4
             }));
-            
-            // Initialize object tree
-            updateObjectTree();
         }
 
         function addPiece(type, transform, customModelData = null) {
@@ -1242,6 +1329,7 @@
             if (type === 'start') color = 0x4CAF50; // Bright green for start
             if (type === 'end') color = 0xF44336; // Red for end/finish line
             if (type === 'ball') color = 0x2196F3; // Blue for pinned balls
+            if (type === 'ball-set') color = 0x00FF00; // Green for placement balls
             if (type === 'pyramid') color = 0xFF9800; // Orange for pyramid
             if (type === 'cylinder') color = 0x9C27B0; // Purple for cylinder
             if (type === 'pipe') color = 0x607D8B; // Blue Grey for pipe
@@ -1265,13 +1353,12 @@
             if (type === 'directional-light') color = 0xFFE135; // Golden for directional
             if (type === 'particle-gen') color = 0xFF8C00; // Dark orange for particles
             if (type === 'camera-set') color = 0x4169E1; // Royal blue for camera sets
-            if (type === 'ball-set') color = 0x00FF00; // Green for placement balls
             
             // Set transparency for affectors and camera sets
             const isAffector = config.isAffector || false;
-            const isCameraSet = config.isCameraSet || false;
             const isLight = config.isLight || false;
             const isParticleGen = config.isParticleGen || false;
+            const isCameraSet = config.isCameraSet || false;
             const transparency = (isAffector || isCameraSet) ? 0.7 : 0;
             
             const materialData = {
@@ -1285,11 +1372,20 @@
                 textureType: 'none',
                 textureData: null
             };
-            const floorMat = createPieceMaterial(materialData);
-            const mesh = new THREE.Mesh(config.geometry, floorMat);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            group.add(mesh);
+            // Only create platform mesh if geometry exists (not for ball-sets)
+            if (config.geometry) {
+                const floorMat = createPieceMaterial(materialData);
+                const mesh = new THREE.Mesh(config.geometry, floorMat);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                group.add(mesh);
+            }
+            
+            // Ball sets are individual placement balls
+            if (type === 'ball-set') {
+                // Add preview balls showing all roster balls
+                addPreviewBallsToSet(group);
+            }
             
             // Add directional arrow for accelerator
             if (type === 'accelerator') {
@@ -1365,6 +1461,31 @@
                 }
             }
 
+            // Add visual indicator for camera sets
+            if (config.isCameraSet) {
+                // Add a camera icon on top of the box
+                const cameraGeometry = new THREE.BoxGeometry(1.2, 0.8, 0.5);
+                const cameraMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x333333,
+                    emissive: 0x111144,
+                    emissiveIntensity: 0.4
+                });
+                const cameraIcon = new THREE.Mesh(cameraGeometry, cameraMaterial);
+                cameraIcon.position.set(0, 3.5, 0);
+                group.add(cameraIcon);
+                
+                // Add lens indicator (small cylinder)
+                const lensGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
+                const lensMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x000000,
+                    emissive: 0x002244 
+                });
+                const lensIndicator = new THREE.Mesh(lensGeometry, lensMaterial);
+                lensIndicator.position.set(0, 3.5, 0.3);
+                lensIndicator.rotation.x = Math.PI / 2;
+                group.add(lensIndicator);
+            }
+            
             // Add particle system for particle generators
             if (config.isParticleGen) {
                 const particleCount = 200;
@@ -1412,32 +1533,6 @@
                     color: 0xffa500, size: 0.1, opacity: 0.8, additive: true
                 };
                 group.add(particleSystem);
-            }
-
-            // Add visual indicator for camera sets
-            if (config.isCameraSet) {
-                // Add a camera icon on top of the box
-                const cameraGeometry = new THREE.BoxGeometry(1.2, 0.8, 0.5);
-                const cameraMaterial = new THREE.MeshStandardMaterial({ 
-                    color: 0x333333,
-                    emissive: 0x111144,
-                    emissiveIntensity: 0.4
-                });
-                const cameraIcon = new THREE.Mesh(cameraGeometry, cameraMaterial);
-                cameraIcon.position.set(0, 3.5, 0);
-                group.add(cameraIcon);
-                
-                // Add lens indicator (small cylinder)
-                const lensGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
-                const lensMaterial = new THREE.MeshStandardMaterial({ 
-                    color: 0x000000,
-                    emissive: 0x002244,
-                    emissiveIntensity: 0.2
-                });
-                const lens = new THREE.Mesh(lensGeometry, lensMaterial);
-                lens.position.set(0, 3.5, 0.3);
-                lens.rotation.x = Math.PI / 2;
-                group.add(lens);
             }
 
             group.position.copy(newPos);
@@ -1507,14 +1602,7 @@
             
             trackPieces.push(newPiece);
             scene.add(group);
-            
-            // Add preview balls to Ball Sets
-            if (type === 'ball-set') {
-                addPreviewBallsToSet(group);
-            }
-            
             updateObjectTree();
-            return newPiece;
         }
         
         function updatePhysicsForPiece(piece) {
@@ -1525,9 +1613,9 @@
             }
             piece.physicsBodies = [];
             
-            // Affectors don't need collision bodies, they're invisible zones
-            if (piece.isAffector) {
-                console.log(`${piece.type} affector: No collision body needed`);
+            // Affectors and ball-sets don't need collision bodies
+            if (piece.isAffector || piece.isBallSet) {
+                console.log(`${piece.type}: No collision body needed`);
                 return;
             }
             
@@ -1615,9 +1703,7 @@
                     }
                 });
             }
-            
-            console.log(`${piece.type} piece: Using exact rendered geometry as collision mesh`);
-            
+                        
             world.addBody(body);
             piece.physicsBodies.push(body);
         }
@@ -1653,6 +1739,12 @@
                     return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
                 case "ball":
                     return { geometry: new THREE.SphereGeometry(2, 16, 16), pinned: true };
+                case "ball-set":
+                    return { 
+                        geometry: new THREE.SphereGeometry(0.4, 16, 16), // Individual ball geometry
+                        isBallSet: true,
+                        isPlacementBall: true
+                    };
                 case "pyramid":
                     return { geometry: new THREE.ConeGeometry(3, 6, 8) };
                 case "cylinder":
@@ -1855,13 +1947,7 @@
                         isCameraSet: true,
                         cameraPosition: camera.position.clone(),
                         cameraTarget: orbitControls.target.clone(),
-                        followMode: 'static'
-                    };
-                case "ball-set":
-                    return { 
-                        geometry: new THREE.SphereGeometry(0.4, 16, 16),
-                        isBallSet: true,
-                        isPlacementBall: true
+                        followMode: 'static' // 'static', 'follow', 'rigid', 'smooth'
                     };
             }
             return null;
@@ -2208,8 +2294,11 @@
         function removeSelectedPiece() {
             if (selectedPieces.length > 0) {
                 selectedPieces.forEach(piece => {
-                    transformControls.detach();
+                    safeDetachTransformControls();
+                    
+                    // Remove custom name if it exists
                     pieceNames.delete(piece);
+                    
                     scene.remove(piece.group);
                     piece.physicsBodies.forEach(b => world.removeBody(b));
                     trackPieces = trackPieces.filter(p => p !== piece);
@@ -2220,8 +2309,11 @@
             } else if (transformControls.object) {
                 const piece = trackPieces.find(p => p.group === transformControls.object);
                 if (piece) {
-                    transformControls.detach();
+                    safeDetachTransformControls();
+                    
+                    // Remove custom name if it exists
                     pieceNames.delete(piece);
+                    
                     scene.remove(piece.group);
                     piece.physicsBodies.forEach(b => world.removeBody(b));
                     trackPieces = trackPieces.filter(p => p !== piece);
@@ -2229,6 +2321,7 @@
                 }
             }
         }
+        
         
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -2258,24 +2351,69 @@
         }
 
         function onPointerUp(event) {
-            if (!transformControls.enabled || transformControls.dragging || isDragging) return;
+            if (transformControls.dragging || isDragging) return;
+            
+            // Handle paint mode clicks only if not Ctrl+dragging and no transform controls are active
+            if (paintMode && !transformControls.object) {
+                handlePaintClick(event);
+                return;
+            }
+            
+            if (!transformControls.enabled) return;
             
             // Only handle selection if this was a click (not a drag)
             pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
             raycaster.setFromCamera(pointer, camera);
-            const intersects = raycaster.intersectObjects(trackPieces.map(p => p.group), true);
             
-            // Filter out preview balls from intersection results
-            const validIntersects = intersects.filter(intersect => !intersect.object.userData.isPreviewBall);
+            // Filter out preview balls from selection raycast
+            const selectableObjects = [];
+            trackPieces.forEach(p => {
+                p.group.traverse((child) => {
+                    if (child.isMesh && !child.userData.isPreviewBall) {
+                        selectableObjects.push(child);
+                    }
+                });
+            });
             
-            if (validIntersects.length > 0) {
-                let object = validIntersects[0].object;
+            const intersects = raycaster.intersectObjects(selectableObjects, false);
+            
+            if (intersects.length > 0) {
+                let object = intersects[0].object;
                 while (object.parent && !object.userData.isTrackPiece) object = object.parent;
                 
                 if (object.userData.isTrackPiece) {
                     const piece = trackPieces.find(p => p.group === object);
                     
-                    if (event.ctrlKey || event.metaKey) {
+                    // Handle target/tool selection for Boolean operations
+                    if (event.shiftKey) {
+                        // Shift+click = add to targets
+                        const index = targetPieces.indexOf(piece);
+                        if (index > -1) {
+                            targetPieces.splice(index, 1);
+                            clearPieceSelection(piece);
+                        } else {
+                            targetPieces.push(piece);
+                            // Highlight as target (red wireframe)
+                            clearPieceSelection(piece);
+                            highlightAsTarget(piece);
+                        }
+                        updateTargetToolUI();
+                        return;
+                    } else if (event.altKey) {
+                        // Alt+click = add to tools
+                        const index = toolPieces.indexOf(piece);
+                        if (index > -1) {
+                            toolPieces.splice(index, 1);
+                            clearPieceSelection(piece);
+                        } else {
+                            toolPieces.push(piece);
+                            // Highlight as tool (blue wireframe)
+                            clearPieceSelection(piece);
+                            highlightAsTool(piece);
+                        }
+                        updateTargetToolUI();
+                        return;
+                    } else if (event.ctrlKey || event.metaKey) {
                         // Multi-select mode
                         const index = selectedPieces.indexOf(piece);
                         if (index > -1) {
@@ -2304,47 +2442,59 @@
             } else {
                 if (!event.ctrlKey && !event.metaKey) {
                     clearAllSelections();
-                    transformControls.detach();
+                    safeDetachTransformControls();
                     updateSelectionUI();
                 }
             }
         }
 
         function highlightPiece(piece, isMultiSelect = false) {
+            // Remove any existing wireframe
+            clearPieceSelection(piece);
+            
             const mesh = piece.group.children[0];
-            if (mesh && mesh.isMesh) {
-                // Store original material if not already stored
-                if (!piece.originalMaterial) {
-                    piece.originalMaterial = mesh.material;
-                }
-                // Create highlighted material with different effects for single vs multi-select
-                const highlightMaterial = piece.originalMaterial.clone();
+            if (mesh && mesh.isMesh && mesh.geometry) {
+                // Create wireframe geometry for thicker lines
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
                 
-                if (isMultiSelect) {
-                    // Brighter glow for multi-selected objects with animation support
-                    highlightMaterial.emissive.setHex(0x00aaff); // Bright cyan glow
-                    highlightMaterial.emissiveIntensity = 0.6;
-                    // Add a subtle transparency to make them stand out
-                    highlightMaterial.transparent = true;
-                    highlightMaterial.opacity = 0.9;
-                    // Mark this material for animation
-                    highlightMaterial.userData.isMultiSelectGlow = true;
-                } else {
-                    // Subtle gray highlight for single selection
-                    highlightMaterial.emissive.setHex(0x444444);
-                    highlightMaterial.emissiveIntensity = 0.3;
-                }
+                // Create simple white wireframe material (no bloom/emissive)
+                const wireframeMaterial = new THREE.LineBasicMaterial({
+                    color: 0xffffff, // Always white
+                    transparent: true,
+                    opacity: 0.8,
+                    linewidth: 2 // Thicker lines
+                });
                 
-                mesh.material = highlightMaterial;
+                // Create wireframe line segments
+                const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+                
+                // Copy transform from the original mesh
+                wireframe.position.copy(mesh.position);
+                wireframe.rotation.copy(mesh.rotation);
+                wireframe.scale.copy(mesh.scale);
+                
+                // Store wireframe for later removal
+                piece.wireframeOutline = wireframe;
+                piece.group.add(wireframe);
             }
         }
 
         function clearPieceSelection(piece) {
+            // Remove wireframe outline if it exists
+            if (piece.wireframeOutline) {
+                piece.group.remove(piece.wireframeOutline);
+                piece.wireframeOutline.geometry.dispose();
+                piece.wireframeOutline.material.dispose();
+                delete piece.wireframeOutline;
+            }
+            
+            // Clean up old material highlighting system (kept for backwards compatibility)
             const mesh = piece.group.children[0];
             if (mesh && mesh.isMesh && piece.originalMaterial) {
                 mesh.material = piece.originalMaterial;
                 delete piece.originalMaterial;
             }
+            
             // Clean up relative transform data
             if (piece.relativePosition) {
                 delete piece.relativePosition;
@@ -2370,18 +2520,17 @@
             selectedPieces = [];
             destroyMultiSelectGroup();
         }
-
+        
         function addToSelection(piece) {
             if (!selectedPieces.includes(piece)) {
                 selectedPieces.push(piece);
                 highlightPiece(piece, selectedPieces.length > 1);
+                refreshAllHighlights();
                 updateMultiSelectGroup();
                 updateCameraTargetForMultiSelect();
-                updateSelectionUI();
-                updateObjectTree();
             }
         }
-
+        
         function removeFromSelection(piece) {
             const index = selectedPieces.indexOf(piece);
             if (index > -1) {
@@ -2390,13 +2539,13 @@
                 refreshAllHighlights();
                 updateMultiSelectGroup();
                 updateCameraTargetForMultiSelect();
-                updateSelectionUI();
-                updateObjectTree();
             }
         }
 
         function updateSelectionUI() {
             const selectionInfo = document.getElementById('selection-info');
+            const exportBtn = document.getElementById('export-blueprint-btn');
+            
             if (selectionInfo) {
                 if (selectedPieces.length > 1) {
                     selectionInfo.textContent = `${selectedPieces.length} pieces selected`;
@@ -2406,6 +2555,14 @@
                     selectionInfo.textContent = '';
                 }
             }
+            
+            // Show export button only when multiple pieces are selected
+            if (exportBtn) {
+                exportBtn.style.display = selectedPieces.length > 1 ? 'block' : 'none';
+            }
+            
+            // Update object tree to reflect selection changes
+            updateObjectTree();
         }
 
         function updateCameraTarget(piece, smooth = false) {
@@ -2612,7 +2769,7 @@
 
         function destroyMultiSelectGroup() {
             if (multiSelectGroup) {
-                transformControls.detach();
+                safeDetachTransformControls();
                 scene.remove(multiSelectGroup);
                 multiSelectGroup = null;
                 multiSelectInitialized = false;
@@ -2639,6 +2796,10 @@
                 document.getElementById('ball-maker').style.display = 'none';
             });
             document.getElementById('add-ball-btn').addEventListener('click', addCustomBall);
+            
+            // Object Tree section now handled by existing collapsible system
+            // Setup object list event listeners immediately
+            setupObjectTreeEventListeners();
             
             // Ball maker control event listeners
             ['ball-color', 'ball-metalness', 'ball-roughness', 'ball-emissive', 'ball-emissive-color', 'ball-texture'].forEach(id => {
@@ -2709,70 +2870,51 @@
             });
             document.getElementById('add-custom-input').addEventListener('change', loadCustomObject);
             document.getElementById('toggle-transform-btn').addEventListener('click', (e) => {
+                if (paintMode) {
+                    // Disable paint mode first
+                    togglePaintMode();
+                }
                 transformControls.enabled = !transformControls.enabled;
                 transformControls.visible = transformControls.enabled;
-                e.target.textContent = transformControls.enabled ? '🎯 Disable Transform' : '🎯 Enable Transform';
+                e.target.textContent = transformControls.enabled ? '🎯 Disable Transform' : '🎯 Transform';
                 e.target.style.background = transformControls.enabled ? '#007bff' : '#4a4a4a';
                 if (!transformControls.enabled) transformControls.detach();
             });
+            
+            document.getElementById('toggle-paint-btn').addEventListener('click', togglePaintMode);
             document.getElementById('duplicate-piece-btn').addEventListener('click', () => {
                 if (selectedPieces.length > 0) {
                     selectedPieces.forEach(piece => {
-                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
-                        const newPiece = addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
-                        
-                        // Copy custom name with "Copy" suffix
-                        if (pieceNames.has(piece)) {
-                            const originalName = pieceNames.get(piece);
-                            pieceNames.set(newPiece, originalName + " Copy");
-                        }
-                        
-                        // Copy material data to new piece
-                        newPiece.materialData = {...piece.materialData};
-                        
-                        // Copy special properties
-                        if (piece.isCameraSet) {
-                            newPiece.isCameraSet = true;
-                            newPiece.cameraSettings = {...piece.cameraSettings};
-                        }
-                        if (piece.isBallSet) {
-                            newPiece.isBallSet = true;
-                            newPiece.isPlacementBall = piece.isPlacementBall;
-                        }
-                        
-                        const mesh = newPiece.group.children[0];
-                        if (mesh && mesh.isMesh) {
-                            mesh.material = createPieceMaterial(newPiece.materialData);
-                        }
+                        duplicatePiece(piece);
                     });
                 } else if(transformControls.object){
                     const piece = trackPieces.find(p => p.group === transformControls.object);
                     if(piece) {
-                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
-                        addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
-                        // Copy material data to new piece
-                        const newPiece = trackPieces[trackPieces.length - 1];
-                        newPiece.materialData = {...piece.materialData};
-                        
-                        // Copy special properties
-                        if (piece.isCameraSet) {
-                            newPiece.isCameraSet = true;
-                            newPiece.cameraSettings = {...piece.cameraSettings};
-                        }
-                        if (piece.isBallSet) {
-                            newPiece.isBallSet = true;
-                            newPiece.isPlacementBall = piece.isPlacementBall;
-                        }
-                        
-                        const mesh = newPiece.group.children[0];
-                        if (mesh && mesh.isMesh) {
-                            mesh.material = createPieceMaterial(newPiece.materialData);
-                        }
+                        duplicatePiece(piece);
                     }
                 }
             });
+            
+            // Boolean operation buttons
+            document.getElementById('union-btn').addEventListener('click', () => {
+                performBooleanOperation('union');
+            });
+            
+            document.getElementById('subtract-btn').addEventListener('click', () => {
+                performBooleanOperation('subtract');
+            });
+            
+            document.getElementById('intersect-btn').addEventListener('click', () => {
+                performBooleanOperation('intersect');
+            });
+            
+            document.getElementById('clear-target-tool-btn').addEventListener('click', () => {
+                clearTargetToolSelection();
+                showMessage('Target/tool selection cleared', 'info');
+            });
             document.getElementById('remove-piece-btn').addEventListener('click', removeSelectedPiece);
             document.getElementById('edit-material-btn').addEventListener('click', openMaterialEditor);
+            document.getElementById('export-blueprint-btn').addEventListener('click', exportBlueprint);
             document.getElementById('close-material-editor-btn').addEventListener('click', () => {
                 const editor = document.getElementById('material-editor');
                 editor.classList.remove('show');
@@ -2781,56 +2923,6 @@
             document.getElementById('apply-material-btn').addEventListener('click', applyMaterial);
             document.getElementById('piece-texture-type').addEventListener('change', toggleTextureUpload);
             document.getElementById('texture-upload').addEventListener('change', handleTextureUpload);
-            
-            // Camera settings event listeners
-            document.getElementById('capture-camera-position').addEventListener('click', () => {
-                if (!transformControls.object) return;
-                const piece = trackPieces.find(p => p.group === transformControls.object);
-                if (!piece || !piece.isCameraSet) return;
-                
-                // Capture current camera position and target
-                piece.cameraSettings.position = camera.position.clone();
-                piece.cameraSettings.target = orbitControls.target.clone();
-                
-                // Update display
-                document.getElementById('camera-position-display').textContent = 
-                    `(${piece.cameraSettings.position.x.toFixed(1)}, ${piece.cameraSettings.position.y.toFixed(1)}, ${piece.cameraSettings.position.z.toFixed(1)})`;
-                document.getElementById('camera-target-display').textContent = 
-                    `(${piece.cameraSettings.target.x.toFixed(1)}, ${piece.cameraSettings.target.y.toFixed(1)}, ${piece.cameraSettings.target.z.toFixed(1)})`;
-                    
-                showMessage('Camera position captured!', 'success');
-            });
-            
-            document.getElementById('goto-camera-position').addEventListener('click', () => {
-                if (!transformControls.object) return;
-                const piece = trackPieces.find(p => p.group === transformControls.object);
-                if (!piece || !piece.isCameraSet) return;
-                
-                // Animate camera to stored position
-                const startPos = camera.position.clone();
-                const startTarget = orbitControls.target.clone();
-                const duration = 1000; // 1 second animation
-                
-                cameraTransition = {
-                    active: true,
-                    startTime: performance.now(),
-                    duration: duration / 1000, // Convert to seconds
-                    startCameraPosition: startPos,
-                    targetCameraPosition: piece.cameraSettings.position.clone(),
-                    startTarget: startTarget,
-                    targetTarget: piece.cameraSettings.target.clone()
-                };
-                
-                showMessage('Moving to camera position...', 'info');
-            });
-            
-            document.getElementById('camera-follow-mode').addEventListener('change', () => {
-                if (!transformControls.object) return;
-                const piece = trackPieces.find(p => p.group === transformControls.object);
-                if (!piece || !piece.isCameraSet) return;
-                
-                piece.cameraSettings.followMode = document.getElementById('camera-follow-mode').value;
-            });
             
             // Material editor value display updates with real-time material application
             ['piece-transparency', 'piece-metalness', 'piece-roughness', 'piece-bounciness', 'piece-emissive', 'piece-rotation-speed', 'piece-affector-intensity', 'light-intensity', 'light-distance', 'light-angle', 'light-penumbra', 'light-decay', 'strobe-frequency', 'particle-count', 'particle-size', 'particle-spread', 'particle-velocity', 'particle-gravity', 'particle-opacity'].forEach(id => {
@@ -2889,6 +2981,56 @@
             document.getElementById('particle-type').addEventListener('change', applyParticleTypePreset);
             document.getElementById('particle-shape').addEventListener('change', applyParticleSettingsRealTime);
             
+            // Camera controls
+            document.getElementById('capture-camera-position').addEventListener('click', () => {
+                if (!transformControls.object) return;
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (!piece || !piece.isCameraSet) return;
+                
+                // Capture current camera position and target
+                piece.cameraSettings.position = camera.position.clone();
+                piece.cameraSettings.target = orbitControls.target.clone();
+                
+                // Update display
+                document.getElementById('camera-position-display').textContent = 
+                    `(${piece.cameraSettings.position.x.toFixed(1)}, ${piece.cameraSettings.position.y.toFixed(1)}, ${piece.cameraSettings.position.z.toFixed(1)})`;
+                document.getElementById('camera-target-display').textContent = 
+                    `(${piece.cameraSettings.target.x.toFixed(1)}, ${piece.cameraSettings.target.y.toFixed(1)}, ${piece.cameraSettings.target.z.toFixed(1)})`;
+                    
+                showMessage('Camera position captured!', 'success');
+            });
+            
+            document.getElementById('goto-camera-position').addEventListener('click', () => {
+                if (!transformControls.object) return;
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (!piece || !piece.isCameraSet) return;
+                
+                // Animate camera to stored position
+                const startPos = camera.position.clone();
+                const startTarget = orbitControls.target.clone();
+                const duration = 1000; // 1 second animation
+                
+                cameraTransition = {
+                    active: true,
+                    startTime: performance.now(),
+                    duration: duration / 1000, // Convert to seconds
+                    startCameraPosition: startPos,
+                    targetCameraPosition: piece.cameraSettings.position.clone(),
+                    startTarget: startTarget,
+                    targetTarget: piece.cameraSettings.target.clone()
+                };
+                
+                showMessage('Moving to camera position...', 'info');
+            });
+            
+            document.getElementById('camera-follow-mode').addEventListener('change', () => {
+                if (!transformControls.object) return;
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (!piece || !piece.isCameraSet) return;
+                
+                piece.cameraSettings.followMode = document.getElementById('camera-follow-mode').value;
+            });
+            
             // Rotation settings toggle
             document.getElementById('piece-rotation-enabled').addEventListener('change', (e) => {
                 const rotationSettings = document.getElementById('rotation-settings');
@@ -2924,6 +3066,17 @@
                 }
             });
             
+            // Export dialog event listeners
+            document.getElementById('export-confirm-btn').addEventListener('click', performBlueprintExport);
+            document.getElementById('export-cancel-btn').addEventListener('click', () => {
+                document.getElementById('export-dialog').style.display = 'none';
+            });
+            document.getElementById('export-filename').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performBlueprintExport();
+                }
+            });
+            
             // Select all button
             document.getElementById('select-all-btn').addEventListener('click', () => {
                 clearAllSelections();
@@ -2934,10 +3087,6 @@
                 updateCameraTargetForMultiSelect();
                 updateSelectionUI();
             });
-            
-            // Object tree event listeners
-            document.addEventListener('click', handleObjectTreeClick);
-            document.addEventListener('dblclick', handleObjectTreeDoubleClick);
             
             // Collapsible sections
             document.querySelectorAll('.collapsible-section').forEach(section => {
@@ -2959,7 +3108,6 @@
             renderer.domElement.addEventListener('pointerdown', onPointerDown);
             renderer.domElement.addEventListener('pointermove', onPointerMove);
             renderer.domElement.addEventListener('pointerup', onPointerUp);
-            
             let isCtrlDuplicating = false;
             let originalPiecesToDuplicate = [];
             let duplicatedPieces = [];
@@ -3006,12 +3154,7 @@
                         // Duplicate all pieces at their current positions (no offset)
                         piecesToDuplicate.forEach(piece => {
                             originalPiecesToDuplicate.push(piece);
-                            const newTransform = {
-                                position: piece.group.position.clone(),
-                                quaternion: piece.group.quaternion.clone(),
-                                scale: piece.group.scale.clone()
-                            };
-                            const newPiece = addPiece(piece.type, newTransform);
+                            const newPiece = duplicatePiece(piece, new THREE.Vector3(0, 0, 0)); // No offset
                             duplicatedPieces.push(newPiece);
                         });
                         
@@ -3023,7 +3166,11 @@
             });
             
             transformControls.addEventListener('dragging-changed', event => orbitControls.enabled = !event.value);
-            transformControls.addEventListener('change', updateMultiSelectPositions);
+            transformControls.addEventListener('change', () => {
+                if (transformControls.object) {
+                    updateMultiSelectPositions();
+                }
+            });
             transformControls.addEventListener('mouseUp', () => { 
                 if(transformControls.object && transformControls.object !== multiSelectGroup) {
                     const piece = trackPieces.find(p => p.group === transformControls.object);
@@ -3075,6 +3222,9 @@
                     transformControls.scaleSnap = null;
                 }
             });
+            
+            // Setup object tree event listeners using document delegation
+            setupObjectTreeEventListeners();
             
             // ViewCube event listeners
             document.querySelectorAll('.viewcube-face').forEach(face => {
@@ -3163,6 +3313,347 @@
             showMessage(`Track saved as "${finalFilename}"`, 'success');
         }
         
+        function exportBlueprint() {
+            if (selectedPieces.length < 2) {
+                showMessage('Please select multiple pieces to export as blueprint', 'error');
+                return;
+            }
+            
+            // Show export dialog
+            document.getElementById('export-dialog').style.display = 'block';
+            document.getElementById('export-filename').focus();
+        }
+        
+        function performBlueprintExport() {
+            const filename = document.getElementById('export-filename').value.trim() || 'blueprint';
+            const finalFilename = filename.endsWith('.obj') ? filename : `${filename}.obj`;
+            
+            // Calculate center point of selection for relative positioning
+            const center = new THREE.Vector3();
+            selectedPieces.forEach(piece => {
+                center.add(piece.group.position);
+            });
+            center.divideScalar(selectedPieces.length);
+            
+            let objContent = '# Blueprint exported from 3D Marble Race Game\n';
+            objContent += `# Generated on ${new Date().toISOString()}\n`;
+            objContent += `# Contains ${selectedPieces.length} pieces merged into one object\n\n`;
+            objContent += 'o merged_blueprint\n\n';
+            
+            let allVertices = [];
+            let allNormals = [];
+            let allFaces = [];
+            let vertexOffset = 0;
+            let materialInfo = [];
+            
+            // First pass: collect all geometry data
+            selectedPieces.forEach((piece, pieceIndex) => {
+                const mesh = piece.group.children.find(child => child.isMesh && child.geometry);
+                if (!mesh) return;
+                
+                objContent += `# Piece ${pieceIndex + 1}: ${piece.type}\n`;
+                
+                // Get geometry and apply transforms
+                const geometry = mesh.geometry.clone();
+                const matrix = new THREE.Matrix4();
+                
+                // Calculate relative position from center
+                const relativePos = piece.group.position.clone().sub(center);
+                matrix.compose(relativePos, piece.group.quaternion, piece.group.scale);
+                geometry.applyMatrix4(matrix);
+                
+                // Collect vertices
+                const vertices = geometry.attributes.position.array;
+                for (let i = 0; i < vertices.length; i += 3) {
+                    allVertices.push(vertices[i], vertices[i + 1], vertices[i + 2]);
+                }
+                
+                // Collect normals if available
+                if (geometry.attributes.normal) {
+                    const normals = geometry.attributes.normal.array;
+                    for (let i = 0; i < normals.length; i += 3) {
+                        allNormals.push(normals[i], normals[i + 1], normals[i + 2]);
+                    }
+                }
+                
+                // Collect faces with proper vertex offset
+                const vertexCount = vertices.length / 3;
+                if (geometry.index) {
+                    const indices = geometry.index.array;
+                    for (let i = 0; i < indices.length; i += 3) {
+                        const v1 = indices[i] + vertexOffset + 1;
+                        const v2 = indices[i + 1] + vertexOffset + 1;
+                        const v3 = indices[i + 2] + vertexOffset + 1;
+                        allFaces.push([v1, v2, v3]);
+                    }
+                } else {
+                    // No indices, treat as triangle soup
+                    for (let i = 0; i < vertexCount; i += 3) {
+                        const v1 = i + vertexOffset + 1;
+                        const v2 = i + 1 + vertexOffset + 1;
+                        const v3 = i + 2 + vertexOffset + 1;
+                        allFaces.push([v1, v2, v3]);
+                    }
+                }
+                
+                vertexOffset += vertexCount;
+                
+                // Store material info
+                if (piece.materialData) {
+                    materialInfo.push({
+                        type: piece.type,
+                        data: piece.materialData
+                    });
+                }
+            });
+            
+            // Write all vertices
+            objContent += '\n# Vertices\n';
+            for (let i = 0; i < allVertices.length; i += 3) {
+                objContent += `v ${allVertices[i].toFixed(6)} ${allVertices[i + 1].toFixed(6)} ${allVertices[i + 2].toFixed(6)}\n`;
+            }
+            
+            // Write all normals
+            if (allNormals.length > 0) {
+                objContent += '\n# Normals\n';
+                for (let i = 0; i < allNormals.length; i += 3) {
+                    objContent += `vn ${allNormals[i].toFixed(6)} ${allNormals[i + 1].toFixed(6)} ${allNormals[i + 2].toFixed(6)}\n`;
+                }
+            }
+            
+            // Write all faces
+            objContent += '\n# Faces\n';
+            allFaces.forEach(face => {
+                if (allNormals.length > 0) {
+                    objContent += `f ${face[0]}//${face[0]} ${face[1]}//${face[1]} ${face[2]}//${face[2]}\n`;
+                } else {
+                    objContent += `f ${face[0]} ${face[1]} ${face[2]}\n`;
+                }
+            });
+            
+            // Add material info as comments
+            if (materialInfo.length > 0) {
+                objContent += '\n# Material Information\n';
+                materialInfo.forEach((mat, index) => {
+                    objContent += `# Piece ${index + 1} (${mat.type}): color=${mat.data.color}, metalness=${mat.data.metalness}, roughness=${mat.data.roughness}\n`;
+                });
+            }
+            
+            // Create and download the file
+            const blob = new Blob([objContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = finalFilename;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('export-dialog').style.display = 'none';
+            showMessage(`Blueprint exported as "${finalFilename}" with ${selectedPieces.length} pieces!`, 'success');
+        }
+        
+        function duplicatePiece(originalPiece, offsetPosition = new THREE.Vector3(0, 2, 0)) {
+            const newPos = originalPiece.group.position.clone().add(offsetPosition);
+            addPiece(originalPiece.type, {
+                position: newPos, 
+                quaternion: originalPiece.group.quaternion.clone(), 
+                scale: originalPiece.group.scale.clone()
+            });
+            
+            // Copy all properties to new piece
+            const newPiece = trackPieces[trackPieces.length - 1];
+            newPiece.materialData = {...originalPiece.materialData};
+            
+            // Copy custom name with "Copy" suffix
+            if (pieceNames.has(originalPiece)) {
+                const originalName = pieceNames.get(originalPiece);
+                pieceNames.set(newPiece, originalName + " Copy");
+            }
+            
+            // Copy special properties
+            if (originalPiece.isAffector) {
+                newPiece.isAffector = true;
+                newPiece.affectorType = originalPiece.affectorType;
+                newPiece.affectorIntensity = originalPiece.affectorIntensity;
+            }
+            if (originalPiece.hasPath) {
+                newPiece.hasPath = true;
+                newPiece.keyframes = [...originalPiece.keyframes];
+                newPiece.pathSpeed = originalPiece.pathSpeed;
+                newPiece.pathType = originalPiece.pathType;
+            }
+            if (originalPiece.isLight) {
+                newPiece.isLight = true;
+                newPiece.lightSettings = {...originalPiece.lightSettings};
+            }
+            if (originalPiece.isParticleGen) {
+                newPiece.isParticleGen = true;
+                newPiece.particleSettings = {...originalPiece.particleSettings};
+            }
+            if (originalPiece.isCameraSet) {
+                newPiece.isCameraSet = true;
+                newPiece.cameraSettings = {...originalPiece.cameraSettings};
+            }
+            if (originalPiece.isBallSet) {
+                newPiece.isBallSet = true;
+                newPiece.isPlacementBall = originalPiece.isPlacementBall;
+            }
+            
+            // Apply material and recreate any special features
+            const mesh = newPiece.group.children[0];
+            if (mesh && mesh.isMesh) {
+                mesh.material = createPieceMaterial(newPiece.materialData);
+            }
+            
+            // Recreate ball set previews if needed
+            if (newPiece.isBallSet) {
+                addPreviewBallsToSet(newPiece.group);
+            }
+            
+            return newPiece;
+        }
+
+        function updateObjectTree() {
+            const objectList = document.getElementById('object-list');
+            if (!objectList) return;
+            
+            if (trackPieces.length === 0) {
+                objectList.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No objects in scene</div>';
+                return;
+            }
+            
+            let html = '';
+            trackPieces.forEach((piece, index) => {
+                const isSelected = selectedPieces.includes(piece);
+                const icon = getPieceIcon(piece.type);
+                const specialInfo = getPieceSpecialInfo(piece);
+                const displayName = pieceNames.get(piece) || piece.type;
+                
+                html += `
+                    <div class="object-item ${isSelected ? 'selected' : ''}" data-piece-index="${index}" title="Double-click to rename">
+                        <span class="object-icon">${icon}</span>
+                        <span class="object-name">${displayName}</span>
+                        <span class="object-type">${specialInfo}</span>
+                    </div>
+                `;
+            });
+            
+            objectList.innerHTML = html;
+        }
+        
+        function getPieceIcon(type) {
+            const icons = {
+                'start': '🏁', 'end': '🏁', 'straight': '▬', 'curve': '↰',
+                'pipe': '⭕', 'halfpipe': '⌒', 'quarter': '⌓', 
+                'ball': '⚫', 'ball-set': '🏁', 'pyramid': '🔺', 'cylinder': '⭕', 'cube': '⬜',
+                'prism': '🔶', 'accelerator': '⚡', 'brake': '🛑', 'water': '💧',
+                'gravity': '🌌', 'moon': '🌙', 'ice': '🧊',
+                'light': '💡', 'particle': '✨', 'camera': '📷', 'custom': '📦'
+            };
+            return icons[type] || '📦';
+        }
+        
+        function getPieceSpecialInfo(piece) {
+            if (piece.isAffector) return piece.affectorType;
+            if (piece.isLight) return piece.lightSettings?.type || 'light';
+            if (piece.isParticleGen) return 'particles';
+            if (piece.isCameraSet) return 'camera';
+            if (piece.isBallSet) return 'ball set';
+            if (piece.hasPath) return 'animated';
+            return '';
+        }
+        
+        function setupObjectTreeEventListeners() {
+            // Use document-level delegation to handle clicks on object tree items
+            // Remove any existing listeners first to prevent duplicates
+            document.removeEventListener('click', handleObjectTreeClick);
+            document.removeEventListener('dblclick', handleObjectTreeDoubleClick);
+            
+            // Add new listeners
+            document.addEventListener('click', handleObjectTreeClick);
+            document.addEventListener('dblclick', handleObjectTreeDoubleClick);
+            
+            // Panel drag setup removed - using collapsible menu section
+        }
+        
+        // Panel drag functionality removed - now using collapsible menu section
+        
+        function handleObjectTreeClick(e) {
+            // Only handle clicks within the object tree section
+            if (!e.target.closest('#object-tree-section')) return;
+            
+            const item = e.target.closest('.object-item');
+            if (item && item.dataset.pieceIndex !== undefined) {
+                e.stopPropagation();
+                const pieceIndex = parseInt(item.dataset.pieceIndex);
+                console.log('Object tree clicked - piece index:', pieceIndex, 'ctrl key:', e.ctrlKey);
+                if (!isNaN(pieceIndex) && pieceIndex >= 0 && pieceIndex < trackPieces.length) {
+                    selectPieceFromTree(pieceIndex, e.ctrlKey);
+                } else {
+                    console.error('Invalid piece index:', pieceIndex);
+                }
+            }
+        }
+        
+        function handleObjectTreeDoubleClick(e) {
+            // Only handle double-clicks within the object tree section
+            if (!e.target.closest('#object-tree-section')) return;
+            
+            const item = e.target.closest('.object-item');
+            if (item && item.dataset.pieceIndex !== undefined) {
+                e.stopPropagation();
+                const pieceIndex = parseInt(item.dataset.pieceIndex);
+                if (!isNaN(pieceIndex) && pieceIndex >= 0 && pieceIndex < trackPieces.length) {
+                    const piece = trackPieces[pieceIndex];
+                    if (piece) {
+                        renamePiece(piece);
+                    }
+                }
+            }
+        }
+
+        function selectPieceFromTree(pieceIndex, ctrlKey = false) {
+            console.log('selectPieceFromTree called with:', pieceIndex, ctrlKey);
+            const piece = trackPieces[pieceIndex];
+            if (!piece) {
+                console.error('Piece not found at index:', pieceIndex);
+                return;
+            }
+            
+            console.log('Found piece:', piece.type, 'at index:', pieceIndex);
+            
+            if (ctrlKey) {
+                // Ctrl+click: toggle selection
+                if (selectedPieces.includes(piece)) {
+                    console.log('Removing from selection');
+                    removeFromSelection(piece);
+                } else {
+                    console.log('Adding to selection');
+                    addToSelection(piece);
+                }
+            } else {
+                // Regular click: select only this piece
+                console.log('Selecting single piece');
+                clearAllSelections();
+                addToSelection(piece);
+                transformControls.attach(piece.group);
+            }
+            
+            updateObjectTree();
+            updateSelectionUI();
+        }
+        
+        function renamePiece(piece) {
+            const currentName = pieceNames.get(piece) || piece.type;
+            const newName = prompt('Enter new name for this piece:', currentName);
+            
+            if (newName !== null && newName.trim() !== '') {
+                pieceNames.set(piece, newName.trim());
+                updateObjectTree();
+                showMessage(`Renamed to "${newName.trim()}"`, 'success');
+            }
+        }
+
         function showMessage(text, type = 'info') {
             const notification = document.getElementById('message-notification');
             notification.textContent = text;
@@ -3171,6 +3662,12 @@
             // Auto-hide after 3 seconds
             setTimeout(() => {
                 notification.classList.remove('show');
+                
+                // Clean up after animation completes
+                setTimeout(() => {
+                    notification.textContent = '';
+                    notification.className = '';
+                }, 300); // Match the CSS transition duration
             }, 3000);
         }
 
@@ -3184,12 +3681,9 @@
             });
             trackPieces.length = 0;
             
-            // Clear piece names
-            pieceNames.clear();
-            
             // Clear selections
             clearAllSelections();
-            transformControls.detach();
+            safeDetachTransformControls();
             
             // Reset custom balls
             customBalls.length = 0;
@@ -3229,7 +3723,7 @@
                 // Reset everything to defaults before loading
                 resetToDefaults();
                 
-                transformControls.detach();
+                safeDetachTransformControls();
                 
                 const data = JSON.parse(e.target.result);
                 
@@ -3322,6 +3816,22 @@
                                 }
                             }
                             
+                            // Restore camera settings
+                            if (d.isCameraSet !== undefined) {
+                                piece.isCameraSet = d.isCameraSet;
+                                if (d.cameraSettings) {
+                                    piece.cameraSettings = {
+                                        position: new THREE.Vector3().fromArray(d.cameraSettings.position ? 
+                                            [d.cameraSettings.position.x, d.cameraSettings.position.y, d.cameraSettings.position.z] : 
+                                            [0, 10, 10]),
+                                        target: new THREE.Vector3().fromArray(d.cameraSettings.target ? 
+                                            [d.cameraSettings.target.x, d.cameraSettings.target.y, d.cameraSettings.target.z] : 
+                                            [0, 0, 0]),
+                                        followMode: d.cameraSettings.followMode || 'static'
+                                    };
+                                }
+                            }
+                            
                             // Restore particle settings
                             if (d.isParticleGen !== undefined) {
                                 piece.isParticleGen = d.isParticleGen;
@@ -3346,22 +3856,6 @@
                                             child.geometry.attributes.color.needsUpdate = true;
                                         }
                                     });
-                                }
-                            }
-                            
-                            // Restore camera settings
-                            if (d.isCameraSet !== undefined) {
-                                piece.isCameraSet = d.isCameraSet;
-                                if (d.cameraSettings) {
-                                    piece.cameraSettings = {
-                                        position: new THREE.Vector3().fromArray(d.cameraSettings.position ? 
-                                            [d.cameraSettings.position.x, d.cameraSettings.position.y, d.cameraSettings.position.z] : 
-                                            [0, 10, 10]),
-                                        target: new THREE.Vector3().fromArray(d.cameraSettings.target ? 
-                                            [d.cameraSettings.target.x, d.cameraSettings.target.y, d.cameraSettings.target.z] : 
-                                            [0, 0, 0]),
-                                        followMode: d.cameraSettings.followMode || 'static'
-                                    };
                                 }
                             }
                             
@@ -3421,6 +3915,9 @@
                             }
                         });
                     }
+                    
+                    // Update object tree after loading
+                    updateObjectTree();
                 }
             };
             reader.readAsText(file);
@@ -3458,8 +3955,11 @@
             if (isRaceMode) return;
             isRaceMode = true;
             updateRaceUI();
-            transformControls.detach();
+            safeDetachTransformControls();
             transformControls.visible = false;
+            
+            // Clear preview balls when starting race
+            clearPreviewBalls();
             
             // Configure orbit controls for race mode - disable rotation but allow pan and zoom
             orbitControls.enabled = true;
@@ -3584,10 +4084,10 @@
                 raceRoster.forEach((ballConfig, rosterIndex) => {
                     const material = createBallMaterial(ballConfig);
                     
-                    // Calculate position in line formation (spread out along X axis)
+                    // Calculate local position in line formation
                     const localPos = new THREE.Vector3(
-                        (rosterIndex - (raceRoster.length - 1) / 2) * 1.0, // X spread
-                        1.0, // Y above placement
+                        rosterIndex * 1.0 - ((raceRoster.length - 1) * 0.5), // X offset for line
+                        1, // Y offset for drop height
                         0  // Z stays at placement position
                     );
                     
@@ -3597,7 +4097,6 @@
                     
                     const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), material);
                     mesh.castShadow = true;
-                    mesh.position.copy(worldPos);
                     scene.add(mesh);
                     
                     // Create nameplate
@@ -3617,10 +4116,13 @@
                     body.userData = { 
                         isMarble: true, 
                         name: ballConfig.name, 
-                        finished: false 
+                        finished: false,
+                        ballSetIndex: placementIndex,
+                        originalSetIndex: rosterIndex,
+                        ballType: ballConfig.name // For collision-based camera switching
                     };
-                    world.addBody(body);
                     
+                    world.addBody(body);
                     marbles.push({ 
                         mesh, 
                         body, 
@@ -3628,314 +4130,12 @@
                         color: ballConfig.color, 
                         finished: false, 
                         nameplate,
-                        ballType: ballConfig.name, // Track ball type for collision logic
-                        ballSetIndex: placementIndex // Track which placement ball it came from
+                        ballSetIndex: placementIndex,
+                        ballType: ballConfig.name,
+                        rosterIndex: rosterIndex
                     });
                 });
             });
-        }
-
-        function addPreviewBallsToSet(group) {
-            // Clear existing preview balls from this group
-            const existingPreviews = group.children.filter(child => child.userData.isPreviewBall);
-            existingPreviews.forEach(preview => group.remove(preview));
-            
-            // If no roster, create a default one for preview
-            let previewRoster = raceRoster;
-            if (previewRoster.length === 0) {
-                previewRoster = [];
-                for (let i = 0; i < 6; i++) {
-                    previewRoster.push(generateRandomBall());
-                }
-            }
-            
-            // Create preview balls for all roster balls
-            previewRoster.forEach((ballConfig, index) => {
-                const material = createBallMaterial(ballConfig);
-                material.transparent = true;
-                material.opacity = 0.6; // Semi-transparent preview
-                
-                const previewMesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), material);
-                previewMesh.userData.isPreviewBall = true;
-                previewMesh.userData.rosterIndex = index;
-                
-                // Position in line formation (local coordinates)
-                previewMesh.position.x = index * 1.0 - ((previewRoster.length - 1) * 0.5);
-                previewMesh.position.y = 0.5;
-                previewMesh.position.z = 0;
-                
-                group.add(previewMesh);
-            });
-        }
-
-        function updateAllBallSetPreviews() {
-            // Update preview balls for all ball sets when roster changes
-            const ballSets = trackPieces.filter(p => p.type === 'ball-set');
-            ballSets.forEach(ballSet => {
-                addPreviewBallsToSet(ballSet.group);
-            });
-        }
-
-        function clearPreviewBalls() {
-            // Preview balls are now part of ball set groups, so they'll be cleared when ball sets are removed
-            // This function is mainly for race mode transitions
-        }
-
-        // Object Tree Functions
-        function updateObjectTree() {
-            const objectList = document.getElementById('object-list');
-            if (!objectList) return;
-            
-            if (trackPieces.length === 0) {
-                objectList.innerHTML = '<div style="color: #999; font-size: 12px; text-align: center; padding: 10px;">No objects in scene</div>';
-                return;
-            }
-            
-            // Group pieces by main category, then by specific type, then instances
-            const categories = {
-                'Track Pieces': {},
-                'Obstacles': {},
-                'Affector Zones': {},
-                'Lighting': {},
-                'Camera System': {},
-                'Custom': {}
-            };
-            
-            trackPieces.forEach((piece, index) => {
-                const pieceData = { piece, index };
-                let mainCategory = '';
-                let specificType = piece.type;
-                
-                // Determine main category
-                if (['start', 'straight', 'curve', 'end', 'pipe', 'half-pipe', 'quarter-bowl', 'ball-set'].includes(piece.type)) {
-                    mainCategory = 'Track Pieces';
-                } else if (['ball', 'pyramid', 'cylinder', 'cube', 'prism'].includes(piece.type)) {
-                    mainCategory = 'Obstacles';
-                } else if (piece.isAffector || ['water', 'zero-gravity', 'moon-gravity', 'accelerator', 'brake', 'ice'].includes(piece.type)) {
-                    mainCategory = 'Affector Zones';
-                    // Use affector type if available, otherwise piece type
-                    specificType = piece.affectorType || piece.type;
-                } else if (piece.lightType || ['spot-light', 'point-light', 'strobe-light', 'directional-light', 'particle-generator'].includes(piece.type)) {
-                    mainCategory = 'Lighting';
-                    // Use light type if available, otherwise piece type
-                    specificType = piece.lightType || piece.type;
-                } else if (piece.isCameraSet || piece.type === 'camera-set') {
-                    mainCategory = 'Camera System';
-                    specificType = 'camera-set';
-                } else {
-                    mainCategory = 'Custom';
-                    specificType = piece.type || 'imported-object';
-                }
-                
-                // Initialize category and type if they don't exist
-                if (!categories[mainCategory]) {
-                    categories[mainCategory] = {};
-                }
-                if (!categories[mainCategory][specificType]) {
-                    categories[mainCategory][specificType] = [];
-                }
-                
-                categories[mainCategory][specificType].push(pieceData);
-            });
-            
-            // Build tree HTML
-            let html = '';
-            Object.entries(categories).forEach(([mainCategoryName, typeGroups]) => {
-                // Count total items in main category
-                const totalItems = Object.values(typeGroups).reduce((sum, items) => sum + items.length, 0);
-                if (totalItems === 0) return;
-                
-                const mainCategoryId = mainCategoryName.toLowerCase().replace(/\s+/g, '-');
-                const isMainExpanded = localStorage.getItem(`tree-main-${mainCategoryId}`) !== 'collapsed';
-                
-                html += `
-                    <div class="tree-main-category">
-                        <div class="tree-main-category-header" data-category="${mainCategoryId}">
-                            <span class="tree-expand">${isMainExpanded ? '▼' : '▶'}</span>
-                            <span class="tree-category-name">${mainCategoryName}</span>
-                            <span class="tree-category-count">(${totalItems})</span>
-                        </div>
-                        <div class="tree-main-category-content" style="display: ${isMainExpanded ? 'block' : 'none'};">
-                `;
-                
-                // Specific types (e.g., "straight", "curve", etc.)
-                Object.entries(typeGroups).forEach(([specificType, instances]) => {
-                    if (instances.length === 0) return;
-                    
-                    const typeId = `${mainCategoryId}-${specificType.toLowerCase().replace(/\s+/g, '-')}`;
-                    const isTypeExpanded = localStorage.getItem(`tree-type-${typeId}`) !== 'collapsed';
-                    const typeIcon = getPieceIcon(specificType);
-                    const displayName = specificType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    
-                    html += `
-                        <div class="tree-sub-category">
-                            <div class="tree-sub-category-header" data-category="${typeId}">
-                                <span class="tree-expand">${isTypeExpanded ? '▼' : '▶'}</span>
-                                <span class="object-icon">${typeIcon}</span>
-                                <span class="tree-category-name">${displayName}</span>
-                                <span class="tree-category-count">(${instances.length})</span>
-                            </div>
-                            <div class="tree-sub-category-content" style="display: ${isTypeExpanded ? 'block' : 'none'};">
-                    `;
-                    
-                    // Individual instances
-                    instances.forEach(({ piece, index }) => {
-                        const isSelected = selectedPieces.includes(piece);
-                        const name = pieceNames.get(piece) || `${displayName} ${instances.indexOf(instances.find(i => i.index === index)) + 1}`;
-                        const specialInfo = getPieceSpecialInfo(piece);
-                        
-                        html += `
-                            <div class="tree-item ${isSelected ? 'selected' : ''}" data-piece-index="${index}">
-                                <span class="tree-indent"></span>
-                                <span class="object-name">${name}</span>
-                                ${specialInfo ? `<span class="object-type">${specialInfo}</span>` : ''}
-                            </div>
-                        `;
-                    });
-                    
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += `
-                        </div>
-                    </div>
-                `;
-            });
-            
-            objectList.innerHTML = html;
-            
-            // Add click handlers for category headers
-            objectList.querySelectorAll('.tree-main-category-header').forEach(header => {
-                header.addEventListener('click', toggleMainCategory);
-            });
-            objectList.querySelectorAll('.tree-sub-category-header').forEach(header => {
-                header.addEventListener('click', toggleSubCategory);
-            });
-        }
-        
-        function getPieceIcon(type) {
-            const icons = {
-                'start': '🟢', 'straight': '━', 'curve': '↪', 'end': '🏁', 'pipe': '⭕', 'half-pipe': '🌙', 'quarter-bowl': '🥣',
-                'ball': '⚫', 'ball-set': '🏁', 'pyramid': '🔺', 'cylinder': '⭕', 'cube': '⬜',
-                'water': '💧', 'zero-gravity': '🌌', 'moon-gravity': '🌙', 'accelerator': '⚡', 'brake': '🛑', 'ice': '🧊',
-                'particle-generator': '✨', 'camera-set': '📷',
-                'spot-light': '💡', 'point-light': '🔆', 'strobe-light': '💥', 'directional-light': '☀️'
-            };
-            return icons[type] || '❓';
-        }
-        
-        function getPieceSpecialInfo(piece) {
-            if (piece.affectorType) return piece.affectorType;
-            if (piece.lightType) return piece.lightType;
-            if (piece.isCameraSet) return 'camera';
-            if (piece.isBallSet) return 'ball-set';
-            return '';
-        }
-        
-        
-        function toggleMainCategory(event) {
-            const header = event.currentTarget;
-            const categoryId = header.dataset.category;
-            const expandIcon = header.querySelector('.tree-expand');
-            const content = header.nextElementSibling;
-            
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                expandIcon.textContent = '▼';
-                localStorage.removeItem(`tree-main-${categoryId}`);
-            } else {
-                content.style.display = 'none';
-                expandIcon.textContent = '▶';
-                localStorage.setItem(`tree-main-${categoryId}`, 'collapsed');
-            }
-        }
-        
-        function toggleSubCategory(event) {
-            const header = event.currentTarget;
-            const categoryId = header.dataset.category;
-            const expandIcon = header.querySelector('.tree-expand');
-            const content = header.nextElementSibling;
-            
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                expandIcon.textContent = '▼';
-                localStorage.removeItem(`tree-type-${categoryId}`);
-            } else {
-                content.style.display = 'none';
-                expandIcon.textContent = '▶';
-                localStorage.setItem(`tree-type-${categoryId}`, 'collapsed');
-            }
-        }
-        
-        function handleObjectTreeClick(event) {
-            const item = event.target.closest('.tree-item');
-            if (!item) return;
-            
-            const pieceIndex = parseInt(item.dataset.pieceIndex);
-            if (isNaN(pieceIndex) || pieceIndex >= trackPieces.length) return;
-            
-            const piece = trackPieces[pieceIndex];
-            const ctrlPressed = event.ctrlKey || event.metaKey;
-            
-            selectPieceFromTree(piece, ctrlPressed);
-        }
-        
-        function handleObjectTreeDoubleClick(event) {
-            const item = event.target.closest('.tree-item');
-            if (!item) return;
-            
-            const pieceIndex = parseInt(item.dataset.pieceIndex);
-            if (isNaN(pieceIndex) || pieceIndex >= trackPieces.length) return;
-            
-            const piece = trackPieces[pieceIndex];
-            renamePiece(piece);
-        }
-        
-        function selectPieceFromTree(piece, multiSelect = false) {
-            if (multiSelect) {
-                // Multi-selection with Ctrl
-                if (selectedPieces.includes(piece)) {
-                    selectedPieces = selectedPieces.filter(p => p !== piece);
-                } else {
-                    selectedPieces.push(piece);
-                }
-            } else {
-                // Single selection
-                selectedPieces = [piece];
-            }
-            
-            // Update transform controls
-            if (selectedPieces.length === 1) {
-                transformControls.attach(selectedPieces[0].group);
-            } else if (selectedPieces.length > 1) {
-                // Create group for multi-selection
-                const center = new THREE.Vector3();
-                selectedPieces.forEach(p => center.add(p.group.position));
-                center.divideScalar(selectedPieces.length);
-                
-                const groupHelper = new THREE.Group();
-                groupHelper.position.copy(center);
-                scene.add(groupHelper);
-                transformControls.attach(groupHelper);
-            } else {
-                transformControls.detach();
-            }
-            
-            updateSelectionInfo();
-            updateObjectTree();
-        }
-        
-        function renamePiece(piece) {
-            const currentName = pieceNames.get(piece) || `${piece.type} ${trackPieces.indexOf(piece) + 1}`;
-            const newName = prompt('Enter new name for this piece:', currentName);
-            
-            if (newName && newName.trim() !== '') {
-                pieceNames.set(piece, newName.trim());
-                updateObjectTree();
-            }
         }
 
         function createNameplate(name) {
@@ -3987,16 +4187,68 @@
             marbles = [];
         }
 
+        function addPreviewBallsToSet(group) {
+            // Clear existing preview balls from this group
+            const existingPreviews = group.children.filter(child => child.userData.isPreviewBall);
+            existingPreviews.forEach(preview => group.remove(preview));
+            
+            // If no roster, create a default one for preview
+            let previewRoster = raceRoster;
+            if (previewRoster.length === 0) {
+                previewRoster = [];
+                for (let i = 0; i < 6; i++) {
+                    previewRoster.push(generateRandomBall());
+                }
+            }
+            
+            // Create preview balls for all roster balls
+            previewRoster.forEach((ballConfig, index) => {
+                const material = createBallMaterial(ballConfig);
+                material.transparent = true;
+                material.opacity = 0.6; // Semi-transparent preview
+                
+                const previewMesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), material);
+                previewMesh.userData.isPreviewBall = true;
+                previewMesh.userData.rosterIndex = index;
+                
+                // Position in line formation (local coordinates)
+                previewMesh.position.x = index * 1.0 - ((previewRoster.length - 1) * 0.5);
+                previewMesh.position.y = 0.5;
+                previewMesh.position.z = 0;
+                
+                group.add(previewMesh);
+            });
+        }
+
+        function updateAllBallSetPreviews() {
+            // Update preview balls for all ball sets when roster changes
+            const ballSets = trackPieces.filter(p => p.type === 'ball-set');
+            ballSets.forEach(ballSet => {
+                addPreviewBallsToSet(ballSet.group);
+            });
+        }
+
+        function clearPreviewBalls() {
+            // Preview balls are now part of ball set groups, so they'll be cleared when ball sets are removed
+            // This function is mainly for race mode transitions
+        }
+
+        function recreatePreviewBalls() {
+            // Update all ball set previews when called
+            updateAllBallSetPreviews();
+        }
+
         function updateRaceUI() {
             const uiContainer = document.getElementById('ui-container');
             const startBtn = document.getElementById('start-race-btn');
             const restartBtn = document.getElementById('restart-race-btn');
             const editBtn = document.getElementById('edit-track-btn');
             const speedControl = document.getElementById('camera-speed-control');
-            const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #toggle-transform-btn, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #save-track-btn, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
+            const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #toggle-transform-btn, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #union-btn, #subtract-btn, #intersect-btn, #save-track-btn, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
             const editorLabels = document.querySelectorAll('label[for="add-custom-input"], label[for="load-track-input"]');
             const fileInputs = document.querySelectorAll('#add-custom-input, #load-track-input');
             const viewcube = document.getElementById('viewcube');
+            const objectTreeSection = document.getElementById('object-tree-section');
 
             if (isRaceMode) {
                 startBtn.style.display = 'none';
@@ -4007,6 +4259,7 @@
                 editorLabels.forEach(l => l.style.display = 'none');
                 fileInputs.forEach(f => f.style.display = 'none');
                 if (viewcube) viewcube.style.display = 'none';
+                // Object tree section handled by main UI container visibility
             } else {
                 startBtn.style.display = 'block';
                 restartBtn.style.display = 'none';
@@ -4017,6 +4270,627 @@
                 // Keep file inputs hidden - they should only appear when triggered
                 fileInputs.forEach(f => f.style.display = 'none');
                 if (viewcube) viewcube.style.display = 'block';
+            }
+        }
+
+        function togglePaintMode() {
+            paintMode = !paintMode;
+            const paintBtn = document.getElementById('toggle-paint-btn');
+            const transformBtn = document.getElementById('toggle-transform-btn');
+            
+            if (paintMode) {
+                // Completely disable transform mode when entering paint mode
+                transformControls.enabled = false;
+                transformControls.visible = false;
+                safeDetachTransformControls();
+                transformBtn.textContent = '🎯 Transform';
+                transformBtn.style.background = '#4a4a4a';
+                
+                paintBtn.textContent = '🖌️ Exit Paint';
+                paintBtn.style.background = '#28a745';
+                
+                // Open materials menu automatically
+                const materialEditorPanel = document.getElementById('material-editor-panel');
+                if (materialEditorPanel) {
+                    materialEditorPanel.style.display = 'block';
+                }
+                
+                showMessage('Paint mode active - click on surfaces to apply materials. Materials menu opened automatically.', 'info');
+            } else {
+                paintBtn.textContent = '🖌️ Paint';
+                paintBtn.style.background = '#e74c3c';
+                
+                // Close materials menu when exiting paint mode
+                const materialEditorPanel = document.getElementById('material-editor-panel');
+                if (materialEditorPanel) {
+                    materialEditorPanel.style.display = 'none';
+                }
+                
+                // Clear any selected face
+                clearFaceSelection();
+                
+                showMessage('Paint mode disabled', 'info');
+            }
+        }
+
+        function selectFaceForPainting(mesh, faceIndex, intersectionPoint) {
+            // Clear previous face selection
+            clearFaceSelection();
+            
+            // Create wireframe for the specific face
+            const geometry = mesh.geometry;
+            const position = geometry.attributes.position;
+            
+            // Get the face vertices
+            const faceVertices = [];
+            const face = geometry.index ? 
+                [geometry.index.getX(faceIndex * 3), geometry.index.getX(faceIndex * 3 + 1), geometry.index.getX(faceIndex * 3 + 2)] :
+                [faceIndex * 3, faceIndex * 3 + 1, faceIndex * 3 + 2];
+            
+            for (let i = 0; i < 3; i++) {
+                const vertex = new THREE.Vector3();
+                vertex.fromBufferAttribute(position, face[i]);
+                faceVertices.push(vertex);
+            }
+            
+            // Create triangle outline
+            const wireframeGeometry = new THREE.BufferGeometry();
+            const wireframePositions = new Float32Array([
+                faceVertices[0].x, faceVertices[0].y, faceVertices[0].z,
+                faceVertices[1].x, faceVertices[1].y, faceVertices[1].z,
+                faceVertices[1].x, faceVertices[1].y, faceVertices[1].z,
+                faceVertices[2].x, faceVertices[2].y, faceVertices[2].z,
+                faceVertices[2].x, faceVertices[2].y, faceVertices[2].z,
+                faceVertices[0].x, faceVertices[0].y, faceVertices[0].z
+            ]);
+            
+            wireframeGeometry.setAttribute('position', new THREE.BufferAttribute(wireframePositions, 3));
+            
+            const wireframeMaterial = new THREE.LineBasicMaterial({
+                color: 0xffff00, // Yellow for face selection
+                transparent: true,
+                opacity: 0.8,
+                linewidth: 3
+            });
+            
+            faceWireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+            
+            // Copy transform from the original mesh
+            faceWireframe.position.copy(mesh.position);
+            faceWireframe.rotation.copy(mesh.rotation);
+            faceWireframe.scale.copy(mesh.scale);
+            
+            mesh.parent.add(faceWireframe);
+            selectedFace = { mesh, faceIndex };
+        }
+        
+        function clearFaceSelection() {
+            if (faceWireframe) {
+                faceWireframe.parent.remove(faceWireframe);
+                faceWireframe.geometry.dispose();
+                faceWireframe.material.dispose();
+                faceWireframe = null;
+            }
+            selectedFace = null;
+        }
+        
+        function performBooleanOperation(operation) {
+            if (operation === 'subtract') {
+                // For subtract, need targets and tools
+                if (targetPieces.length === 0 || toolPieces.length === 0) {
+                    showMessage('For subtract: select target pieces (Shift+click) and tool pieces (Alt+click)', 'error');
+                    return;
+                }
+                performSubtractOperation();
+            } else {
+                // For union and intersect, use traditional 2-piece selection
+                if (selectedPieces.length !== 2) {
+                    showMessage('Please select exactly 2 pieces for Union/Intersect operations', 'error');
+                    return;
+                }
+                performUnionIntersectOperation(operation);
+            }
+        }
+        
+        function performSubtractOperation() {
+            console.log('Starting simple subtract operation (no CSG library)');
+            
+            const newPieces = [];
+            
+            // Process each target piece
+            targetPieces.forEach(targetPiece => {
+                const targetMesh = targetPiece.group.children.find(child => child.isMesh);
+                if (!targetMesh) return;
+
+                // Create a modified version of the target geometry
+                const resultGeometry = createSimpleSubtractResult(targetMesh.geometry, targetPiece, toolPieces);
+                const resultMaterial = targetMesh.material.clone();
+
+                const resultMesh = new THREE.Mesh(resultGeometry, resultMaterial);
+                const resultGroup = new THREE.Group();
+                resultGroup.add(resultMesh);
+                resultGroup.userData.isTrackPiece = true;
+
+                // Position the result exactly like the original target
+                resultGroup.position.copy(targetPiece.group.position);
+                resultGroup.quaternion.copy(targetPiece.group.quaternion);
+                resultGroup.scale.copy(targetPiece.group.scale);
+
+                scene.add(resultGroup);
+
+                const newPiece = {
+                    group: resultGroup,
+                    type: 'subtract_result',
+                    physicsBodies: [],
+                    materialData: targetPiece.materialData
+                };
+                trackPieces.push(newPiece);
+                updatePhysicsForPiece(newPiece);
+                newPieces.push(newPiece);
+            });
+
+            // Remove original target and tool pieces
+            [...targetPieces, ...toolPieces].forEach(p => removePiece(p));
+            
+            clearTargetToolSelection();
+            clearAllSelections();
+            
+            // Select all newly created pieces
+            selectedPieces = newPieces;
+            refreshAllHighlights();
+            updateMultiSelectGroup();
+            updateSelectionUI();
+            updateObjectTree();
+            showMessage(`Simple subtract complete! Created ${newPieces.length} modified piece(s).`, 'success');
+        }
+        
+        // Simple subtract that removes triangles based on proximity to tool pieces
+        function createSimpleSubtractResult(targetGeometry, targetPiece, toolPieces) {
+            console.log('Creating simple subtract result');
+            
+            const targetPositions = targetGeometry.attributes.position.array;
+            const resultPositions = [];
+            
+            // Get tool positions in world space
+            const toolBoxes = [];
+            toolPieces.forEach(toolPiece => {
+                const toolMesh = toolPiece.group.children.find(child => child.isMesh);
+                if (!toolMesh) return;
+                
+                toolPiece.group.updateMatrixWorld();
+                const worldMatrix = toolPiece.group.matrixWorld;
+                
+                // Get tool bounding box
+                const toolBox = new THREE.Box3();
+                toolMesh.geometry.computeBoundingBox();
+                toolBox.copy(toolMesh.geometry.boundingBox);
+                toolBox.applyMatrix4(worldMatrix);
+                toolBox.expandByScalar(2.0); // Moderate expansion for realistic cutting
+                
+                toolBoxes.push(toolBox);
+            });
+            
+            if (toolBoxes.length === 0) {
+                return targetGeometry.clone();
+            }
+            
+            // Transform target geometry to world space for testing
+            targetPiece.group.updateMatrixWorld();
+            const targetWorldMatrix = targetPiece.group.matrixWorld;
+            
+            let removedCount = 0;
+            let keptCount = 0;
+            
+            // Process each triangle
+            for (let i = 0; i < targetPositions.length; i += 9) {
+                // Get triangle vertices in local space
+                const v1 = new THREE.Vector3(targetPositions[i], targetPositions[i + 1], targetPositions[i + 2]);
+                const v2 = new THREE.Vector3(targetPositions[i + 3], targetPositions[i + 4], targetPositions[i + 5]);
+                const v3 = new THREE.Vector3(targetPositions[i + 6], targetPositions[i + 7], targetPositions[i + 8]);
+                
+                // Transform to world space
+                v1.applyMatrix4(targetWorldMatrix);
+                v2.applyMatrix4(targetWorldMatrix);
+                v3.applyMatrix4(targetWorldMatrix);
+                
+                // Check if triangle should be removed
+                let shouldRemove = false;
+                for (const toolBox of toolBoxes) {
+                    // Count vertices inside this tool box
+                    let insideCount = 0;
+                    if (toolBox.containsPoint(v1)) insideCount++;
+                    if (toolBox.containsPoint(v2)) insideCount++;
+                    if (toolBox.containsPoint(v3)) insideCount++;
+                    
+                    // Remove triangle only if most vertices are inside (more conservative)
+                    if (insideCount >= 2) {
+                        shouldRemove = true;
+                        break;
+                    }
+                }
+                
+                if (!shouldRemove) {
+                    // Keep triangle (use original local coordinates)
+                    resultPositions.push(
+                        targetPositions[i], targetPositions[i + 1], targetPositions[i + 2],
+                        targetPositions[i + 3], targetPositions[i + 4], targetPositions[i + 5],
+                        targetPositions[i + 6], targetPositions[i + 7], targetPositions[i + 8]
+                    );
+                    keptCount++;
+                } else {
+                    removedCount++;
+                }
+            }
+            
+            console.log(`Simple subtract: removed ${removedCount} triangles, kept ${keptCount}`);
+            console.log('Tool boxes:', toolBoxes.map(box => ({
+                min: `(${box.min.x.toFixed(1)}, ${box.min.y.toFixed(1)}, ${box.min.z.toFixed(1)})`,
+                max: `(${box.max.x.toFixed(1)}, ${box.max.y.toFixed(1)}, ${box.max.z.toFixed(1)})`
+            })));
+            
+            // Sample a few target vertices in world space
+            console.log('Sample target vertices (world space):');
+            for (let i = 0; i < Math.min(targetPositions.length, 9); i += 9) {
+                const v1 = new THREE.Vector3(targetPositions[i], targetPositions[i + 1], targetPositions[i + 2]);
+                v1.applyMatrix4(targetWorldMatrix);
+                console.log(`Vertex: (${v1.x.toFixed(1)}, ${v1.y.toFixed(1)}, ${v1.z.toFixed(1)})`);
+            }
+            
+            if (resultPositions.length === 0) {
+                console.log('All triangles removed, creating placeholder');
+                return new THREE.BoxGeometry(0.1, 0.1, 0.1);
+            }
+            
+            const result = new THREE.BufferGeometry();
+            result.setAttribute('position', new THREE.Float32BufferAttribute(resultPositions, 3));
+            result.computeVertexNormals();
+            
+            return result;
+        }
+        
+        function performUnionIntersectOperation(operation) {
+            const [pieceA, pieceB] = selectedPieces;
+            const meshA = pieceA.group.children.find(child => child.isMesh);
+            const meshB = pieceB.group.children.find(child => child.isMesh);
+
+            if (!meshA || !meshB) {
+                showMessage('Selected pieces must contain meshes', 'error');
+                return;
+            }
+
+            // Create brushes from the original, untransformed geometries.
+            const geomA = meshA.geometry.clone();
+            const geomB = meshB.geometry.clone();
+            
+            // Prepare geometries for BVH creation
+            if (!geomA.index) {
+                geomA.setIndex(null); // Force non-indexed
+            }
+            if (!geomB.index) {
+                geomB.setIndex(null); // Force non-indexed  
+            }
+            
+            // Ensure normals exist
+            if (!geomA.attributes.normal) {
+                geomA.computeVertexNormals();
+            }
+            if (!geomB.attributes.normal) {
+                geomB.computeVertexNormals();
+            }
+            
+            // Create BVH trees with explicit options
+            try {
+                geomA.boundsTree = new MeshBVH(geomA, { lazyGeneration: false });
+                geomB.boundsTree = new MeshBVH(geomB, { lazyGeneration: false });
+                console.log('BVH trees created successfully');
+            } catch (error) {
+                console.error('BVH creation failed:', error);
+                showMessage('BVH tree creation failed - CSG may not work correctly', 'warning');
+            }
+            
+            const brushA = new Brush(geomA);
+            const brushB = new Brush(geomB);
+
+            // Apply the world matrices of the pieces to the brushes.
+            pieceA.group.updateMatrixWorld();
+            pieceB.group.updateMatrixWorld();
+            brushA.matrix.copy(pieceA.group.matrixWorld);
+            brushB.matrix.copy(pieceB.group.matrixWorld);
+
+            // Perform the CSG operation in world space.
+            const csgOperation = operation === 'union' ? ADDITION : INTERSECTION;
+            let resultBrush = null;
+            
+            try {
+                resultBrush = csgEvaluator.evaluate(brushA, brushB, csgOperation);
+            } catch (error) {
+                console.error('CSG operation failed, using fallback:', error);
+                // Fallback to simple merge for union, or original geometry for intersection
+                if (operation === 'union') {
+                    // Simple union: merge both geometries in world space
+                    const worldGeomA = geomA.clone();
+                    const worldGeomB = geomB.clone();
+                    worldGeomA.applyMatrix4(pieceA.group.matrixWorld);
+                    worldGeomB.applyMatrix4(pieceB.group.matrixWorld);
+                    
+                    const mergedGeometry = BufferGeometryUtils.mergeGeometries([worldGeomA, worldGeomB]);
+                    const inverseMatrix = pieceA.group.matrixWorld.clone().invert();
+                    mergedGeometry.applyMatrix4(inverseMatrix);
+                    mergedGeometry.computeVertexNormals();
+                    
+                    // Create a result that looks like a CSG result
+                    resultBrush = { geometry: mergedGeometry };
+                } else {
+                    // For intersection, just return the first geometry as fallback
+                    resultBrush = { geometry: geomA };
+                }
+            }
+
+            if (resultBrush && resultBrush.geometry) {
+                const resultGeometry = resultBrush.geometry;
+                // The material from the first-selected piece is preserved.
+                const resultMaterial = meshA.material.clone();
+
+                // The resulting geometry is in WORLD SPACE. We transform it back to
+                // the local space of a new group, which will be positioned where pieceA was.
+                const inverseMatrix = pieceA.group.matrixWorld.clone().invert();
+                resultGeometry.applyMatrix4(inverseMatrix);
+                resultGeometry.computeVertexNormals();
+
+                const resultMesh = new THREE.Mesh(resultGeometry, resultMaterial);
+                const resultGroup = new THREE.Group();
+                resultGroup.add(resultMesh);
+                resultGroup.userData.isTrackPiece = true;
+
+                // Position the new group exactly where pieceA was.
+                resultGroup.position.copy(pieceA.group.position);
+                resultGroup.quaternion.copy(pieceA.group.quaternion);
+                resultGroup.scale.copy(pieceA.group.scale);
+
+                scene.add(resultGroup);
+
+                const newPiece = {
+                    group: resultGroup,
+                    type: `${operation}_result`,
+                    physicsBodies: [],
+                    materialData: pieceA.materialData // Inherit material data
+                };
+
+                trackPieces.push(newPiece);
+                updatePhysicsForPiece(newPiece);
+
+                // Remove original pieces.
+                [pieceA, pieceB].forEach(p => removePiece(p));
+                
+                // Select the new result piece.
+                clearAllSelections();
+                selectedPieces = [newPiece];
+                highlightPiece(newPiece, false);
+                transformControls.attach(newPiece.group);
+                updateSelectionUI();
+                updateObjectTree();
+                showMessage(`${operation} operation successful!`, 'success');
+
+            } else {
+                showMessage(`${operation} operation failed. The objects might not overlap correctly.`, 'error');
+            }
+        }
+        
+        function clearTargetToolSelection() {
+            // Clear highlights from target/tool pieces
+            targetPieces.forEach(piece => clearPieceSelection(piece));
+            toolPieces.forEach(piece => clearPieceSelection(piece));
+            
+            targetPieces = [];
+            toolPieces = [];
+            updateTargetToolUI();
+        }
+        
+        function highlightAsTarget(piece) {
+            const mesh = piece.group.children[0];
+            if (mesh && mesh.isMesh && mesh.geometry) {
+                // Create red wireframe for targets
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                const wireframeMaterial = new THREE.LineBasicMaterial({
+                    color: 0xff0000, // Red for targets
+                    transparent: true,
+                    opacity: 0.8,
+                    linewidth: 2
+                });
+                
+                const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+                
+                // Copy transform from the original mesh
+                wireframe.position.copy(mesh.position);
+                wireframe.rotation.copy(mesh.rotation);
+                wireframe.scale.copy(mesh.scale);
+                
+                // Store wireframe for later removal
+                piece.wireframeOutline = wireframe;
+                piece.group.add(wireframe);
+            }
+        }
+        
+        function highlightAsTool(piece) {
+            const mesh = piece.group.children[0];
+            if (mesh && mesh.isMesh && mesh.geometry) {
+                // Create blue wireframe for tools
+                const wireframeGeometry = new THREE.WireframeGeometry(mesh.geometry);
+                const wireframeMaterial = new THREE.LineBasicMaterial({
+                    color: 0x0088ff, // Blue for tools
+                    transparent: true,
+                    opacity: 0.8,
+                    linewidth: 2
+                });
+                
+                const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+                
+                // Copy transform from the original mesh
+                wireframe.position.copy(mesh.position);
+                wireframe.rotation.copy(mesh.rotation);
+                wireframe.scale.copy(mesh.scale);
+                
+                // Store wireframe for later removal
+                piece.wireframeOutline = wireframe;
+                piece.group.add(wireframe);
+            }
+        }
+        
+        function updateTargetToolUI() {
+            const targetCount = document.getElementById('target-count');
+            const toolCount = document.getElementById('tool-count');
+            const targetToolInfo = document.getElementById('target-tool-info');
+            
+            if (targetCount) targetCount.textContent = targetPieces.length;
+            if (toolCount) toolCount.textContent = toolPieces.length;
+            
+            // Show/hide the info panel
+            if (targetToolInfo) {
+                targetToolInfo.style.display = (targetPieces.length > 0 || toolPieces.length > 0) ? 'block' : 'none';
+            }
+        }
+
+        function handlePaintClick(event) {
+            // Don't paint if Ctrl is held (user might want to do selection/transform operations)
+            if (event.ctrlKey || event.metaKey) return;
+            
+            // Set up raycaster for paint click
+            pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            raycaster.setFromCamera(pointer, camera);
+            
+            // Get all meshes from track pieces for paint raycast
+            const paintableObjects = [];
+            trackPieces.forEach(p => {
+                p.group.traverse((child) => {
+                    if (child.isMesh && !child.userData.isPreviewBall) {
+                        paintableObjects.push(child);
+                    }
+                });
+            });
+            
+            const intersects = raycaster.intersectObjects(paintableObjects, false);
+            
+            if (intersects.length > 0) {
+                const intersection = intersects[0];
+                const intersectedMesh = intersection.object;
+                
+                if (event.shiftKey) {
+                    // Shift+click to select face for painting
+                    selectFaceForPainting(intersectedMesh, intersection.faceIndex, intersection.point);
+                    showMessage('Face selected for painting. Click without Shift to apply material.', 'info');
+                } else if (selectedFace) {
+                    // Apply material to selected face
+                    const materialSettings = getCurrentMaterialSettings();
+                    applyPaintToMesh(selectedFace.mesh, materialSettings);
+                    clearFaceSelection();
+                    showMessage('Material applied to selected face!', 'success');
+                } else {
+                    // Apply material to entire mesh
+                    const materialSettings = getCurrentMaterialSettings();
+                    applyPaintToMesh(intersectedMesh, materialSettings);
+                    showMessage('Material applied to surface!', 'success');
+                }
+            }
+        }
+
+        function getCurrentMaterialSettings() {
+            return {
+                color: document.getElementById('piece-color')?.value || '#ffffff',
+                metalness: parseFloat(document.getElementById('piece-metalness')?.value || 0),
+                roughness: parseFloat(document.getElementById('piece-roughness')?.value || 0.5),
+                transparency: parseFloat(document.getElementById('piece-transparency')?.value || 0),
+                emissive: parseFloat(document.getElementById('piece-emissive')?.value || 0),
+                emissiveColor: document.getElementById('piece-emissive-color')?.value || '#ffffff',
+                textureType: document.getElementById('piece-texture-type')?.value || 'none'
+            };
+        }
+
+        function applyPaintToMesh(mesh, settings) {
+            // Create new material based on settings
+            const material = new THREE.MeshStandardMaterial({
+                color: settings.color,
+                metalness: settings.metalness,
+                roughness: settings.roughness,
+                transparent: settings.transparency > 0,
+                opacity: 1 - settings.transparency
+            });
+
+            // Apply emissive properties if specified
+            if (settings.emissive > 0) {
+                material.emissive = new THREE.Color(settings.emissiveColor);
+                material.emissiveIntensity = settings.emissive;
+            }
+
+            // Handle texture application
+            if (settings.textureType && settings.textureType !== 'none') {
+                applyTextureToMaterial(material, settings);
+            }
+
+            // Apply the new material to the mesh
+            mesh.material = material;
+            mesh.material.needsUpdate = true;
+        }
+
+        function applyTextureToMaterial(material, settings) {
+            let texture = null;
+            
+            if (settings.textureType === 'upload' && window.currentTextureData) {
+                // Load from uploaded texture
+                const loader = new THREE.TextureLoader();
+                texture = loader.load(window.currentTextureData);
+            } else {
+                // Generate procedural texture
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.fillStyle = settings.color;
+                ctx.fillRect(0, 0, 512, 512);
+                
+                ctx.globalCompositeOperation = 'overlay';
+                
+                switch (settings.textureType) {
+                    case 'dots':
+                        ctx.fillStyle = '#ffffff';
+                        for (let i = 0; i < 40; i++) {
+                            const x = Math.random() * 512;
+                            const y = Math.random() * 512;
+                            const radius = 15 + Math.random() * 10;
+                            ctx.beginPath();
+                            ctx.arc(x, y, radius, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        break;
+                    case 'stripes':
+                        ctx.fillStyle = '#ffffff';
+                        for (let i = 0; i < 512; i += 40) {
+                            ctx.fillRect(i, 0, 20, 512);
+                        }
+                        break;
+                    case 'marble':
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 3;
+                        for (let i = 0; i < 80; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(Math.random() * 512, Math.random() * 512);
+                            ctx.quadraticCurveTo(
+                                Math.random() * 512, Math.random() * 512,
+                                Math.random() * 512, Math.random() * 512
+                            );
+                            ctx.stroke();
+                        }
+                        break;
+                }
+                
+                texture = new THREE.CanvasTexture(canvas);
+            }
+            
+            if (texture) {
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(2, 2);
+                material.map = texture;
             }
         }
 
@@ -4420,7 +5294,7 @@
             document.getElementById('tournament-panel').style.display = 'none';
             isRaceMode = true;
             updateRaceUI();
-            transformControls.detach();
+            safeDetachTransformControls();
             transformControls.visible = false;
 
             // Configure orbit controls for race mode
@@ -4437,7 +5311,7 @@
                 // Clear current track and load new one
                 trackPieces.forEach(p => { scene.remove(p.group); p.physicsBodies.forEach(b => world.removeBody(b)); });
                 trackPieces = [];
-                transformControls.detach();
+                safeDetachTransformControls();
 
                 const actualTrackData = trackData.data;
                 
@@ -4620,9 +5494,6 @@
             
             rosterCount.textContent = raceRoster.length;
             rosterList.innerHTML = '';
-            
-            // Update ball set previews when roster changes
-            updateAllBallSetPreviews();
 
             raceRoster.forEach((ball, index) => {
                 const item = document.createElement('div');
@@ -4652,6 +5523,9 @@
             
             // Update ballCount for backwards compatibility
             ballCount = raceRoster.length;
+            
+            // Update ball set previews when roster changes
+            updateAllBallSetPreviews();
         }
 
         function removeFromRoster(index) {
@@ -5087,92 +5961,9 @@
 
         // ============= AFFECTOR SYSTEM =============
         
-        function checkAffectorZones() {
-            marbles.forEach(marble => {
-                if (marble.finished) return;
-                
-                trackPieces.forEach(piece => {
-                    if (!piece.isAffector) return;
-                    
-                    // Check if marble is inside affector zone
-                    const marblePos = marble.mesh.position;
-                    const affectorPos = piece.group.position;
-                    const affectorScale = piece.group.scale;
-                    
-                    // Simple bounding box check (can be made more precise later)
-                    const relativePos = marblePos.clone().sub(affectorPos);
-                    
-                    let inside = false;
-                    if (piece.affectorType === 'zero-g' || piece.affectorType === 'moon-g') {
-                        // Spherical zones
-                        const distance = relativePos.length();
-                        const radius = Math.max(affectorScale.x, affectorScale.y, affectorScale.z) * 5; // Base radius from sphere
-                        inside = distance < radius;
-                    } else {
-                        // Box zones
-                        const bounds = {
-                            x: Math.max(affectorScale.x * 8, affectorScale.x * 10) / 2, // Based on geometry size
-                            y: Math.max(affectorScale.y * 4, affectorScale.y * 2) / 2,
-                            z: Math.max(affectorScale.z * 8, affectorScale.z * 6) / 2
-                        };
-                        
-                        inside = Math.abs(relativePos.x) < bounds.x && 
-                                Math.abs(relativePos.y) < bounds.y && 
-                                Math.abs(relativePos.z) < bounds.z;
-                    }
-                    
-                    if (inside) {
-                        applyAffectorEffect(marble, piece);
-                    }
-                });
-            });
-        }
-
-        function checkBallCollisions() {
-            // Check for collisions between marbles of the same type
-            for (let i = 0; i < marbles.length; i++) {
-                for (let j = i + 1; j < marbles.length; j++) {
-                    const marble1 = marbles[i];
-                    const marble2 = marbles[j];
-                    
-                    if (marble1.finished || marble2.finished) continue;
-                    
-                    const distance = marble1.mesh.position.distanceTo(marble2.mesh.position);
-                    const collisionDistance = 1.0; // Collision radius
-                    
-                    if (distance < collisionDistance) {
-                        // Check if marbles are of the same type (same ball name/type)
-                        if (marble1.ballType === marble2.ballType) {
-                            // When same-type marbles collide, switch camera focus to the one that has traveled further
-                            const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
-                            
-                            let marble1Distance = 0;
-                            let marble2Distance = 0;
-                            
-                            if (marble1.ballSetIndex < placementBalls.length) {
-                                const placementBall1 = placementBalls[marble1.ballSetIndex];
-                                marble1Distance = marble1.mesh.position.distanceTo(placementBall1.group.position);
-                            }
-                            
-                            if (marble2.ballSetIndex < placementBalls.length) {
-                                const placementBall2 = placementBalls[marble2.ballSetIndex];
-                                marble2Distance = marble2.mesh.position.distanceTo(placementBall2.group.position);
-                            }
-                            
-                            // Force camera to focus on the marble that has traveled further
-                            const furtherMarble = marble1Distance > marble2Distance ? marble1 : marble2;
-                            if (furtherMarble !== previousLeadMarble) {
-                                previousLeadMarble = furtherMarble;
-                                cameraTransitionTime = 0; // Force immediate camera transition
-                                console.log(`Camera switching to ${furtherMarble.name} due to collision with same-type marble`);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         function checkCameraZones() {
+            if (!isRaceMode) return;
+            
             marbles.forEach(marble => {
                 if (marble.finished) return;
                 
@@ -5190,13 +5981,13 @@
                     // Camera trigger zone (rectangular area matching the box geometry)
                     const bounds = {
                         x: cameraScale.x * 2, // Half width of box (4 * 2 / 2)
-                        y: cameraScale.y * 3, // Height of box (6 * 3 / 2)
+                        y: cameraScale.y * 3, // Half height of box (6 * 3 / 2) 
                         z: cameraScale.z * 2  // Half depth of box (4 * 2 / 2)
                     };
                     
-                    const inside = Math.abs(relativePos.x) <= bounds.x && 
-                                  Math.abs(relativePos.y) <= bounds.y && 
-                                  Math.abs(relativePos.z) <= bounds.z;
+                    const inside = Math.abs(relativePos.x) < bounds.x && 
+                                  Math.abs(relativePos.y) < bounds.y &&
+                                  Math.abs(relativePos.z) < bounds.z;
                     
                     if (inside) {
                         applyCameraEffect(marble, piece);
@@ -5271,6 +6062,47 @@
             }
         }
         
+        function checkAffectorZones() {
+            marbles.forEach(marble => {
+                if (marble.finished) return;
+                
+                trackPieces.forEach(piece => {
+                    if (!piece.isAffector) return;
+                    
+                    // Check if marble is inside affector zone
+                    const marblePos = marble.mesh.position;
+                    const affectorPos = piece.group.position;
+                    const affectorScale = piece.group.scale;
+                    
+                    // Simple bounding box check (can be made more precise later)
+                    const relativePos = marblePos.clone().sub(affectorPos);
+                    
+                    let inside = false;
+                    if (piece.affectorType === 'zero-g' || piece.affectorType === 'moon-g') {
+                        // Spherical zones
+                        const distance = relativePos.length();
+                        const radius = Math.max(affectorScale.x, affectorScale.y, affectorScale.z) * 5; // Base radius from sphere
+                        inside = distance < radius;
+                    } else {
+                        // Box zones
+                        const bounds = {
+                            x: Math.max(affectorScale.x * 8, affectorScale.x * 10) / 2, // Based on geometry size
+                            y: Math.max(affectorScale.y * 4, affectorScale.y * 2) / 2,
+                            z: Math.max(affectorScale.z * 8, affectorScale.z * 6) / 2
+                        };
+                        
+                        inside = Math.abs(relativePos.x) < bounds.x && 
+                                Math.abs(relativePos.y) < bounds.y && 
+                                Math.abs(relativePos.z) < bounds.z;
+                    }
+                    
+                    if (inside) {
+                        applyAffectorEffect(marble, piece);
+                    }
+                });
+            });
+        }
+        
         function applyAffectorEffect(marble, affector) {
             const intensity = affector.affectorSettings.strength || 5; // 0-10 scale
             const body = marble.body;
@@ -5341,6 +6173,51 @@
                     body.velocity.x += body.velocity.x * iceMultiplier;
                     body.velocity.z += body.velocity.z * iceMultiplier;
                     break;
+            }
+        }
+        
+        function checkBallCollisions() {
+            // Check for collisions between marbles
+            for (let i = 0; i < marbles.length; i++) {
+                for (let j = i + 1; j < marbles.length; j++) {
+                    const marble1 = marbles[i];
+                    const marble2 = marbles[j];
+                    
+                    if (marble1.finished || marble2.finished) continue;
+                    
+                    // Calculate distance between marbles
+                    const distance = marble1.mesh.position.distanceTo(marble2.mesh.position);
+                    const collisionDistance = 1.0; // Collision radius
+                    
+                    if (distance < collisionDistance) {
+                        // Check if marbles are of the same type (same ball name/type)
+                        if (marble1.ballType === marble2.ballType) {
+                            // When same-type marbles collide, switch camera focus to the one that has traveled further
+                            const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+                            
+                            let marble1Distance = 0;
+                            let marble2Distance = 0;
+                            
+                            if (marble1.ballSetIndex < placementBalls.length) {
+                                const placementBall1 = placementBalls[marble1.ballSetIndex];
+                                marble1Distance = marble1.mesh.position.distanceTo(placementBall1.group.position);
+                            }
+                            
+                            if (marble2.ballSetIndex < placementBalls.length) {
+                                const placementBall2 = placementBalls[marble2.ballSetIndex];
+                                marble2Distance = marble2.mesh.position.distanceTo(placementBall2.group.position);
+                            }
+                            
+                            // Force camera to focus on the marble that has traveled further
+                            const furtherMarble = marble1Distance > marble2Distance ? marble1 : marble2;
+                            if (furtherMarble !== previousLeadMarble) {
+                                previousLeadMarble = furtherMarble;
+                                cameraTransitionTime = 0; // Force immediate camera transition
+                                console.log(`Camera switching to ${furtherMarble.name} due to collision with same-type marble`);
+                            }
+                        }
+                    }
+                }
             }
         }
         
@@ -5697,7 +6574,7 @@
             const nextIndex = (currentIndex + 1) % modes.length;
             cameraMode = modes[nextIndex];
             
-            // Reset camera set control when manually changing camera modes
+            // Reset camera set control when manually changing camera mode
             cameraSetActive = false;
             
             // Camera mode changed - no display update needed for compact button
@@ -5915,6 +6792,7 @@
                         m.nameplate.position.y += 1.5;
                     }
                 });
+                
 
                 checkFinishLine();
                 checkPathTriggers();
@@ -5950,13 +6828,16 @@
                     leadMarble = marbles[0];
                 }
 
-                // Check if lead marble changed
-                if (leadMarble !== previousLeadMarble) {
-                    previousLeadMarble = leadMarble;
-                    cameraTransitionTime = 0; // Start transition
+                // Only use default camera logic if no camera set is active
+                if (!cameraSetActive) {
+                    // Check if lead marble changed
+                    if (leadMarble !== previousLeadMarble) {
+                        previousLeadMarble = leadMarble;
+                        cameraTransitionTime = 0; // Start transition
+                    }
                 }
 
-                if (leadMarble && !raceFinished) {
+                if (leadMarble && !raceFinished && !cameraSetActive) {
                     const marblePosition = leadMarble.mesh.position;
                     const marbleVelocity = leadMarble.body.velocity;
                     
@@ -6024,6 +6905,47 @@
                                 camera.position.y += 3;
                                 camera.lookAt(marblePosition);
                                 break;
+                                
+                            case 'follow-camera-set':
+                                // Follow mode from camera set
+                                const followingCameraSet = trackPieces.find(p => p.isCameraSet && p.followingMarble === leadMarble);
+                                if (followingCameraSet) {
+                                    const followOffset = followingCameraSet.smoothOffset || new THREE.Vector3(10, 8, 10);
+                                    const targetCameraPos = marblePosition.clone().add(followOffset);
+                                    camera.position.lerp(targetCameraPos, deltaTime * 2);
+                                    camera.lookAt(marblePosition);
+                                }
+                                break;
+                                
+                            case 'rigid-camera-set':
+                                // Rigid follow from camera set
+                                const rigidCameraSet = trackPieces.find(p => p.isCameraSet && p.followingMarble === leadMarble);
+                                if (rigidCameraSet) {
+                                    const rigidOffset = new THREE.Vector3().subVectors(
+                                        rigidCameraSet.cameraSettings.position, 
+                                        rigidCameraSet.cameraSettings.target
+                                    );
+                                    camera.position.copy(marblePosition).add(rigidOffset);
+                                    orbitControls.target.copy(marblePosition);
+                                }
+                                break;
+                                
+                            case 'smooth-camera-set':
+                                // Smooth follow from camera set
+                                const smoothCameraSet = trackPieces.find(p => p.isCameraSet && p.followingMarble === leadMarble);
+                                if (smoothCameraSet && smoothCameraSet.smoothOffset) {
+                                    const smoothTargetPos = marblePosition.clone().add(smoothCameraSet.smoothOffset);
+                                    camera.position.lerp(smoothTargetPos, deltaTime * 1.5);
+                                    
+                                    const smoothTargetLook = marblePosition.clone();
+                                    orbitControls.target.lerp(smoothTargetLook, deltaTime * 2);
+                                }
+                                break;
+                                
+                            case 'static-camera-set':
+                                // Static camera set - camera stays at set position/target
+                                // Do nothing - camera position is maintained by transition or already set
+                                break;
                         }
                     }
                 }
@@ -6031,6 +6953,7 @@
                 // Update orbit controls for middle mouse panning
                 orbitControls.update();
             } else {
+                // Edit mode - no physics needed, just orbit controls
                 orbitControls.update();
             }
             
@@ -6083,6 +7006,22 @@
         </div>
     </div>
 
+    <div id="export-dialog" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.95); color: white; padding: 30px; border-radius: 10px; z-index: 200; display: none; border: 2px solid #28a745; box-shadow: 0 0 20px rgba(40, 167, 69, 0.3);">
+        <h3>📦 Export Blueprint</h3>
+        <div>
+            <label for="export-filename">Filename:</label>
+            <input type="text" id="export-filename" placeholder="Enter filename..." value="blueprint" style="width: 250px; padding: 8px; margin: 10px 0; background: #2a2a2a; color: white; border: 1px solid #28a745; border-radius: 4px;">
+            <div style="font-size: 12px; color: #ccc; margin-top: 5px;">
+                .obj extension will be added automatically
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="export-confirm-btn" style="background: #28a745; border-color: #28a745; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer;">📦 Export</button>
+            <button id="export-cancel-btn" style="background: #6c757d; border-color: #6c757d; color: white; padding: 10px 20px; border-radius: 4px; cursor: pointer;">❌ Cancel</button>
+        </div>
+    </div>
+
+
     <!-- Message Notification -->
     <!-- ViewCube Navigation -->
     <div id="viewcube">
@@ -6098,5 +7037,5 @@
 
     <div id="message-notification"></div>
 
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'962ea3098e106c1c',t:'MTc1MzE0MjIwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

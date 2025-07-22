@@ -6,7 +6,9 @@
       "WebFetch(domain:gftruj.github.io)",
       "Bash(grep:*)",
       "Bash(rg:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "WebFetch(domain:unpkg.com)",
+      "WebFetch(domain:app.unpkg.com)"
     ],
     "deny": []
   }

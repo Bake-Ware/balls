@@ -14,7 +14,7 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Obstacles**: Pinned balls, pyramids, cylinders, cubes, prisms, custom .obj models
 - **Physics Affectors**: Water zones, zero gravity, moon gravity, accelerators, brakes, ice surfaces
 - **Camera Sets**: Marble-triggered camera control points with 4 follow modes and position capture
-- **📋 Object Selection Tree**: Hierarchical list of all scene objects with click/ctrl+click selection
+- **📋 Three-Level Object Tree**: Hierarchical organization (Main Type → Specific Type → Instances) with collapsible categories
 - **Multi-Selection**: Ctrl+click to select multiple pieces and transform them together
 - **🔄 Smart Duplication**: Duplicate button + Ctrl+drag to copy while moving
 - **📦 Blueprint Export**: Export selected pieces as merged OBJ files for sharing track sections
@@ -25,14 +25,17 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **ViewCube Navigation**: 3D orientation cube for quick orthographic view switching (Front, Back, Left, Right, Top, Bottom)
 - **Real-time Orientation**: ViewCube reflects current camera position with smooth transitions
 
-### ⚽ Ball Maker & Placement System
+### ⚽ Ball Maker & Advanced Placement System
 - **Complete Customization**: Color, metalness, roughness, glow intensity, glow color
 - **Procedural Textures**: Polka dots, stripes, marble patterns
 - **Ball Roster**: Manage race participants with visual previews
 - **🏁 Flexible Ball Placement**: Use Ball Set pieces to define starting positions anywhere on track
-- **📍 Visual Previews**: Ball Sets show semi-transparent previews of all roster balls in formation
-- **🔄 Dynamic Spawning**: All roster balls spawn in line formations at each Ball Set location
+- **📍 Real-Time Visual Previews**: Ball Sets show semi-transparent previews of all roster balls in formation
+- **🔄 Dynamic Multi-Position Spawning**: All roster balls spawn in line formations at each Ball Set location
 - **⚙️ Rotational Control**: Rotate Ball Sets to orient starting lines in any direction
+- **🎯 Distance-Based Lead Selection**: Camera follows the marble that has traveled furthest from its starting position
+- **⚡ Same-Type Collision Switching**: When marbles of the same type touch, camera switches to the one that traveled further
+- **🏃 Intelligent Ball Tracking**: Each marble tracks its type, starting position, and travel distance for advanced camera logic
 - **Random Generation**: Create random balls with varied properties
 - **Material Physics**: Realistic rendering with PBR materials
 
@@ -53,6 +56,25 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
   - **Position Capture**: Save current viewport camera position with one click
 - **Smooth Transitions**: Cubic easing when switching between lead marbles
 - **Manual Override**: User can take control with mouse/orbit controls or Camera button
+- **Smart Reset**: Camera set control automatically resets when users manually change camera modes
+
+### 📋 Advanced Object Management System
+- **📁 Three-Level Hierarchy**: Main Type → Specific Type → Individual Instances
+  - **Track Pieces**: Start, straight, curve, end, pipe, half-pipe, quarter-bowl, ball-set
+  - **Obstacles**: Ball, pyramid, cylinder, cube, prism
+  - **Affector Zones**: Water, gravity, accelerator, brake, ice zones
+  - **Lighting**: Spot lights, point lights, strobes, particle generators
+  - **Camera System**: Camera set pieces for dynamic filming
+  - **Custom**: Imported .obj files and other custom objects
+- **🔍 Smart Organization**: Objects automatically categorized by type and function
+- **📊 Instance Counting**: Shows quantity of each object type with real-time updates
+- **🎯 Multi-Level Selection**: Click main categories, specific types, or individual instances
+- **✏️ Custom Naming**: Double-click any object to give it a custom name
+- **💾 Persistent Names**: Custom object names saved and loaded with track files
+- **🔄 Collapsible Interface**: Each hierarchy level remembers its expansion state
+- **🎨 Visual Feedback**: Selected objects highlighted across both tree and 3D scene
+- **⌨️ Keyboard Integration**: Full support for Ctrl+click multi-selection
+- **🔍 Type Filtering**: Easily find all instances of a specific piece type
 
 ### 🌌 Physics Affector Zones
 - **💧 Water Zone**: Simulates buoyancy and water resistance
@@ -102,6 +124,8 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 ### 📋 Object Management & Export System
 - **📜 Object Selection Tree**: Hierarchical list showing all scene objects with visual icons
 - **🎯 Smart Selection**: Click to select single objects, Ctrl+click for multi-selection
+- **✏️ Object Renaming**: Double-click tree items to give pieces custom names
+- **🖱️ Draggable Panel**: Drag the tree panel by its header to position it anywhere on screen
 - **🔄 Enhanced Duplication**: 
   - **📋 Duplicate Button**: Creates copies 2 units above originals with all properties
   - **⌨️ Ctrl+Drag**: Hold Ctrl while dragging to move copies instead of originals
@@ -123,9 +147,10 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 
 ### Quick Start
 1. Open `balls.html` in a modern web browser
-2. Use the toolbar to add track pieces (Start → Straight → Curve → End)
-3. Click "Start Race!" to begin
-4. Use "Camera" button to cycle through viewing modes
+2. Use the toolbar to add track pieces (Straight → Curve → End)
+3. Add "🏁 Ball Set" pieces where you want marbles to start racing
+4. Click "Start Race!" to begin (marbles will spawn at all Ball Set locations)
+5. Use "Camera" button to cycle through viewing modes
 
 ### Track Building
 1. **Add Pieces**: Use dropdown selector to add track segments and obstacles
@@ -227,9 +252,11 @@ balls/
 ### Editor Mode
 - **Mouse**: Click to select pieces (3D view or Object Tree)
 - **Ctrl+Click**: Multi-select pieces (3D view or Object Tree)
+- **Double-Click**: Rename pieces in Object Tree
 - **Ctrl+Drag**: Duplicate and move copies of selected pieces
 - **Shift+Drag**: Grid-snapped movement for precise alignment
 - **W/E/R**: Switch transform modes (translate/rotate/scale)
+- **Del**: Delete selected pieces
 - **Mouse Drag**: Transform selected pieces
 - **Middle Mouse**: Pan camera
 - **Scroll**: Zoom camera
@@ -312,6 +339,16 @@ balls/
 6. During races, all marbles spawn in neat lines at each Ball Set location
 7. Great for creating multi-stage races, parallel tracks, or elimination rounds
 
+### Advanced Object Organization
+1. Open "📋 Object Tree" panel to see all scene objects organized hierarchically
+2. Expand main categories like "Track Pieces" to see all track-related objects
+3. Expand specific types like "Straight" to see all individual straight pieces
+4. Click any object in the tree to select it instantly in the 3D scene
+5. Double-click objects to rename them with custom names
+6. Use Ctrl+click to multi-select objects of different types
+7. Each level remembers its expansion state for persistent organization
+8. Perfect for managing complex tracks with hundreds of objects
+
 ## 🐛 Troubleshooting
 
 ### Performance Issues
@@ -323,8 +360,9 @@ balls/
 ### Physics Problems
 - Ensure track pieces are connected properly
 - Check for overlapping geometry
-- Verify start/end platforms are present
+- Verify Ball Set pieces are placed where you want marbles to start
 - Use "Edit Material" to adjust piece materials
+- Check Object Tree to identify and fix problematic pieces
 
 ### Saving/Loading
 - Ensure browser allows file downloads
