@@ -356,6 +356,13 @@
     <div id="ui-container">
         <button id="toggle-menu-btn">☰</button>
         <div class="ui-content">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <a href="https://github.com/Bake-Ware/balls" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 20px;" title="Fork me on GitHub">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                </a>
+            </div>
             <div class="ui-title">➕ Add Pieces</div>
             <select id="piece-type-selector" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px;">
                 <option value="">Select piece type...</option>
@@ -633,7 +640,7 @@
         
         <div class="material-option">
             <label for="piece-color">Color:</label>
-            <input type="color" id="piece-color" value="#449944">
+            <input type="color" id="piece-color" value="#888888">
         </div>
         
         
@@ -652,7 +659,10 @@
             <input type="range" id="piece-bounciness" min="0" max="1" step="0.1" value="0.3">
         </div>
         
-        
+        <div class="material-option" id="ball-set-mass-option" style="display: none;">
+            <label for="ball-set-mass">Ball Mass: <span id="ball-set-mass-value">12</span></label>
+            <input type="range" id="ball-set-mass" min="0.1" max="50" step="0.1" value="12">
+        </div>
         
         <hr style="border-color: #444; margin: 20px 0;">
         
@@ -956,6 +966,7 @@
                 <option value="dots">Polka Dots</option>
                 <option value="stripes">Stripes</option>
                 <option value="marble">Marble</option>
+                <option value="checkered">Checkered</option>
             </select>
             <input type="file" id="face-texture-upload" accept="image/*" style="display: none; margin-top: 10px;">
         </div>
@@ -1089,6 +1100,12 @@
         let cameraSetActive = false; // Track if a camera set is controlling the view
         let pieceNames = new Map(); // Custom names for pieces
         let currentSkyboxData = null;
+        
+        // Undo/Redo System
+        let undoStack = [];
+        let redoStack = [];
+        const MAX_HISTORY_SIZE = 50;
+        let isPerformingUndoRedo = false;
         let multiSelectGroup = null;
         let previousLeadMarble = null;
         let cameraTransitionTime = 0;
@@ -1248,6 +1265,280 @@
             
             // Initialize object tree
             updateObjectTree();
+            
+            // Capture initial state for undo system
+            setTimeout(() => captureState(), 100);
+        }
+
+        // Undo/Redo System Functions
+        function captureState() {
+            if (isPerformingUndoRedo) return; // Don't capture during undo/redo operations
+            
+            const state = {
+                timestamp: Date.now(),
+                trackPieces: trackPieces.map(piece => ({
+                    type: piece.type,
+                    position: piece.group.position.toArray(),
+                    quaternion: piece.group.quaternion.toArray(),
+                    scale: piece.group.scale.toArray(),
+                    materialData: piece.materialData ? {...piece.materialData} : null,
+                    faceMaterials: piece.group.children[0]?.userData?.faceMaterials ? 
+                        Array.from(piece.group.children[0].userData.faceMaterials.entries()) : null,
+                    paintedFaces: piece.group.children[0]?.userData?.paintedFaces ? 
+                        Array.from(piece.group.children[0].userData.paintedFaces.entries()) : null,
+                    rotationSettings: piece.rotationSettings ? {...piece.rotationSettings} : null,
+                    hidden: piece.hidden,
+                    ballMass: piece.ballMass,
+                    raycastMirror: piece.raycastMirror,
+                    isAffector: piece.isAffector,
+                    affectorType: piece.affectorType,
+                    affectorSettings: piece.affectorSettings ? {...piece.affectorSettings} : null,
+                    pathingSettings: piece.pathingSettings ? {...piece.pathingSettings} : null,
+                    isLight: piece.isLight,
+                    lightType: piece.lightType,
+                    lightSettings: piece.lightSettings ? {...piece.lightSettings} : null,
+                    isParticleGen: piece.isParticleGen,
+                    particleSettings: piece.particleSettings ? {...piece.particleSettings} : null,
+                    isCameraSet: piece.isCameraSet,
+                    cameraSettings: piece.cameraSettings ? {...piece.cameraSettings} : null
+                })),
+                pieceNames: Array.from(pieceNames.entries()).map(([piece, name]) => ({
+                    index: trackPieces.indexOf(piece),
+                    name: name
+                })).filter(entry => entry.index !== -1), // Only include pieces that still exist
+                selectedPieces: selectedPieces.map(piece => trackPieces.indexOf(piece)).filter(index => index !== -1)
+            };
+            
+            // Add to undo stack
+            undoStack.push(state);
+            
+            // Limit stack size
+            if (undoStack.length > MAX_HISTORY_SIZE) {
+                undoStack.shift();
+            }
+            
+            // Clear redo stack when new action is performed
+            redoStack.length = 0;
+            
+            return state;
+        }
+        
+        function restoreState(state) {
+            if (!state) return false;
+            
+            isPerformingUndoRedo = true;
+            
+            try {
+                // Clear current scene
+                trackPieces.forEach(piece => {
+                    scene.remove(piece.group);
+                    if (piece.body) {
+                        world.removeBody(piece.body);
+                    }
+                    // Clean up materials
+                    piece.group.traverse(child => {
+                        if (child.material) {
+                            if (Array.isArray(child.material)) {
+                                child.material.forEach(mat => mat.dispose());
+                            } else {
+                                child.material.dispose();
+                            }
+                        }
+                        if (child.geometry) {
+                            child.geometry.dispose();
+                        }
+                    });
+                });
+                
+                trackPieces.length = 0;
+                selectedPieces.length = 0;
+                pieceNames.clear();
+                
+                // Restore track pieces
+                state.trackPieces.forEach(pieceData => {
+                    const transform = {
+                        position: new THREE.Vector3().fromArray(pieceData.position),
+                        quaternion: new THREE.Quaternion().fromArray(pieceData.quaternion),
+                        scale: new THREE.Vector3().fromArray(pieceData.scale)
+                    };
+                    
+                    const piece = addPiece(pieceData.type, transform);
+                    if (!piece) return;
+                    
+                    // Restore all properties
+                    if (pieceData.materialData) piece.materialData = {...pieceData.materialData};
+                    if (pieceData.rotationSettings) piece.rotationSettings = {...pieceData.rotationSettings};
+                    if (pieceData.hidden !== undefined) piece.hidden = pieceData.hidden;
+                    if (pieceData.ballMass !== undefined) piece.ballMass = pieceData.ballMass;
+                    if (pieceData.raycastMirror !== undefined) piece.raycastMirror = pieceData.raycastMirror;
+                    if (pieceData.isAffector !== undefined) piece.isAffector = pieceData.isAffector;
+                    if (pieceData.affectorType !== undefined) piece.affectorType = pieceData.affectorType;
+                    if (pieceData.affectorSettings) piece.affectorSettings = {...pieceData.affectorSettings};
+                    if (pieceData.pathingSettings) piece.pathingSettings = {...pieceData.pathingSettings};
+                    if (pieceData.isLight !== undefined) piece.isLight = pieceData.isLight;
+                    if (pieceData.lightType !== undefined) piece.lightType = pieceData.lightType;
+                    if (pieceData.lightSettings) piece.lightSettings = {...pieceData.lightSettings};
+                    if (pieceData.isParticleGen !== undefined) piece.isParticleGen = pieceData.isParticleGen;
+                    if (pieceData.particleSettings) piece.particleSettings = {...pieceData.particleSettings};
+                    if (pieceData.isCameraSet !== undefined) piece.isCameraSet = pieceData.isCameraSet;
+                    if (pieceData.cameraSettings) piece.cameraSettings = {...pieceData.cameraSettings};
+                    
+                    // Restore face materials and painted faces
+                    const mesh = piece.group.children.find(child => child.isMesh);
+                    if (mesh) {
+                        if (pieceData.faceMaterials) {
+                            mesh.userData.faceMaterials = new Map(pieceData.faceMaterials);
+                        }
+                        if (pieceData.paintedFaces) {
+                            mesh.userData.paintedFaces = new Map(pieceData.paintedFaces);
+                            // Reapply face materials
+                            if (mesh.userData.faceMaterials && mesh.userData.faceMaterials.size > 0) {
+                                restoreFaceMaterials(mesh);
+                            }
+                        }
+                    }
+                });
+                
+                // Restore piece names
+                state.pieceNames.forEach(nameData => {
+                    if (nameData.index < trackPieces.length) {
+                        pieceNames.set(trackPieces[nameData.index], nameData.name);
+                    }
+                });
+                
+                // Restore selection
+                state.selectedPieces.forEach(index => {
+                    if (index < trackPieces.length) {
+                        selectedPieces.push(trackPieces[index]);
+                    }
+                });
+                
+                // Update UI
+                updateObjectTree();
+                updateHiddenObjectVisibility();
+                updateSelectionUI();
+                
+                // Detach transform controls to avoid errors
+                transformControls.detach();
+                
+                return true;
+                
+            } catch (error) {
+                console.error('Error restoring state:', error);
+                showMessage('Error during undo/redo operation', 'error');
+                return false;
+            } finally {
+                isPerformingUndoRedo = false;
+            }
+        }
+        
+        function performUndo() {
+            if (undoStack.length <= 1) { // Need at least 2 states (current + previous)
+                showMessage('Nothing to undo', 'info');
+                return false;
+            }
+            
+            // Move current state to redo stack
+            const currentState = undoStack.pop();
+            redoStack.push(currentState);
+            
+            // Restore previous state (which is now the last item)
+            const previousState = undoStack[undoStack.length - 1];
+            const success = restoreState(previousState);
+            
+            if (success) {
+                showMessage(`Undo successful (${undoStack.length} states remaining)`, 'success');
+            }
+            
+            return success;
+        }
+        
+        function performRedo() {
+            if (redoStack.length === 0) {
+                showMessage('Nothing to redo', 'info');
+                return false;
+            }
+            
+            // Get state from redo stack
+            const redoState = redoStack.pop();
+            const success = restoreState(redoState);
+            
+            if (success) {
+                // Add the restored state back to undo stack
+                undoStack.push(redoState);
+                showMessage(`Redo successful (${redoStack.length} redo states remaining)`, 'success');
+            } else {
+                // Put it back on redo stack if restore failed
+                redoStack.push(redoState);
+            }
+            
+            return success;
+        }
+
+        function generateProceduralTexture(textureType, color) {
+            if (textureType === 'none' || !textureType) return null;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 512, 512);
+            
+            ctx.globalCompositeOperation = 'overlay';
+            
+            switch (textureType) {
+                case 'dots':
+                    ctx.fillStyle = '#ffffff';
+                    for (let i = 0; i < 40; i++) {
+                        const x = Math.random() * 512;
+                        const y = Math.random() * 512;
+                        const radius = 15 + Math.random() * 10;
+                        ctx.beginPath();
+                        ctx.arc(x, y, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    break;
+                case 'stripes':
+                    ctx.fillStyle = '#ffffff';
+                    for (let i = 0; i < 512; i += 40) {
+                        ctx.fillRect(i, 0, 20, 512);
+                    }
+                    break;
+                case 'marble':
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    for (let i = 0; i < 80; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(Math.random() * 512, Math.random() * 512);
+                        ctx.quadraticCurveTo(
+                            Math.random() * 512, Math.random() * 512,
+                            Math.random() * 512, Math.random() * 512
+                        );
+                        ctx.stroke();
+                    }
+                    break;
+                case 'checkered':
+                    // Racing checkered pattern
+                    ctx.fillStyle = '#ffffff';
+                    const squareSize = 64;
+                    for (let x = 0; x < 512; x += squareSize) {
+                        for (let y = 0; y < 512; y += squareSize) {
+                            if ((x / squareSize + y / squareSize) % 2 === 1) {
+                                ctx.fillRect(x, y, squareSize, squareSize);
+                            }
+                        }
+                    }
+                    break;
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(2, 2);
+            
+            return texture;
         }
 
         function addPiece(type, transform, customModelData = null) {
@@ -1275,7 +1566,7 @@
             group.userData = { isTrackPiece: true, type: type };
             
             // Different colors for different piece types
-            let color = 0x449944; // Default green
+            let color = 0x888888; // Default neutral gray
             if (type === 'start') color = 0x4CAF50; // Bright green for start
             if (type === 'end') color = 0xF44336; // Red for end/finish line
             if (type === 'ball') color = 0x2196F3; // Blue for pinned balls
@@ -1562,6 +1853,11 @@
             
             // Affectors don't need collision bodies, they're invisible zones
             if (piece.isAffector) {
+                return;
+            }
+            
+            // Lights and particle generators don't need collision bodies
+            if (piece.lightType || ['spot-light', 'point-light', 'strobe-light', 'directional-light', 'particle-generator'].includes(piece.type)) {
                 return;
             }
             
@@ -2199,6 +2495,11 @@
         }
 
         function removeSelectedPiece() {
+            // Capture state before deletion for undo system
+            if (selectedPieces.length > 0 || transformControls.object) {
+                captureState();
+            }
+            
             if (selectedPieces.length > 0) {
                 selectedPieces.forEach(piece => {
                     transformControls.detach();
@@ -2326,11 +2627,27 @@
             const mesh = piece.group.children[0];
             if (mesh && mesh.isMesh) {
                 // Store original material if not already stored
+                // Skip if mesh has face painting - use the face painting original material instead
                 if (!piece.originalMaterial) {
-                    piece.originalMaterial = mesh.material;
+                    if (mesh.userData.originalMaterial && mesh.userData.paintedFaces) {
+                        // This mesh has face painting - use the original material from face painting system
+                        piece.originalMaterial = mesh.userData.originalMaterial;
+                    } else {
+                        // No face painting - use current material
+                        piece.originalMaterial = mesh.material;
+                    }
                 }
+                
+                // Handle both single materials and material arrays
+                let baseMaterial;
+                if (Array.isArray(piece.originalMaterial)) {
+                    baseMaterial = piece.originalMaterial[0]; // Use first material as base
+                } else {
+                    baseMaterial = piece.originalMaterial;
+                }
+                
                 // Create highlighted material with different effects for single vs multi-select
-                const highlightMaterial = piece.originalMaterial.clone();
+                const highlightMaterial = baseMaterial.clone();
                 
                 if (isMultiSelect) {
                     // Brighter glow for multi-selected objects with animation support
@@ -2347,14 +2664,46 @@
                     highlightMaterial.emissiveIntensity = 0.3;
                 }
                 
-                mesh.material = highlightMaterial;
+                // For face-painted objects, apply highlighting to all materials in the array
+                if (mesh.userData.paintedFaces && mesh.userData.paintedFaces.size > 0 && mesh.userData.materials) {
+                    // Apply highlighting to each material in the face-painted materials array
+                    const highlightedMaterials = mesh.userData.materials.map(mat => {
+                        if (!mat) return mat;
+                        const highlighted = mat.clone();
+                        
+                        if (isMultiSelect) {
+                            highlighted.emissive.setHex(0x00aaff);
+                            highlighted.emissiveIntensity = Math.max(highlighted.emissiveIntensity, 0.6);
+                            highlighted.transparent = true;
+                            highlighted.opacity = Math.min(highlighted.opacity, 0.9);
+                            highlighted.userData.isMultiSelectGlow = true;
+                        } else {
+                            highlighted.emissive.setHex(0x444444);
+                            highlighted.emissiveIntensity = Math.max(highlighted.emissiveIntensity, 0.3);
+                        }
+                        
+                        return highlighted;
+                    });
+                    mesh.material = highlightedMaterials;
+                } else {
+                    // Normal single material highlighting
+                    mesh.material = highlightMaterial;
+                }
             }
         }
 
         function clearPieceSelection(piece) {
             const mesh = piece.group.children[0];
             if (mesh && mesh.isMesh && piece.originalMaterial) {
-                mesh.material = piece.originalMaterial;
+                // If this mesh has face painting, restore the face-painted materials instead
+                if (mesh.userData.paintedFaces && mesh.userData.paintedFaces.size > 0 && mesh.userData.materials) {
+                    // Restore face-painted multi-materials
+                    mesh.material = mesh.userData.materials;
+                    updateGeometryGroups(mesh);
+                } else {
+                    // No face painting - restore original material normally
+                    mesh.material = piece.originalMaterial;
+                }
                 delete piece.originalMaterial;
             }
             // Clean up relative transform data
@@ -2709,6 +3058,9 @@
             document.getElementById('piece-type-selector').addEventListener('change', (e) => {
                 const selectedType = e.target.value;
                 if (selectedType) {
+                    // Capture state before adding piece
+                    captureState();
+                    
                     if (selectedType === 'custom') {
                         // Trigger file input for custom obj
                         document.getElementById('add-custom-input').click();
@@ -2726,6 +3078,9 @@
                 e.target.textContent = transformControls.enabled ? '🎯 Disable Transform' : '🎯 Enable Transform';
                 e.target.style.background = transformControls.enabled ? '#007bff' : '#4a4a4a';
                 if (!transformControls.enabled) transformControls.detach();
+                
+                // Update visibility of hidden objects when transform controls are toggled
+                updateHiddenObjectVisibility();
             });
             document.getElementById('duplicate-piece-btn').addEventListener('click', () => {
                 if (selectedPieces.length > 0) {
@@ -2844,9 +3199,9 @@
                 const piece = trackPieces.find(p => p.group === transformControls.object);
                 if (!piece) return;
                 
-                // Toggle visibility immediately
+                // Set hidden flag and update visibility based on current mode
                 piece.hidden = e.target.checked;
-                piece.group.visible = !e.target.checked;
+                updateHiddenObjectVisibility();
                 
                 showMessage(e.target.checked ? 'Object hidden' : 'Object shown', 'info');
             });
@@ -2910,7 +3265,7 @@
                     } else if (id.startsWith('light-') || id.startsWith('particle-') || id === 'strobe-frequency') {
                         valueId = id + '-value';
                     } else {
-                        valueId = id.replace('piece-', '').replace('-', '-') + '-value';
+                        valueId = id + '-value';
                     }
                     
                     const element = document.getElementById(valueId);
@@ -2942,6 +3297,11 @@
             
             // Real-time updates for color
             document.getElementById('piece-color').addEventListener('input', applyMaterialRealTime);
+            
+            // Ball set mass slider
+            document.getElementById('ball-set-mass').addEventListener('input', (e) => {
+                document.getElementById('ball-set-mass-value').textContent = e.target.value;
+            });
             
             // Real-time updates for light colors
             document.getElementById('light-color').addEventListener('input', applyLightSettingsRealTime);
@@ -3034,10 +3394,19 @@
             let isCtrlPressed = false;
             let hasDuplicated = false; // Track if we've already duplicated this drag session
             
-            // Track ctrl key state
+            // Track ctrl key state and handle undo/redo
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'Control') {
                     isCtrlPressed = true;
+                }
+                
+                // Handle undo/redo shortcuts
+                if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') {
+                    e.preventDefault();
+                    performUndo();
+                } else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'Z' || e.key === 'y')) {
+                    e.preventDefault();
+                    performRedo();
                 }
             });
             
@@ -3090,7 +3459,13 @@
                 }
             });
             
-            transformControls.addEventListener('dragging-changed', event => orbitControls.enabled = !event.value);
+            transformControls.addEventListener('dragging-changed', event => {
+                orbitControls.enabled = !event.value;
+                // Capture state when drag starts (before transformation)
+                if (event.value) {
+                    captureState();
+                }
+            });
             transformControls.addEventListener('change', updateMultiSelectPositions);
             transformControls.addEventListener('mouseUp', () => { 
                 if(transformControls.object && transformControls.object !== multiSelectGroup) {
@@ -3187,6 +3562,7 @@
                     rotationSettings: p.rotationSettings,
                     raycastMirror: p.raycastMirror,
                     hidden: p.hidden,
+                    ballMass: p.ballMass,
                     isAffector: p.isAffector,
                     affectorType: p.affectorType,
                     affectorSettings: p.affectorSettings ? {
@@ -3347,7 +3723,10 @@
                             // Restore hidden state
                             if (d.hidden !== undefined) {
                                 piece.hidden = d.hidden;
-                                piece.group.visible = !d.hidden;
+                                // Visibility will be updated by updateHiddenObjectVisibility() call below
+                            }
+                            if (d.ballMass !== undefined) {
+                                piece.ballMass = d.ballMass;
                             }
                             if (d.raycastMirror !== undefined) {
                                 piece.raycastMirror = d.raycastMirror;
@@ -3507,6 +3886,9 @@
                             }
                         });
                     }
+                    
+                    // Update visibility of all hidden objects after loading
+                    updateHiddenObjectVisibility();
                 }
             };
             reader.readAsText(file);
@@ -3515,6 +3897,9 @@
         function loadCustomObject(event) {
             const file = event.target.files[0];
             if (!file) return;
+            
+            // Capture state before adding custom object
+            captureState();
             const reader = new FileReader();
             reader.onload = e => {
                 try {
@@ -3528,6 +3913,20 @@
                     });
 
                     if (geometry) {
+                        // Ensure the geometry is ready for face painting by making it indexed if needed
+                        if (!geometry.index) {
+                            const positionAttribute = geometry.getAttribute('position');
+                            const vertexCount = positionAttribute.count;
+                            const indices = [];
+                            
+                            // Create triangular faces (assumes vertices are in triangular groups)
+                            for (let i = 0; i < vertexCount; i += 3) {
+                                indices.push(i, i + 1, i + 2);
+                            }
+                            
+                            geometry.setIndex(indices);
+                        }
+                        
                         addPiece('custom', null, { geometry });
                     } else {
                         showMessage('Could not find a mesh in the OBJ file.', 'error');
@@ -3565,6 +3964,9 @@
             placementBalls.forEach(ball => {
                 ball.group.visible = false;
             });
+
+            // Update visibility of hidden objects for race mode
+            updateHiddenObjectVisibility();
 
             spawnMarblesFromPlacements(placementBalls);
         }
@@ -3608,6 +4010,9 @@
             // Enable transform controls by default when entering edit mode
             transformControls.enabled = true;
             transformControls.visible = true;
+            
+            // Update visibility of hidden objects for edit mode
+            updateHiddenObjectVisibility();
             document.getElementById('toggle-transform-btn').textContent = '🔧 Disable Transform';
             
             // Re-enable all orbit controls for edit mode
@@ -3615,6 +4020,17 @@
             orbitControls.enableRotate = true;
             orbitControls.enablePan = true;
             orbitControls.enableZoom = true;
+        }
+
+        function updateHiddenObjectVisibility() {
+            // Update visibility for all hidden objects based on current mode
+            trackPieces.forEach(piece => {
+                if (piece.hidden) {
+                    // Hidden objects should be visible only when editing (not racing and transform controls enabled)
+                    const shouldBeVisible = !isRaceMode && transformControls.enabled;
+                    piece.group.visible = shouldBeVisible;
+                }
+            });
         }
 
         function spawnMarbles(startPiece) {
@@ -3645,7 +4061,7 @@
                 scene.add(nameplate);
                 
                 const sphereShape = new CANNON.Sphere(0.39); // Slightly smaller for better collision detection
-                const body = new CANNON.Body({ mass: 1.2, shape: sphereShape, position: worldPos, material: marbleCannonMaterial });
+                const body = new CANNON.Body({ mass: 12, shape: sphereShape, position: worldPos, material: marbleCannonMaterial });
                 
                 // Add collision margins for better contact detection
                 body.material.friction = 0.3;
@@ -3691,7 +4107,7 @@
                     
                     const sphereShape = new CANNON.Sphere(0.39);
                     const body = new CANNON.Body({ 
-                        mass: 1.2, 
+                        mass: placementBall.ballMass || 12, 
                         shape: sphereShape, 
                         position: worldPos, 
                         material: marbleCannonMaterial 
@@ -3992,9 +4408,10 @@
                 selectedPieces = [piece];
             }
             
-            // Update transform controls
+            // Update transform controls and camera target
             if (selectedPieces.length === 1) {
                 transformControls.attach(selectedPieces[0].group);
+                updateCameraTarget(selectedPieces[0]);
             } else if (selectedPieces.length > 1) {
                 // Create group for multi-selection
                 const center = new THREE.Vector3();
@@ -4005,6 +4422,7 @@
                 groupHelper.position.copy(center);
                 scene.add(groupHelper);
                 transformControls.attach(groupHelper);
+                updateCameraTargetForMultiSelect();
             } else {
                 transformControls.detach();
             }
@@ -4149,13 +4567,16 @@
                 ballPreview.style.marginRight = '10px';
                 ballPreview.style.verticalAlign = 'middle';
                 ballPreview.style.border = '2px solid #666';
-                ballPreview.style.background = marble.color;
+                ballPreview.style.background = marble.color || '#ff0000';
                 
                 // Add glow effect if marble has emissive properties
-                const ballConfig = raceRoster.find(b => b.name === marble.name) || 
-                                  customBalls.find(b => b.name === marble.name);
-                if (ballConfig && ballConfig.emissive > 0) {
-                    ballPreview.style.boxShadow = `0 0 ${ballConfig.emissive * 10}px ${ballConfig.emissiveColor}`;
+                if (marble.emissive && marble.emissive > 0) {
+                    ballPreview.style.boxShadow = `0 0 ${marble.emissive * 10}px ${marble.emissiveColor || '#ffffff'}`;
+                }
+                
+                // Add metallic/roughness styling
+                if (marble.metalness > 0.5) {
+                    ballPreview.style.background = `linear-gradient(45deg, ${marble.color}, #ffffff)`;
                 }
                 
                 if (i < 3) {
@@ -4558,7 +4979,10 @@
                             const piece = trackPieces[trackPieces.length - 1];
                             if (d.hidden !== undefined) {
                                 piece.hidden = d.hidden;
-                                piece.group.visible = !d.hidden;
+                                // Visibility will be updated by updateHiddenObjectVisibility() call below
+                            }
+                            if (d.ballMass !== undefined) {
+                                piece.ballMass = d.ballMass;
                             }
                         });
                     }
@@ -4568,6 +4992,9 @@
                     } else {
                         document.getElementById('spotify-mini-player').style.display = 'none';
                     }
+                    
+                    // Update visibility of all hidden objects after loading
+                    updateHiddenObjectVisibility();
                 }
 
                 // Wait for track to load and physics to settle (simple delay for now)
@@ -4778,6 +5205,17 @@
             document.getElementById('piece-hidden').checked = piece.hidden || false;
             document.getElementById('piece-rotation-speed').value = rotSettings.speed;
             document.getElementById('piece-rotation-axis').value = rotSettings.axis;
+            
+            // Show/hide ball set mass option
+            const massOption = document.getElementById('ball-set-mass-option');
+            if (piece.type === 'ball-set') {
+                massOption.style.display = 'block';
+                const mass = piece.ballMass || 12;
+                document.getElementById('ball-set-mass').value = mass;
+                document.getElementById('ball-set-mass-value').textContent = mass;
+            } else {
+                massOption.style.display = 'none';
+            }
             document.getElementById('piece-rotation-global').checked = rotSettings.global;
             
             // Update rotation speed value display
@@ -5076,6 +5514,9 @@
             const piece = trackPieces.find(p => p.group === transformControls.object);
             if (!piece) return;
             
+            // Capture state before applying material
+            captureState();
+            
             // Update material data
             piece.materialData = {
                 color: document.getElementById('piece-color').value,
@@ -5102,6 +5543,11 @@
             
             // Update hidden state
             piece.hidden = document.getElementById('piece-hidden').checked;
+            
+            // Update ball set mass if applicable
+            if (piece.type === 'ball-set') {
+                piece.ballMass = parseFloat(document.getElementById('ball-set-mass').value);
+            }
             
             // Update affector settings
             if (piece.isAffector) {
@@ -5246,6 +5692,14 @@
                 showMessage('Face Painter: Closed', 'info');
                 document.body.style.cursor = 'default';
                 
+                // Ensure face painted materials are preserved on currently selected object
+                if (transformControls.object) {
+                    const piece = trackPieces.find(p => p.group === transformControls.object);
+                    if (piece) {
+                        ensureFacePaintingPreserved(piece);
+                    }
+                }
+                
                 // Re-enable transform controls
                 transformControls.enabled = true;
             }
@@ -5265,8 +5719,41 @@
         }
         
         function paintFace(mesh, faceIndex) {
-            if (!mesh.geometry.index) {
-                return;
+            // Initialize face painting data if not exists
+            if (!mesh.userData.paintedFaces) {
+                mesh.userData.paintedFaces = new Map();
+                mesh.userData.originalMaterial = mesh.material;
+                
+                // Clone geometry for face painting setup
+                const geometry = mesh.geometry.clone();
+                
+                // Ensure geometry is indexed for face identification
+                if (!geometry.index) {
+                    const positionAttribute = geometry.getAttribute('position');
+                    const vertexCount = positionAttribute.count;
+                    const indices = [];
+                    
+                    // Create triangular faces (assumes vertices are in triangular groups)
+                    for (let i = 0; i < vertexCount; i += 3) {
+                        indices.push(i, i + 1, i + 2);
+                    }
+                    
+                    geometry.setIndex(indices);
+                }
+                
+                // Replace mesh geometry and dispose old one
+                mesh.geometry.dispose();
+                mesh.geometry = geometry;
+                
+                if (!mesh.geometry.index) {
+                    showMessage('Cannot create indexed geometry for face painting', 'error');
+                    return;
+                }
+            }
+            
+            // Capture state before face painting (only on first paint of this object)
+            if (!mesh.userData.paintedFaces || mesh.userData.paintedFaces.size === 0) {
+                captureState();
             }
             
             // Get current paint settings
@@ -5278,27 +5765,7 @@
             const paintEmissiveColor = document.getElementById('face-paint-emissive-color').value;
             const paintTextureType = document.getElementById('face-texture-type').value;
             
-            // Initialize face painting data if not exists
-            if (!mesh.userData.paintedFaces) {
-                mesh.userData.paintedFaces = new Map();
-                mesh.userData.originalMaterial = mesh.material;
-                
-                // Convert to BufferGeometry with vertex colors for face painting
-                const geometry = mesh.geometry.clone();
-                if (!geometry.attributes.color) {
-                    const colors = new Float32Array(geometry.attributes.position.count * 3);
-                    colors.fill(1); // Default white
-                    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-                }
-                mesh.geometry = geometry;
-                
-                // Create material that uses vertex colors
-                const material = mesh.material.clone();
-                material.vertexColors = true;
-                mesh.material = material;
-            }
-            
-            // Store face paint data with all properties
+            // Store face paint data with all properties for per-face material control
             mesh.userData.paintedFaces.set(faceIndex, {
                 color: paintColor,
                 transparency: paintTransparency,
@@ -5309,75 +5776,98 @@
                 textureType: paintTextureType
             });
             
-            // Apply color to face vertices immediately
-            const color = new THREE.Color(paintColor);
-            const colors = mesh.geometry.attributes.color;
-            const indices = mesh.geometry.index.array;
+            // Use multi-material approach for true per-face material properties
+            applyPerFaceMaterials(mesh, faceIndex);
             
-            // Safety check - make sure color attribute exists
-            if (!colors) {
-                console.error('No color attribute found on geometry!');
-                showMessage('Error: Could not paint face - geometry missing color data', 'error');
+            showMessage(`Painted face ${faceIndex} with ${Object.keys(mesh.userData.paintedFaces.get(faceIndex)).length} properties`, 'success');
+        }
+        
+        function applyPerFaceMaterials(mesh, faceIndex) {
+            // Initialize face materials system if not exists
+            if (!mesh.userData.faceMaterials) {
+                mesh.userData.faceMaterials = new Map();
+                mesh.userData.materials = [mesh.material.clone()]; // Keep original as material 0
+            }
+            
+            const paintData = mesh.userData.paintedFaces.get(faceIndex);
+            if (!paintData) return;
+            
+            // Create unique material for this face with its specific properties
+            if (!mesh.userData.originalMaterial) {
+                showMessage('Original material missing - cannot apply face paint', 'error');
                 return;
             }
+            const faceMaterial = mesh.userData.originalMaterial.clone();
             
-            if (!indices) {
-                console.error('No indices found on geometry!');
-                showMessage('Error: Could not paint face - geometry not indexed', 'error');
-                return;
-            }
+            // Apply face-specific properties
+            faceMaterial.color = new THREE.Color(paintData.color);
+            faceMaterial.transparent = paintData.transparency > 0;
+            faceMaterial.opacity = 1 - paintData.transparency;
+            faceMaterial.metalness = paintData.metalness;
+            faceMaterial.roughness = paintData.roughness;
             
-            // Get the three vertices of this face
-            const faceStart = faceIndex * 3;
-            for (let i = 0; i < 3; i++) {
-                const vertexIndex = indices[faceStart + i];
-                colors.setXYZ(vertexIndex, color.r, color.g, color.b);
-            }
-            
-            colors.needsUpdate = true;
-            
-            // Update material properties with new values
-            mesh.material.transparent = paintTransparency > 0;
-            mesh.material.opacity = 1 - paintTransparency;
-            mesh.material.metalness = paintMetalness;
-            mesh.material.roughness = paintRoughness;
-            
-            // Handle emissive properties
-            if (paintEmissive > 0) {
-                mesh.material.emissive = new THREE.Color(paintEmissiveColor);
-                mesh.material.emissiveIntensity = paintEmissive;
+            // Apply emissive properties
+            if (paintData.emissive > 0) {
+                faceMaterial.emissive = new THREE.Color(paintData.emissiveColor);
+                faceMaterial.emissiveIntensity = paintData.emissive;
             } else {
-                mesh.material.emissive = new THREE.Color(0x000000);
-                mesh.material.emissiveIntensity = 0;
+                faceMaterial.emissive = new THREE.Color(0x000000);
+                faceMaterial.emissiveIntensity = 0;
             }
             
-            // Handle texture
-            if (paintTextureType !== 'none') {
-                let texture = null;
-                if (paintTextureType === 'upload') {
-                    // Handle uploaded texture if available
-                    const fileInput = document.getElementById('face-texture-upload');
-                    if (fileInput.files && fileInput.files[0]) {
-                        // For now, skip texture upload handling in face painting
-                        texture = null;
-                    }
-                } else {
-                    // Generate procedural texture
-                    texture = generateProceduralTexture(paintTextureType, paintColor);
-                }
-                
+            // Handle procedural textures
+            if (paintData.textureType && paintData.textureType !== 'none') {
+                const texture = generateProceduralTexture(paintData.textureType, paintData.color);
                 if (texture) {
-                    mesh.material.map = texture;
-                    mesh.material.needsUpdate = true;
+                    faceMaterial.map = texture;
                 }
             }
             
-            showMessage(`Painted face ${faceIndex} with color ${paintColor}`, 'success');
+            // Find or create material index for this combination of properties
+            let materialIndex = mesh.userData.materials.findIndex(mat => 
+                mat && 
+                mat.color.equals(faceMaterial.color) &&
+                mat.metalness === faceMaterial.metalness &&
+                mat.roughness === faceMaterial.roughness &&
+                mat.transparent === faceMaterial.transparent &&
+                mat.opacity === faceMaterial.opacity &&
+                mat.emissive.equals(faceMaterial.emissive) &&
+                mat.emissiveIntensity === faceMaterial.emissiveIntensity
+            );
+            
+            if (materialIndex === -1) {
+                // Add new unique material
+                mesh.userData.materials.push(faceMaterial);
+                materialIndex = mesh.userData.materials.length - 1;
+            } else {
+                // Dispose the temporary material since we're reusing existing one
+                faceMaterial.dispose();
+            }
+            
+            // Map this face to its material
+            mesh.userData.faceMaterials.set(faceIndex, materialIndex);
+            
+            // Update mesh materials and geometry groups
+            if (mesh.userData.materials.length === 1) {
+                // Single material - keep as single material to avoid breaking other code
+                mesh.material = mesh.userData.materials[0];
+            } else {
+                // Multi-material - use array
+                mesh.material = mesh.userData.materials;
+            }
+            updateGeometryGroups(mesh);
         }
         
         function updateGeometryGroups(mesh) {
             const geometry = mesh.geometry;
             const faceMaterials = mesh.userData.faceMaterials;
+            
+            if (!faceMaterials || faceMaterials.size === 0) {
+                // No face materials - clear groups and return
+                geometry.clearGroups();
+                return;
+            }
+            
             const faceCount = geometry.index.count / 3;
             
             // Clear existing groups
@@ -5459,7 +5949,7 @@
                 
                 if (faceIndex !== undefined) {
                     // Show cursor change or other visual feedback
-                    document.body.style.cursor = 'url("data:image/svg+xml;charset=utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\'><path fill=\'%23ff6b35\' d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z\'/></svg>"), auto';
+                    document.body.style.cursor = 'crosshair';
                     
                     hoveredFace = { mesh, faceIndex };
                 } else {
@@ -5470,27 +5960,95 @@
             }
         }
         
-        function restoreFaceMaterials(mesh) {
-            const faceMaterials = mesh.userData.faceMaterials;
-            if (!faceMaterials || faceMaterials.size === 0) return;
-            
-            // Convert single material to material array if needed
-            if (!Array.isArray(mesh.material)) {
-                const originalMaterial = mesh.material;
-                mesh.material = [originalMaterial];
+        function ensureFacePaintingPreserved(piece) {
+            // Ensure face painting materials are properly restored for an object
+            const mesh = piece.group.children.find(child => child.isMesh);
+            if (!mesh || !mesh.userData.paintedFaces || mesh.userData.paintedFaces.size === 0) {
+                return; // No face painting to preserve
             }
             
-            // Rebuild materials array based on saved face materials
-            const materialSet = new Set(faceMaterials.values());
-            materialSet.forEach(materialIndex => {
-                if (materialIndex >= mesh.material.length) {
-                    // Create placeholder material (will be replaced when actual data is available)
-                    const defaultMaterial = mesh.material[0].clone();
-                    mesh.material.push(defaultMaterial);
+            // Ensure materials array exists and is properly set up
+            if (!mesh.userData.materials || !Array.isArray(mesh.userData.materials)) {
+                return; // Face painting data corrupted, cannot restore
+            }
+            
+            // Restore the multi-material array and geometry groups
+            mesh.material = mesh.userData.materials;
+            updateGeometryGroups(mesh);
+        }
+        
+        function restoreFaceMaterials(mesh) {
+            const faceMaterials = mesh.userData.faceMaterials;
+            const paintedFaces = mesh.userData.paintedFaces;
+            
+            if (!faceMaterials || faceMaterials.size === 0 || !paintedFaces || paintedFaces.size === 0) {
+                return;
+            }
+            
+            // Store original material if not already stored
+            if (!mesh.userData.originalMaterial) {
+                mesh.userData.originalMaterial = mesh.material;
+            }
+            
+            // Initialize materials array with original material
+            mesh.userData.materials = [mesh.userData.originalMaterial];
+            
+            // Recreate materials for each unique face painting
+            const materialIndicesMap = new Map();
+            
+            paintedFaces.forEach((paintData, faceIndex) => {
+                // Create material for this face with stored paint data
+                const faceMaterial = mesh.userData.originalMaterial.clone();
+                
+                // Apply stored face properties
+                faceMaterial.color = new THREE.Color(paintData.color);
+                faceMaterial.transparent = paintData.transparency > 0;
+                faceMaterial.opacity = 1 - paintData.transparency;
+                faceMaterial.metalness = paintData.metalness;
+                faceMaterial.roughness = paintData.roughness;
+                
+                // Apply emissive properties
+                if (paintData.emissive > 0) {
+                    faceMaterial.emissive = new THREE.Color(paintData.emissiveColor);
+                    faceMaterial.emissiveIntensity = paintData.emissive;
+                } else {
+                    faceMaterial.emissive = new THREE.Color(0x000000);
+                    faceMaterial.emissiveIntensity = 0;
                 }
+                
+                // Handle procedural textures
+                if (paintData.textureType && paintData.textureType !== 'none') {
+                    const texture = generateProceduralTexture(paintData.textureType, paintData.color);
+                    if (texture) {
+                        faceMaterial.map = texture;
+                    }
+                }
+                
+                // Find or create material index
+                let materialIndex = mesh.userData.materials.findIndex(mat => 
+                    mat && 
+                    mat.color.equals(faceMaterial.color) &&
+                    mat.metalness === faceMaterial.metalness &&
+                    mat.roughness === faceMaterial.roughness &&
+                    mat.transparent === faceMaterial.transparent &&
+                    mat.opacity === faceMaterial.opacity &&
+                    mat.emissive.equals(faceMaterial.emissive) &&
+                    mat.emissiveIntensity === faceMaterial.emissiveIntensity
+                );
+                
+                if (materialIndex === -1) {
+                    mesh.userData.materials.push(faceMaterial);
+                    materialIndex = mesh.userData.materials.length - 1;
+                } else {
+                    faceMaterial.dispose();
+                }
+                
+                // Update face materials map
+                mesh.userData.faceMaterials.set(faceIndex, materialIndex);
             });
             
-            // Update geometry groups
+            // Set materials and update geometry groups
+            mesh.material = mesh.userData.materials;
             updateGeometryGroups(mesh);
         }
         
@@ -5509,18 +6067,28 @@
                 return;
             }
             
-            // Restore original material
+            // Capture state before clearing face paint
+            captureState();
+            
+            // Restore original material and clean up multi-materials
             if (mesh.userData.originalMaterial) {
+                // Dispose all face materials
+                if (mesh.userData.materials) {
+                    mesh.userData.materials.forEach(material => {
+                        if (material !== mesh.userData.originalMaterial) {
+                            material.dispose();
+                        }
+                    });
+                }
+                
                 mesh.material = mesh.userData.originalMaterial;
+                mesh.geometry.clearGroups(); // Remove material groups
             }
             
-            // Remove vertex colors if they exist
-            if (mesh.geometry.attributes.color) {
-                mesh.geometry.deleteAttribute('color');
-            }
-            
-            // Clear painted faces data
-            mesh.userData.paintedFaces.clear();
+            // Clean up face painting data structures
+            delete mesh.userData.paintedFaces;
+            delete mesh.userData.faceMaterials; 
+            delete mesh.userData.materials;
             delete mesh.userData.originalMaterial;
             
             showMessage('Cleared all face paint from object', 'success');
@@ -6236,8 +6804,21 @@
             
             // Update all multi-select glow materials
             scene.traverse((object) => {
-                if (object.isMesh && object.material.userData.isMultiSelectGlow) {
-                    object.material.emissiveIntensity = glowIntensity;
+                if (object.isMesh) {
+                    // Handle both single materials and material arrays
+                    if (Array.isArray(object.material)) {
+                        // Multi-material object
+                        object.material.forEach(material => {
+                            if (material && material.userData && material.userData.isMultiSelectGlow) {
+                                material.emissiveIntensity = glowIntensity;
+                            }
+                        });
+                    } else {
+                        // Single material object
+                        if (object.material && object.material.userData && object.material.userData.isMultiSelectGlow) {
+                            object.material.emissiveIntensity = glowIntensity;
+                        }
+                    }
                 }
             });
             
