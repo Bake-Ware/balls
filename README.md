@@ -9,12 +9,16 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 ## 🎮 Features
 
 ### 🏗️ Advanced Track Editor
-- **Track Pieces**: Start platform, straight tracks, curves, end platform, pipes, half-pipes, quarter bowls
+- **🎛️ Modern Toolbar Interface**: Streamlined top toolbar with icon-based buttons and tooltips
+- **📋 Tabbed Sidebar**: Left sidebar with "Objects" and "Add Pieces" tabs for better organization
+- **🌳 Hierarchical Piece Selector**: Collapsible categories (Track Pieces, Obstacles, Physics Affectors, Lights & Effects, etc.)
+- **Track Pieces**: Start platform, straight tracks, curves, end platform, pipes, half-pipes, quarter bowls  
 - **Ball Sets**: Flexible marble starting positions - place and rotate starting line formations anywhere
 - **Obstacles**: Pinned balls, pyramids, cylinders, cubes, prisms, custom .obj models
 - **Physics Affectors**: Water zones, zero gravity, moon gravity, accelerators, brakes, ice surfaces
 - **Camera Sets**: Marble-triggered camera control points with 4 follow modes and position capture
 - **📋 Three-Level Object Tree**: Hierarchical organization (Main Type → Specific Type → Instances) with collapsible categories
+- **🔀 Collapsible Sidebar**: Toggle sidebar visibility to maximize workspace with smooth animations
 - **Multi-Selection**: Ctrl+click to select multiple pieces and transform them together
 - **🔄 Smart Duplication**: Duplicate button + Ctrl+drag to copy while moving
 - **📦 Blueprint Export**: Export selected pieces as merged OBJ files for sharing track sections
@@ -166,26 +170,39 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 5. Use "Camera" button to cycle through viewing modes
 
 ### Track Building
-1. **Add Pieces**: Use dropdown selector to add track segments and obstacles
-2. **Add Ball Sets**: Place "🏁 Ball Set" pieces where you want marbles to start
-3. **Object Management**: Use "📋 Object Tree" panel to select and organize pieces
-4. **Multi-Select**: Hold Ctrl and click pieces in tree or 3D view for multi-selection
-5. **Smart Duplication**: Use "📋 Duplicate" button or Ctrl+drag to copy pieces
-6. **Transform Controls**: Move/rotate/scale with W/E/R hotkeys, Shift for grid snap
-7. **Materials**: Select pieces and click "🎨 Object" to customize appearance
-8. **Surface Painting**: Select any object and click "🖌️ Face Paint" to paint individual faces with custom colors and textures
-9. **Export Blueprints**: Select multiple pieces and click "📦 Export Blueprint" to save as OBJ
-10. **Special Features**: Add affector zones, camera sets, lights, and particle effects
-11. **Save**: Use "💾 Save" to export your complete track
+1. **Modern Interface**: Use the streamlined top toolbar with icon-based buttons and helpful tooltips
+2. **Add Pieces**: Click "Add Pieces" tab in left sidebar, then expand categories to select pieces to add
+3. **Add Ball Sets**: Place "🏁 Ball Set" pieces where you want marbles to start
+4. **Object Management**: Use "Objects" tab in left sidebar to view hierarchical object tree
+5. **Sidebar Control**: Click ◀/▶ button to collapse/expand sidebar for maximum workspace
+6. **Multi-Select**: Hold Ctrl and click pieces in tree or 3D view for multi-selection
+7. **Smart Duplication**: Use toolbar "📋" button or Ctrl+drag to copy pieces
+8. **Transform Controls**: Use toolbar "🎯" button or W/E/R hotkeys, Shift for grid snap
+9. **Materials**: Select pieces and click toolbar "🎨" button to customize appearance
+10. **Surface Painting**: Select any object and click toolbar "🖌️" button to paint individual faces
+11. **Quick Access**: All essential tools available in top toolbar (Save 💾, Load 📂, Camera 📹, Balls ⚽, Tournament 🏁)
+12. **Special Features**: Add affector zones, camera sets, lights, and particle effects from hierarchical selector
+13. **Save**: Use toolbar "💾" button to export your complete track
 
 ### Ball Customization & Racing
-1. **Ball Maker**: Click "⚽ Balls" to design custom marbles
+1. **Ball Maker**: Click toolbar "⚽" button to design custom marbles
 2. **Properties**: Adjust color, shine, glow, and texture patterns
-3. **Ball Roster**: Click "👥 Roster" to manage race participants
+3. **Ball Roster**: Click toolbar "👥" button to manage race participants
 4. **Random Generation**: Use "Add Random" to generate varied marbles quickly
 5. **Ball Placement**: Place "🏁 Ball Set" pieces anywhere on your track
 6. **Preview System**: Ball Sets show transparent previews of all roster balls
 7. **Dynamic Racing**: All roster balls spawn at each Ball Set location in line formation
+
+### 🎛️ Modern Interface Overview
+1. **Top Toolbar**: All essential tools in one streamlined bar with consistent gray styling
+2. **Left Sidebar**: Tabbed interface with "Objects" tree and "Add Pieces" hierarchical selector
+3. **Collapsible Design**: Click ◀/▶ to hide/show sidebar for maximum 3D workspace
+4. **Icon-Based UI**: Clear, recognizable icons with descriptive tooltips on hover
+5. **Unified Color Scheme**: Consistent visual design across all interface elements
+6. **Race Mode Adaptation**: Toolbar buttons automatically show/hide based on current mode
+7. **Selection Info Panel**: Bottom-right panel showing real-time selection details (count, position, rotation, scale)
+8. **Responsive Layout**: Interface adapts smoothly between edit and race modes
+9. **Quick Access**: Critical functions like Save, Load, Camera, Balls, Tournament always visible
 
 ### Racing
 1. **Start Race**: Click "Start Race!" to begin simulation
@@ -266,16 +283,20 @@ balls/
 ## 🎮 Controls
 
 ### Editor Mode
+- **Top Toolbar**: Click icon buttons for quick access to all tools
+- **Left Sidebar Tabs**: Switch between "Objects" tree and "Add Pieces" selector
+- **Sidebar Toggle**: Click ◀/▶ button to collapse/expand sidebar
 - **Mouse**: Click to select pieces (3D view or Object Tree)
 - **Ctrl+Click**: Multi-select pieces (3D view or Object Tree)
 - **Double-Click**: Rename pieces in Object Tree
 - **Ctrl+Drag**: Duplicate and move copies of selected pieces
 - **Shift+Drag**: Grid-snapped movement for precise alignment
-- **W/E/R**: Switch transform modes (translate/rotate/scale)
-- **Del**: Delete selected pieces
+- **W/E/R**: Switch transform modes (translate/rotate/scale) or use toolbar 🎯 button
+- **Del**: Delete selected pieces or use toolbar 🗑️ button
 - **Mouse Drag**: Transform selected pieces
 - **Middle Mouse**: Pan camera
 - **Scroll**: Zoom camera
+- **Tooltips**: Hover over toolbar buttons for descriptions
 
 ### Surface Painting Mode
 - **🖌️ Face Paint Button**: Activate face painting mode (select object first)

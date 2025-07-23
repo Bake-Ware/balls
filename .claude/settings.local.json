@@ -8,7 +8,11 @@
       "Bash(rg:*)",
       "Bash(git checkout:*)",
       "WebFetch(domain:unpkg.com)",
-      "WebFetch(domain:app.unpkg.com)"
+      "WebFetch(domain:app.unpkg.com)",
+      "mcp__serena__initial_instructions",
+      "mcp__serena__search_for_pattern",
+      "mcp__serena__activate_project",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

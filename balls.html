@@ -8,11 +8,32 @@
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
+        
+        /* Main viewport fills entire screen, sidebar overlays it */
+        #main-viewport {
+            position: fixed;
+            top: 50px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+        
+        /* Sidebar tab styling */
+        .sidebar-tab {
+            transition: background-color 0.2s;
+        }
+        .sidebar-tab:hover {
+            background: #007bff !important;
+        }
+        .sidebar-tab.active {
+            background: #007bff !important;
+        }
         #ui-container {
-            position: absolute; top: 10px; left: 10px; z-index: 100;
+            position: absolute; top: 70px; right: 10px; z-index: 100;
             background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 8px;
             color: white; display: flex; flex-direction: column; max-width: 250px;
-            max-height: calc(100vh - 20px);
+            max-height: calc(100vh - 80px);
             transition: all 0.3s ease;
         }
         #ui-container.collapsed {
@@ -350,118 +371,189 @@
             color: #aaa;
             margin-left: 4px;
         }
+
+        /* Bottom toolbar styles */
+        #bottom-toolbar button:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            transform: scale(1.1);
+        }
+
+        #bottom-toolbar button:active {
+            transform: scale(0.95);
+        }
+
+        #bottom-toolbar button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        #bottom-toolbar button:disabled:hover {
+            background: transparent !important;
+            transform: none;
+        }
+
+        /* Timeline styles */
+        #undo-timeline {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+
+        #undo-timeline::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        #undo-timeline::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #undo-timeline::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .timeline-state {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            user-select: none;
+        }
+
+        .timeline-state:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.15);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .timeline-state.current {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: #4CAF50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+            font-size: 13px;
+        }
+
+        .timeline-state.future {
+            background: rgba(255, 193, 7, 0.2);
+            border-color: rgba(255, 193, 7, 0.5);
+            opacity: 0.7;
+        }
+
+        .timeline-state.past {
+            background: rgba(33, 150, 243, 0.2);
+            border-color: rgba(33, 150, 243, 0.5);
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
-    <div id="ui-container">
-        <button id="toggle-menu-btn">☰</button>
-        <div class="ui-content">
-            <div style="text-align: center; margin-bottom: 10px;">
-                <a href="https://github.com/Bake-Ware/balls" target="_blank" style="color: #ffd700; text-decoration: none; font-size: 20px;" title="Fork me on GitHub">
-                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-                    </svg>
-                </a>
-            </div>
-            <div class="ui-title">➕ Add Pieces</div>
-            <select id="piece-type-selector" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px;">
-                <option value="">Select piece type...</option>
-                <option value="start">Start Platform</option>
-                <option value="straight">Straight</option>
-                <option value="curve">Curve</option>
-                <option value="end">End Platform</option>
-                <option value="ball">Ball (Pinned)</option>
-                <option value="pyramid">Pyramid</option>
-                <option value="cylinder">Cylinder</option>
-                <option value="pipe">Pipe</option>
-                <option value="cube">Cube</option>
-                <option value="prism">Prism</option>
-                <option value="custom">📦 Custom (.obj)...</option>
-                <optgroup label="🌊 Physics Affectors">
-                    <option value="water">💧 Water Zone</option>
-                    <option value="zero-g">🌌 Zero Gravity</option>
-                    <option value="moon-g">🌙 Moon Gravity</option>
-                    <option value="accelerator">⚡ Accelerator</option>
-                    <option value="brakes">🛑 Brake Zone</option>
-                    <option value="ice">🧊 Ice Zone</option>
-                </optgroup>
-                <optgroup label="💡 Lights & Effects">
-                    <option value="spot-light">🔦 Spot Light</option>
-                    <option value="point-light">💡 Point Light</option>
-                    <option value="strobe-light">⚡ Strobe Light</option>
-                    <option value="directional-light">☀️ Directional Light</option>
-                    <option value="particle-gen">✨ Particle Generator</option>
-                </optgroup>
-                <optgroup label="📹 Camera Controls">
-                    <option value="camera-set">📷 Camera Set</option>
-                </optgroup>
-                <optgroup label="🎯 Ball Placement">
-                    <option value="ball-set">🏁 Ball Set</option>
-                </optgroup>
-            </select>
-            <input type="file" id="add-custom-input" accept=".obj" style="display: none;">
-            <button id="start-race-btn" class="button-full-width" style="background: #28a745; border-color: #28a745; margin-top: 8px;">🏁 Start Race!</button>
-            
-            <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="editor-tools">🛠️ Editor Tools (W,E,R) ▼</div>
-            <div id="editor-tools" class="collapsible-content">
-                <button id="toggle-transform-btn" class="button-full-width" style="background: #007bff; border-color: #007bff;">🎯 Disable Transform</button>
-                <div id="selection-info" style="color: #ffd700; font-size: 12px; margin: 5px 0; text-align: center;"></div>
-                
-                <div class="button-grid" style="margin-top: 8px;">
-                    <button id="select-all-btn">🎯 Select All</button>
-                    <button id="duplicate-piece-btn">📋 Duplicate</button>
-                    <button id="remove-piece-btn">🗑️ Remove</button>
-                    <button id="edit-material-btn">🎨 Object</button>
-                </div>
-                
-                <div class="button-grid" style="margin-top: 8px;">
-                    <button id="face-paint-btn" style="background: #ff6b35; border-color: #ff6b35;">🖌️ Face Paint</button>
-                </div>
-                
-                <div class="button-grid" style="margin-top: 8px;">
-                    <button id="save-track-btn">💾 Save</button>
-                    <label for="load-track-input" style="margin: 0; padding: 8px 4px; font-size: 12px;">📂 Load</label>
-                </div>
-                <input type="file" id="load-track-input" accept=".json" style="display: none;">
-                
-                <div class="button-grid" style="margin-top: 8px;">
-                    <button id="skybox-btn">🌌 Skybox</button>
-                    <button id="camera-mode-btn">📹 Camera</button>
-                    <button id="ball-maker-btn">⚽ Balls</button>
-                    <button id="spotify-btn">🎵 Music</button>
-                    <button id="ball-roster-btn" style="background: #17a2b8; border-color: #17a2b8;">👥 Roster</button>
-                    <button id="open-tournament-btn">🏁 Tournament</button>
-                </div>
-            </div>
-            <button id="restart-race-btn" class="button-full-width" style="display: none; background: #ffc107; border-color: #ffc107; color: #212529; margin-top: 8px;">🔄 Restart Race</button>
-            <button id="edit-track-btn" class="button-full-width" style="display: none; background: #6c757d; border-color: #6c757d; margin-top: 8px;">✏️ Edit Track</button>
-            <div class="speed-control" id="camera-speed-control" style="display: none;">
-                <label for="camera-speed-slider">Camera Speed</label>
-                <input type="range" id="camera-speed-slider" min="0.1" max="2" step="0.1" value="1">
-            </div>
-            
-            <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="object-tree-section">📋 Object Tree ▼</div>
-            <div id="object-tree-section" class="collapsible-content">
-                <div id="object-list"></div>
-            </div>
-            
-            <div class="ui-title collapsible-section" style="margin-top:15px;" data-target="lighting-controls">💡 Lighting ▼</div>
-            <div id="lighting-controls" class="collapsible-content">
-                <div class="speed-control">
-                    <label for="ambient-light-slider">Ambient Intensity: <span id="ambient-light-value">0.8</span></label>
-                    <input type="range" id="ambient-light-slider" min="0" max="2" step="0.1" value="0.8">
-                </div>
-                <div class="speed-control">
-                    <label for="directional-light-slider">Directional Intensity: <span id="directional-light-value">1.5</span></label>
-                    <input type="range" id="directional-light-slider" min="0" max="5" step="0.1" value="1.5">
-                    <label for="directional-light-color" style="margin-top: 5px;">Directional Color:</label>
-                    <input type="color" id="directional-light-color" value="#ffffff" style="width: 100%; height: 30px; padding: 0; border-radius: 4px;">
-                </div>
-                <div class="speed-control">
-                    <label for="background-color">Background Color:</label>
-                    <input type="color" id="background-color" value="#202020" style="width: 100%; height: 30px; padding: 0; border-radius: 4px; margin-top: 5px;">
-                </div>
-            </div>
+    <!-- Top Toolbar -->
+    <div id="top-toolbar" style="position: fixed; top: 0; left: 0; right: 0; height: 50px; background: rgba(0, 0, 0, 0.9); color: white; display: flex; align-items: center; gap: 10px; padding: 0 15px; z-index: 150; border-bottom: 1px solid #444;">
+
+        <!-- File Operations -->
+        <button id="save-track-btn-toolbar" title="Save Track" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">💾</button>
+        <button id="load-track-btn-toolbar" title="Load Track" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📂</button>
+
+        <!-- Separator -->
+        <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
+
+        <!-- Race Controls -->
+        <button id="start-race-btn-toolbar" title="Start Race" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🏁</button>
+        <button id="restart-race-btn-toolbar" title="Restart Race" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: none; align-items: center; justify-content: center;">🔄</button>
+        <button id="edit-track-btn-toolbar" title="Edit Track" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: none; align-items: center; justify-content: center;">✏️</button>
+
+        <!-- Separator -->
+        <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
+
+        <!-- Transform Tools -->
+        <button id="toggle-transform-btn-toolbar" title="Toggle Transform Controls (W/E/R)" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🎯</button>
+        <button id="duplicate-piece-btn-toolbar" title="Duplicate Selected" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📋</button>
+        <button id="remove-piece-btn-toolbar" title="Delete Selected" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🗑️</button>
+
+        <!-- Separator -->
+        <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
+
+        <!-- Additional Tools -->
+        <button id="edit-material-btn-toolbar" title="Material Editor" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🎨</button>
+        <button id="face-paint-btn-toolbar" title="Face Paint" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🖌️</button>
+
+        <!-- Separator -->
+        <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
+
+        <!-- Menu Buttons -->
+        <button id="camera-mode-btn-toolbar" title="Camera Mode" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📹</button>
+        <button id="ball-maker-btn-toolbar" title="Ball Maker" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">⚽</button>
+        <button id="ball-roster-btn-toolbar" title="Ball Roster" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">👥</button>
+        <button id="open-tournament-btn-toolbar" title="Tournament" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🏁</button>
+        <button id="skybox-btn-toolbar" title="Skybox Settings" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🌌</button>
+        <button id="global-settings-btn-toolbar" title="Global Settings" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">⚙️</button>
+
+        <!-- Spacer to push right-aligned items -->
+        <div style="flex: 1;"></div>
+
+        <!-- Right-aligned items -->
+        <button id="camera-mode-btn-toolbar" title="Toggle Camera Mode" style="background: #495057; border: 1px solid #495057; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">📹 Camera</button>
+    </div>
+
+    <!-- Left Sidebar for Object Tree -->
+    <div id="left-sidebar" style="position: fixed; top: 50px; left: 0; width: 280px; height: calc(100vh - 50px); background: rgba(0, 0, 0, 0.9); color: white; padding: 15px; z-index: 140; overflow-y: auto; border-right: 1px solid #444; transition: transform 0.3s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div class="ui-title">📋 Scene Panel</div>
+            <button id="collapse-sidebar-btn" title="Collapse Sidebar" style="background: #495057; border: 1px solid #495057; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">◀</button>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #444;">
+            <button id="object-tree-tab" class="sidebar-tab active" style="flex: 1; padding: 8px 12px; background: #007bff; border: none; color: white; cursor: pointer; font-size: 12px;">Objects</button>
+            <button id="add-pieces-tab" class="sidebar-tab" style="flex: 1; padding: 8px 12px; background: #495057; border: none; color: white; cursor: pointer; font-size: 12px;">Add Pieces</button>
+        </div>
+        
+        <!-- Object Tree Tab Content -->
+        <div id="object-tree-content" class="tab-content">
+            <div id="object-list"></div>
+        </div>
+        
+        <!-- Add Pieces Tab Content -->
+        <div id="add-pieces-content" class="tab-content" style="display: none;">
+            <div id="piece-selector-tree"></div>
+        </div>
+    </div>
+
+
+    <!-- Global Settings Panel -->
+    <div id="global-settings-panel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.9); color: white; padding: 30px; border-radius: 10px; z-index: 200; display: none; text-align: left; min-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <h2 style="margin-top: 0; color: #6f42c1; text-align: center;">⚙️ Global Settings</h2>
+        
+        <!-- Lighting Settings -->
+        <div class="ui-title" style="margin-bottom: 15px;">💡 Lighting</div>
+        <div class="speed-control">
+            <label for="ambient-light-slider">Ambient Intensity: <span id="ambient-light-value">0.8</span></label>
+            <input type="range" id="ambient-light-slider" min="0" max="2" step="0.1" value="0.8">
+        </div>
+        <div class="speed-control">
+            <label for="directional-light-slider">Directional Intensity: <span id="directional-light-value">1.5</span></label>
+            <input type="range" id="directional-light-slider" min="0" max="5" step="0.1" value="1.5">
+            <label for="directional-light-color" style="margin-top: 5px;">Directional Color:</label>
+            <input type="color" id="directional-light-color" value="#ffffff" style="width: 100%; height: 30px; padding: 0; border-radius: 4px;">
+        </div>
+        
+        <!-- Environment Settings -->
+        <div class="ui-title" style="margin: 20px 0 15px 0;">🌍 Environment</div>
+        <div class="speed-control">
+            <label for="background-color">Background Color:</label>
+            <input type="color" id="background-color" value="#202020" style="width: 100%; height: 30px; padding: 0; border-radius: 4px; margin-top: 5px;">
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button id="close-global-settings-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -1102,9 +1194,9 @@
         let currentSkyboxData = null;
         
         // Undo/Redo System
-        let undoStack = [];
-        let redoStack = [];
-        const MAX_HISTORY_SIZE = 50;
+        let historyStates = [];
+        let currentStateIndex = -1;
+        const MAX_HISTORY_SIZE = 20;
         let isPerformingUndoRedo = false;
         let multiSelectGroup = null;
         let previousLeadMarble = null;
@@ -1143,14 +1235,17 @@
             scene.background = initialBackgroundColor;
             window.defaultBackgroundColor = initialBackgroundColor;
             clock = new THREE.Clock();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            // Calculate aspect ratio for full viewport (sidebar overlays)
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight - 50;
+            camera = new THREE.PerspectiveCamera(75, viewportWidth / viewportHeight, 0.1, 2000);
             camera.position.set(0, 20, 30);
             
             renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(viewportWidth, viewportHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            document.body.appendChild(renderer.domElement);
+            document.getElementById('main-viewport').appendChild(renderer.domElement);
             
             // Set up bloom post-processing
             composer = new EffectComposer(renderer);
@@ -1267,13 +1362,15 @@
             updateObjectTree();
             
             // Capture initial state for undo system
-            setTimeout(() => captureState(), 100);
+            setTimeout(() => {
+                captureState('initial', 'Initial scene state');
+                updateUndoRedoButtons();
+            }, 100);
         }
 
         // Undo/Redo System Functions
-        function captureState() {
-            if (isPerformingUndoRedo) return; // Don't capture during undo/redo operations
-            
+        function captureStateInternal() {
+            // Internal function that doesn't check isPerformingUndoRedo
             const state = {
                 timestamp: Date.now(),
                 trackPieces: trackPieces.map(piece => ({
@@ -1308,17 +1405,33 @@
                 })).filter(entry => entry.index !== -1), // Only include pieces that still exist
                 selectedPieces: selectedPieces.map(piece => trackPieces.indexOf(piece)).filter(index => index !== -1)
             };
+            return state;
+        }
+
+        function captureState(actionType = 'unknown', description = '') {
+            if (isPerformingUndoRedo) return; // Don't capture during undo/redo operations
             
-            // Add to undo stack
-            undoStack.push(state);
+            const state = captureStateInternal();
+            state.actionType = actionType;
+            state.description = description;
             
-            // Limit stack size
-            if (undoStack.length > MAX_HISTORY_SIZE) {
-                undoStack.shift();
+            // If we're in the middle of history (not at the end), remove all future states
+            if (currentStateIndex < historyStates.length - 1) {
+                historyStates = historyStates.slice(0, currentStateIndex + 1);
             }
             
-            // Clear redo stack when new action is performed
-            redoStack.length = 0;
+            // Add new state
+            historyStates.push(state);
+            currentStateIndex = historyStates.length - 1;
+            
+            // Limit history size (sliding window)
+            if (historyStates.length > MAX_HISTORY_SIZE) {
+                historyStates.shift();
+                currentStateIndex--;
+            }
+            
+            // Update button states
+            updateUndoRedoButtons();
             
             return state;
         }
@@ -1433,46 +1546,154 @@
         }
         
         function performUndo() {
-            if (undoStack.length <= 1) { // Need at least 2 states (current + previous)
+            if (currentStateIndex <= 0) {
                 showMessage('Nothing to undo', 'info');
                 return false;
             }
             
-            // Move current state to redo stack
-            const currentState = undoStack.pop();
-            redoStack.push(currentState);
-            
-            // Restore previous state (which is now the last item)
-            const previousState = undoStack[undoStack.length - 1];
-            const success = restoreState(previousState);
+            // Move to previous state
+            currentStateIndex--;
+            const stateToRestore = historyStates[currentStateIndex];
+            const success = restoreState(stateToRestore);
             
             if (success) {
-                showMessage(`Undo successful (${undoStack.length} states remaining)`, 'success');
+                updateUndoRedoButtons();
+                showMessage(`Undo successful - ${stateToRestore.description || stateToRestore.actionType}`, 'success');
+            } else {
+                // If restore failed, move back to current position
+                currentStateIndex++;
             }
             
             return success;
         }
         
         function performRedo() {
-            if (redoStack.length === 0) {
+            if (currentStateIndex >= historyStates.length - 1) {
                 showMessage('Nothing to redo', 'info');
                 return false;
             }
             
-            // Get state from redo stack
-            const redoState = redoStack.pop();
-            const success = restoreState(redoState);
+            // Move to next state
+            currentStateIndex++;
+            const stateToRestore = historyStates[currentStateIndex];
+            const success = restoreState(stateToRestore);
             
             if (success) {
-                // Add the restored state back to undo stack
-                undoStack.push(redoState);
-                showMessage(`Redo successful (${redoStack.length} redo states remaining)`, 'success');
+                updateUndoRedoButtons();
+                showMessage(`Redo successful - ${stateToRestore.description || stateToRestore.actionType}`, 'success');
             } else {
-                // Put it back on redo stack if restore failed
-                redoStack.push(redoState);
+                // If restore failed, move back to previous position
+                currentStateIndex--;
             }
             
             return success;
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('undo-btn');
+            const redoBtn = document.getElementById('redo-btn');
+            
+            const canUndo = currentStateIndex > 0;
+            const canRedo = currentStateIndex < historyStates.length - 1;
+            
+            if (undoBtn) {
+                undoBtn.disabled = !canUndo;
+                undoBtn.title = canUndo ? `Undo (Ctrl+Z) - ${currentStateIndex} states available` : 'Nothing to undo';
+            }
+            
+            if (redoBtn) {
+                redoBtn.disabled = !canRedo;
+                const redoCount = historyStates.length - 1 - currentStateIndex;
+                redoBtn.title = canRedo ? `Redo (Ctrl+Y or Ctrl+Shift+Z) - ${redoCount} states available` : 'Nothing to redo';
+            }
+            
+            updateTimeline();
+        }
+
+        function getActionIcon(actionType) {
+            const iconMap = {
+                'initial': '🏁',      // Initial state
+                'add': '➕',          // Add piece
+                'delete': '🗑️',       // Delete piece
+                'move': '↔️',         // Move/transform piece
+                'rotate': '🔄',       // Rotate piece
+                'scale': '📏',        // Scale piece
+                'material': '🎨',     // Material change
+                'paint': '🖌️',        // Face painting
+                'custom': '📦',       // Custom object
+                'duplicate': '📋',    // Duplicate piece
+                'group': '📁',        // Group operation
+                'light': '💡',        // Light settings
+                'particle': '✨',     // Particle effects
+                'camera': '📹',       // Camera settings
+                'affector': '🌊',     // Physics affector
+                'skybox': '🌅',       // Skybox change
+                'unknown': '❓'       // Unknown action
+            };
+            
+            return iconMap[actionType] || iconMap['unknown'];
+        }
+
+        function updateTimeline() {
+            const timeline = document.getElementById('undo-timeline');
+            if (!timeline) return;
+            
+            timeline.innerHTML = '';
+            
+            if (historyStates.length === 0) return;
+            
+            historyStates.forEach((state, index) => {
+                const stateElement = document.createElement('div');
+                stateElement.className = 'timeline-state';
+                
+                if (index < currentStateIndex) {
+                    stateElement.classList.add('past');
+                } else if (index === currentStateIndex) {
+                    stateElement.classList.add('current');
+                } else {
+                    stateElement.classList.add('future');
+                }
+                
+                // Set the icon based on action type
+                const icon = getActionIcon(state.actionType || 'unknown');
+                stateElement.textContent = icon;
+                
+                // Create a human-readable description
+                const pieceCount = state.trackPieces ? state.trackPieces.length : 0;
+                const timeStr = state.timestamp ? new Date(state.timestamp).toLocaleTimeString() : '';
+                const actionDesc = state.description || state.actionType || 'Unknown action';
+                stateElement.title = `${actionDesc}\nState ${index + 1}: ${pieceCount} pieces (${timeStr})`;
+                
+                stateElement.addEventListener('click', () => jumpToState(index));
+                
+                timeline.appendChild(stateElement);
+            });
+            
+            // Scroll current state into view
+            setTimeout(() => {
+                const currentState = timeline.querySelector('.current');
+                if (currentState) {
+                    currentState.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }, 50);
+        }
+
+        function jumpToState(targetIndex) {
+            if (targetIndex < 0 || targetIndex >= historyStates.length || targetIndex === currentStateIndex) {
+                return;
+            }
+            
+            const targetState = historyStates[targetIndex];
+            if (!targetState) return;
+            
+            // Simply update the current position and restore the state
+            const success = restoreState(targetState);
+            if (success) {
+                currentStateIndex = targetIndex;
+                updateUndoRedoButtons();
+                const actionDesc = targetState.description || targetState.actionType || 'Unknown action';
+                showMessage(`Jumped to: ${actionDesc}`, 'success');
+            }
         }
 
         function generateProceduralTexture(textureType, color) {
@@ -2497,7 +2718,8 @@
         function removeSelectedPiece() {
             // Capture state before deletion for undo system
             if (selectedPieces.length > 0 || transformControls.object) {
-                captureState();
+                const count = selectedPieces.length || (transformControls.object ? 1 : 0);
+                captureState('delete', `Delete ${count} piece${count > 1 ? 's' : ''}`);
             }
             
             if (selectedPieces.length > 0) {
@@ -2525,20 +2747,25 @@
         }
         
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            // Calculate new viewport dimensions (sidebar overlays)
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight - 50; // Subtract toolbar height
+            
+            camera.aspect = viewportWidth / viewportHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(viewportWidth, viewportHeight);
+            composer.setSize(viewportWidth, viewportHeight);
         }
         
         function onPointerDown(event) {
-            if (!transformControls.enabled || transformControls.dragging) return;
-            
-            // Track mouse position and time for drag detection
+            // Always track mouse position for drag detection (including face paint mode)
             mouseDownPosition.x = event.clientX;
             mouseDownPosition.y = event.clientY;
             dragStartTime = Date.now();
             isDragging = false;
+            
+            // Early return for non-transform modes
+            if (!transformControls.enabled || transformControls.dragging) return;
         }
 
         function onPointerMove(event) {
@@ -2560,10 +2787,16 @@
         }
 
         function onPointerUp(event) {
-            // Face painting mode takes priority - always allow painting clicks
-            if (facePaintMode) {
+            // Face painting mode - but only for clicks, not drags
+            if (facePaintMode && !isDragging) {
                 handleFacePaintClick(event);
                 isDragging = false; // Reset drag state
+                return;
+            }
+            
+            // Reset drag state for face paint mode even if we don't paint
+            if (facePaintMode) {
+                isDragging = false;
                 return;
             }
             
@@ -2571,7 +2804,11 @@
             if (transformControls.dragging || isDragging) return;
             
             // Only handle selection if this was a click (not a drag)
-            pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            // Adjust coordinates for the new layout (toolbar + sidebar offset)
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            pointer.set(x, y);
             raycaster.setFromCamera(pointer, camera);
             const intersects = raycaster.intersectObjects(trackPieces.map(p => p.group), true);
             
@@ -2757,15 +2994,73 @@
         }
 
         function updateSelectionUI() {
-            const selectionInfo = document.getElementById('selection-info');
-            if (selectionInfo) {
-                if (selectedPieces.length > 1) {
-                    selectionInfo.textContent = `${selectedPieces.length} pieces selected`;
-                } else if (selectedPieces.length === 1) {
-                    selectionInfo.textContent = `1 piece selected`;
-                } else {
-                    selectionInfo.textContent = '';
+            const selectedCount = document.getElementById('selected-count');
+            const selectedCoordinates = document.getElementById('selected-coordinates');
+            const selectedRotation = document.getElementById('selected-rotation');
+            const selectedScale = document.getElementById('selected-scale');
+            
+            if (selectedCount) {
+                selectedCount.textContent = `Selected: ${selectedPieces.length} piece${selectedPieces.length === 1 ? '' : 's'}`;
+            }
+            
+            if (selectedPieces.length === 1) {
+                const piece = selectedPieces[0];
+                const pos = piece.group.position;
+                const rot = piece.group.rotation;
+                const scale = piece.group.scale;
+                
+                // Convert rotation from radians to degrees for better readability
+                const rotDegX = (rot.x * 180 / Math.PI);
+                const rotDegY = (rot.y * 180 / Math.PI);
+                const rotDegZ = (rot.z * 180 / Math.PI);
+                
+                if (selectedCoordinates) {
+                    selectedCoordinates.textContent = `Position: x:${pos.x.toFixed(2)}, y:${pos.y.toFixed(2)}, z:${pos.z.toFixed(2)}`;
                 }
+                if (selectedRotation) {
+                    selectedRotation.textContent = `Rotation: x:${rotDegX.toFixed(1)}°, y:${rotDegY.toFixed(1)}°, z:${rotDegZ.toFixed(1)}°`;
+                }
+                if (selectedScale) {
+                    selectedScale.textContent = `Scale: x:${scale.x.toFixed(2)}, y:${scale.y.toFixed(2)}, z:${scale.z.toFixed(2)}`;
+                }
+            } else if (selectedPieces.length > 1) {
+                // Calculate center and average values for multiple selection
+                const center = new THREE.Vector3();
+                const avgRotation = new THREE.Euler();
+                const avgScale = new THREE.Vector3();
+                
+                selectedPieces.forEach(piece => {
+                    center.add(piece.group.position);
+                    avgRotation.x += piece.group.rotation.x;
+                    avgRotation.y += piece.group.rotation.y;
+                    avgRotation.z += piece.group.rotation.z;
+                    avgScale.add(piece.group.scale);
+                });
+                
+                center.divideScalar(selectedPieces.length);
+                avgRotation.x /= selectedPieces.length;
+                avgRotation.y /= selectedPieces.length;
+                avgRotation.z /= selectedPieces.length;
+                avgScale.divideScalar(selectedPieces.length);
+                
+                const avgRotDegX = (avgRotation.x * 180 / Math.PI);
+                const avgRotDegY = (avgRotation.y * 180 / Math.PI);
+                const avgRotDegZ = (avgRotation.z * 180 / Math.PI);
+                
+                if (selectedCoordinates) {
+                    selectedCoordinates.textContent = `Center: x:${center.x.toFixed(2)}, y:${center.y.toFixed(2)}, z:${center.z.toFixed(2)}`;
+                }
+                if (selectedRotation) {
+                    selectedRotation.textContent = `Avg Rotation: x:${avgRotDegX.toFixed(1)}°, y:${avgRotDegY.toFixed(1)}°, z:${avgRotDegZ.toFixed(1)}°`;
+                }
+                if (selectedScale) {
+                    selectedScale.textContent = `Avg Scale: x:${avgScale.x.toFixed(2)}, y:${avgScale.y.toFixed(2)}, z:${avgScale.z.toFixed(2)}`;
+                }
+            } else {
+                // No selection
+                if (selectedCoordinates) selectedCoordinates.textContent = 'Position: --';
+                if (selectedRotation) selectedRotation.textContent = 'Rotation: --';
+                if (selectedScale) selectedScale.textContent = 'Scale: --';
             }
         }
 
@@ -2981,20 +3276,61 @@
         }
 
         function setupEventListeners() {
-            document.getElementById('toggle-menu-btn').addEventListener('click', toggleMenu);
-            document.getElementById('start-race-btn').addEventListener('click', startRace);
-            document.getElementById('restart-race-btn').addEventListener('click', restartRace);
-            document.getElementById('edit-track-btn').addEventListener('click', editTrack);
+            // Note: Old main menu elements removed, only toolbar elements remain
+            
+            // Undo/Redo button event listeners
+            document.getElementById('undo-btn').addEventListener('click', () => {
+                performUndo();
+                updateUndoRedoButtons();
+            });
+            document.getElementById('redo-btn').addEventListener('click', () => {
+                performRedo();
+                updateUndoRedoButtons();
+            });
             document.getElementById('close-results-btn').addEventListener('click', () => {
                 document.getElementById('race-results').style.display = 'none';
             });
-            document.getElementById('skybox-btn').addEventListener('click', openSkyboxSelector);
-            document.getElementById('camera-mode-btn').addEventListener('click', toggleCameraMode);
-            document.getElementById('ball-maker-btn').addEventListener('click', openBallMaker);
-            document.getElementById('spotify-btn').addEventListener('click', openSpotifyPanel);
+            // Old main menu button event listeners removed - now handled by toolbar
+            
+            // Toolbar button event listeners (duplicate functionality for new layout)
+            document.getElementById('start-race-btn-toolbar').addEventListener('click', startRace);
+            document.getElementById('restart-race-btn-toolbar').addEventListener('click', restartRace);
+            document.getElementById('edit-track-btn-toolbar').addEventListener('click', editTrack);
+            document.getElementById('toggle-transform-btn-toolbar').addEventListener('click', toggleTransformControls);
+            document.getElementById('duplicate-piece-btn-toolbar').addEventListener('click', duplicateSelectedPiece);
+            document.getElementById('remove-piece-btn-toolbar').addEventListener('click', removeSelectedPiece);
+            document.getElementById('edit-material-btn-toolbar').addEventListener('click', openMaterialEditor);
+            document.getElementById('face-paint-btn-toolbar').addEventListener('click', toggleFacePaintMode);
+            document.getElementById('skybox-btn-toolbar').addEventListener('click', openSkyboxSelector);
+            document.getElementById('global-settings-btn-toolbar').addEventListener('click', openGlobalSettings);
+            document.getElementById('ball-roster-btn-toolbar').addEventListener('click', openBallRoster);
+            document.getElementById('camera-mode-btn-toolbar').addEventListener('click', toggleCameraMode);
+            
+            // Add missing toolbar button event listeners
+            document.getElementById('save-track-btn-toolbar').addEventListener('click', saveTrack);
+            document.getElementById('load-track-btn-toolbar').addEventListener('click', () => {
+                document.getElementById('load-track-input').click();
+            });
+            document.getElementById('ball-maker-btn-toolbar').addEventListener('click', openBallMaker);
+            document.getElementById('open-tournament-btn-toolbar').addEventListener('click', openTournamentPanel);
+            
+            // Sidebar collapse functionality
+            document.getElementById('collapse-sidebar-btn').addEventListener('click', toggleSidebar);
+            
+            // Sidebar tab functionality
+            document.getElementById('object-tree-tab').addEventListener('click', () => switchSidebarTab('objects'));
+            document.getElementById('add-pieces-tab').addEventListener('click', () => switchSidebarTab('pieces'));
+            
+            // Setup material and paint event listeners
+            setupMaterialAndPaintEventListeners();
+        }
+            
             document.getElementById('embed-spotify-btn').addEventListener('click', embedSpotify);
             document.getElementById('close-spotify-btn').addEventListener('click', () => {
                 document.getElementById('spotify-panel').style.display = 'none';
+            });
+            document.getElementById('close-global-settings-btn').addEventListener('click', () => {
+                document.getElementById('global-settings-panel').style.display = 'none';
             });
             document.getElementById('close-ball-maker-btn').addEventListener('click', () => {
                 document.getElementById('ball-maker').style.display = 'none';
@@ -3029,10 +3365,15 @@
                     e.target.closest('.skybox-option').classList.add('selected');
                 }
             });
-            document.getElementById('camera-speed-slider').addEventListener('input', (e) => {
-                cameraSpeed = parseFloat(e.target.value);
-            });
-            document.getElementById('ball-roster-btn').addEventListener('click', openBallRoster);
+            // Old main menu element event listeners - now handled by toolbar or removed
+            const cameraSpeedSlider = document.getElementById('camera-speed-slider');
+            if (cameraSpeedSlider) {
+                cameraSpeedSlider.addEventListener('input', (e) => {
+                    cameraSpeed = parseFloat(e.target.value);
+                });
+            }
+            
+            // These elements are still used in panels/dialogs
             document.getElementById('close-roster-btn').addEventListener('click', () => {
                 document.getElementById('ball-roster').style.display = 'none';
             });
@@ -3042,7 +3383,6 @@
             document.getElementById('add-random-balls-btn').addEventListener('click', addRandomBalls);
             document.getElementById('clear-roster-btn').addEventListener('click', clearRoster);
             document.getElementById('add-custom-to-roster-btn').addEventListener('click', addCustomToRoster);
-            document.getElementById('open-tournament-btn').addEventListener('click', openTournamentPanel);
             document.getElementById('close-tournament-btn').addEventListener('click', () => {
                 document.getElementById('tournament-panel').style.display = 'none';
             });
@@ -3052,101 +3392,108 @@
             document.getElementById('directional-light-slider').addEventListener('input', updateLighting);
             document.getElementById('directional-light-color').addEventListener('input', updateLighting);
             document.getElementById('background-color').addEventListener('input', updateBackgroundColor);
-            document.getElementById('save-track-btn').addEventListener('click', saveTrack);
-            document.getElementById('load-track-input').addEventListener('change', loadTrack);
-            // Auto-add piece when selected in dropdown
-            document.getElementById('piece-type-selector').addEventListener('change', (e) => {
-                const selectedType = e.target.value;
-                if (selectedType) {
-                    // Capture state before adding piece
-                    captureState();
+            // Old main menu element event listeners removed - functionality moved to toolbar
+            const addCustomInput = document.getElementById('add-custom-input');
+            if (addCustomInput) {
+                addCustomInput.addEventListener('change', loadCustomObject);
+            }
+            const loadTrackInput = document.getElementById('load-track-input');
+            if (loadTrackInput) {
+                loadTrackInput.addEventListener('change', loadTrack);
+            }
+
+        // Functions needed by toolbar buttons
+        function toggleTransformControls() {
+            transformControls.enabled = !transformControls.enabled;
+            transformControls.visible = transformControls.enabled;
+            if (!transformControls.enabled) transformControls.detach();
+            updateHiddenObjectVisibility();
+        }
+
+        function duplicateSelectedPiece() {
+            if (selectedPieces.length > 0) {
+                selectedPieces.forEach(piece => {
+                    const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
+                    const newPiece = addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
                     
-                    if (selectedType === 'custom') {
-                        // Trigger file input for custom obj
-                        document.getElementById('add-custom-input').click();
-                    } else {
-                        addPiece(selectedType);
+                    // Copy custom name with "Copy" suffix
+                    if (pieceNames.has(piece)) {
+                        const originalName = pieceNames.get(piece);
+                        pieceNames.set(newPiece, originalName + " Copy");
                     }
-                    // Reset dropdown to default
-                    e.target.value = '';
-                }
-            });
-            document.getElementById('add-custom-input').addEventListener('change', loadCustomObject);
-            document.getElementById('toggle-transform-btn').addEventListener('click', (e) => {
-                transformControls.enabled = !transformControls.enabled;
-                transformControls.visible = transformControls.enabled;
-                e.target.textContent = transformControls.enabled ? '🎯 Disable Transform' : '🎯 Enable Transform';
-                e.target.style.background = transformControls.enabled ? '#007bff' : '#4a4a4a';
-                if (!transformControls.enabled) transformControls.detach();
-                
-                // Update visibility of hidden objects when transform controls are toggled
-                updateHiddenObjectVisibility();
-            });
-            document.getElementById('duplicate-piece-btn').addEventListener('click', () => {
-                if (selectedPieces.length > 0) {
-                    selectedPieces.forEach(piece => {
-                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
-                        const newPiece = addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
-                        
-                        // Copy custom name with "Copy" suffix
-                        if (pieceNames.has(piece)) {
-                            const originalName = pieceNames.get(piece);
-                            pieceNames.set(newPiece, originalName + " Copy");
-                        }
-                        
-                        // Copy material data to new piece
-                        newPiece.materialData = {...piece.materialData};
-                        
-                        // Copy special properties
-                        if (piece.isCameraSet) {
-                            newPiece.isCameraSet = true;
-                            newPiece.cameraSettings = {...piece.cameraSettings};
-                        }
-                        if (piece.isBallSet) {
-                            newPiece.isBallSet = true;
-                            newPiece.isPlacementBall = piece.isPlacementBall;
-                        }
-                        
-                        const mesh = newPiece.group.children[0];
-                        if (mesh && mesh.isMesh) {
-                            mesh.material = createPieceMaterial(newPiece.materialData);
-                        }
-                    });
-                } else if(transformControls.object){
-                    const piece = trackPieces.find(p => p.group === transformControls.object);
-                    if(piece) {
-                        const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
-                        addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
-                        // Copy material data to new piece
-                        const newPiece = trackPieces[trackPieces.length - 1];
-                        newPiece.materialData = {...piece.materialData};
-                        
-                        // Copy special properties
-                        if (piece.isCameraSet) {
-                            newPiece.isCameraSet = true;
-                            newPiece.cameraSettings = {...piece.cameraSettings};
-                        }
-                        if (piece.isBallSet) {
-                            newPiece.isBallSet = true;
-                            newPiece.isPlacementBall = piece.isPlacementBall;
-                        }
-                        
-                        const mesh = newPiece.group.children[0];
-                        if (mesh && mesh.isMesh) {
-                            mesh.material = createPieceMaterial(newPiece.materialData);
-                        }
+                    
+                    // Copy material data to new piece
+                    newPiece.materialData = {...piece.materialData};
+                    
+                    // Copy special properties
+                    if (piece.isCameraSet) {
+                        newPiece.isCameraSet = true;
+                        newPiece.cameraSettings = {...piece.cameraSettings};
                     }
+                    if (piece.isBallSet) {
+                        newPiece.isBallSet = true;
+                        newPiece.isPlacementBall = piece.isPlacementBall;
+                    }
+                    
+                    const mesh = newPiece.group.children[0];
+                    if (mesh && mesh.isMesh) {
+                        mesh.material = createPieceMaterial(newPiece.materialData);
+                    }
+                });
+                updateObjectTree();
+                captureStateInternal('Duplicate pieces');
+            } else if(transformControls.object){
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if(piece) {
+                    const newPos = piece.group.position.clone().add(new THREE.Vector3(0,2,0));
+                    addPiece(piece.type, {position: newPos, quaternion: piece.group.quaternion.clone(), scale: piece.group.scale.clone()});
+                    // Copy material data to new piece
+                    const newPiece = trackPieces[trackPieces.length - 1];
+                    newPiece.materialData = {...piece.materialData};
+                    
+                    // Copy special properties
+                    if (piece.isCameraSet) {
+                        newPiece.isCameraSet = true;
+                        newPiece.cameraSettings = {...piece.cameraSettings};
+                    }
+                    if (piece.isBallSet) {
+                        newPiece.isBallSet = true;
+                        newPiece.isPlacementBall = piece.isPlacementBall;
+                    }
+                    
+                    const mesh = newPiece.group.children[0];
+                    if (mesh && mesh.isMesh) {
+                        mesh.material = createPieceMaterial(newPiece.materialData);
+                    }
+                    updateObjectTree();
+                    captureStateInternal('Duplicate piece');
                 }
-            });
-            document.getElementById('remove-piece-btn').addEventListener('click', removeSelectedPiece);
-            document.getElementById('edit-material-btn').addEventListener('click', openMaterialEditor);
+            }
+        }
+
+        // Helper function to safely add event listeners
+        function safeAddEventListener(elementId, event, handler, description = '') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.addEventListener(event, handler);
+            } else if (description) {
+                console.log(`Element ${elementId} not found - ${description}`);
+            }
+        }
+
+        function setupMaterialAndPaintEventListeners() {
             document.getElementById('close-material-editor-btn').addEventListener('click', () => {
                 const editor = document.getElementById('material-editor');
                 editor.classList.remove('show');
                 setTimeout(() => editor.style.display = 'none', 300);
             });
             document.getElementById('apply-material-btn').addEventListener('click', applyMaterial);
-            document.getElementById('face-paint-btn').addEventListener('click', toggleFacePaintMode);
+            
+            // Face paint button (old main menu version - now handled by toolbar)
+            const facePaintBtn = document.getElementById('face-paint-btn');
+            if (facePaintBtn) {
+                facePaintBtn.addEventListener('click', toggleFacePaintMode);
+            }
             
             // Face painter UI event listeners
             document.getElementById('close-face-painter-btn').addEventListener('click', () => {
@@ -3352,16 +3699,19 @@
                 }
             });
             
-            // Select all button
-            document.getElementById('select-all-btn').addEventListener('click', () => {
-                clearAllSelections();
-                selectedPieces = [...trackPieces];
-                selectedPieces.forEach(piece => highlightPiece(piece, true));
-                refreshAllHighlights();
-                updateMultiSelectGroup();
-                updateCameraTargetForMultiSelect();
-                updateSelectionUI();
-            });
+            // Select all button (old main menu version - functionality could be added to toolbar)
+            const selectAllBtn = document.getElementById('select-all-btn');
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', () => {
+                    clearAllSelections();
+                    selectedPieces = [...trackPieces];
+                    selectedPieces.forEach(piece => highlightPiece(piece, true));
+                    refreshAllHighlights();
+                    updateMultiSelectGroup();
+                    updateCameraTargetForMultiSelect();
+                    updateSelectionUI();
+                });
+            }
             
             // Object tree event listeners
             document.addEventListener('click', handleObjectTreeClick);
@@ -3463,10 +3813,17 @@
                 orbitControls.enabled = !event.value;
                 // Capture state when drag starts (before transformation)
                 if (event.value) {
-                    captureState();
+                    const mode = transformControls.mode;
+                    const actionType = mode === 'translate' ? 'move' : mode === 'rotate' ? 'rotate' : 'scale';
+                    const actionName = mode === 'translate' ? 'Move' : mode === 'rotate' ? 'Rotate' : 'Scale';
+                    captureState(actionType, `${actionName} piece`);
                 }
             });
             transformControls.addEventListener('change', updateMultiSelectPositions);
+            transformControls.addEventListener('change', () => {
+                // Only update UI, don't interfere with selection logic
+                requestAnimationFrame(updateSelectionUI);
+            });
             transformControls.addEventListener('mouseUp', () => { 
                 if(transformControls.object && transformControls.object !== multiSelectGroup) {
                     const piece = trackPieces.find(p => p.group === transformControls.object);
@@ -3899,7 +4256,7 @@
             if (!file) return;
             
             // Capture state before adding custom object
-            captureState();
+            captureState('custom', 'Add custom object');
             const reader = new FileReader();
             reader.onload = e => {
                 try {
@@ -4496,6 +4853,11 @@
             const restartBtn = document.getElementById('restart-race-btn');
             const editBtn = document.getElementById('edit-track-btn');
             const speedControl = document.getElementById('camera-speed-control');
+            
+            // Toolbar buttons
+            const startBtnToolbar = document.getElementById('start-race-btn-toolbar');
+            const restartBtnToolbar = document.getElementById('restart-race-btn-toolbar');
+            const editBtnToolbar = document.getElementById('edit-track-btn-toolbar');
             const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #toggle-transform-btn, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #save-track-btn, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
             const editorLabels = document.querySelectorAll('label[for="add-custom-input"], label[for="load-track-input"]');
             const fileInputs = document.querySelectorAll('#add-custom-input, #load-track-input');
@@ -4506,6 +4868,19 @@
                 restartBtn.style.display = 'block';
                 editBtn.style.display = 'block';
                 speedControl.style.display = 'block';
+                
+                // Update toolbar buttons
+                if (startBtnToolbar) startBtnToolbar.style.display = 'none';
+                if (restartBtnToolbar) {
+                    restartBtnToolbar.style.display = 'flex';
+                    restartBtnToolbar.style.alignItems = 'center';
+                    restartBtnToolbar.style.justifyContent = 'center';
+                }
+                if (editBtnToolbar) {
+                    editBtnToolbar.style.display = 'flex';
+                    editBtnToolbar.style.alignItems = 'center';
+                    editBtnToolbar.style.justifyContent = 'center';
+                }
                 editorButtons.forEach(b => b.style.display = 'none');
                 editorLabels.forEach(l => l.style.display = 'none');
                 fileInputs.forEach(f => f.style.display = 'none');
@@ -4515,11 +4890,209 @@
                 restartBtn.style.display = 'none';
                 editBtn.style.display = 'none';
                 speedControl.style.display = 'none';
+                
+                // Update toolbar buttons
+                if (startBtnToolbar) {
+                    startBtnToolbar.style.display = 'flex';
+                    startBtnToolbar.style.alignItems = 'center';
+                    startBtnToolbar.style.justifyContent = 'center';
+                }
+                if (restartBtnToolbar) restartBtnToolbar.style.display = 'none';
+                if (editBtnToolbar) editBtnToolbar.style.display = 'none';
                 editorButtons.forEach(b => b.style.display = 'block');
                 editorLabels.forEach(l => l.style.display = 'block');
                 // Keep file inputs hidden - they should only appear when triggered
                 fileInputs.forEach(f => f.style.display = 'none');
                 if (viewcube) viewcube.style.display = 'block';
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('left-sidebar');
+            const collapseBtn = document.getElementById('collapse-sidebar-btn');
+            
+            const isCollapsed = sidebar.style.transform === 'translateX(-265px)';
+            
+            if (isCollapsed) {
+                // Expand sidebar
+                sidebar.style.transform = 'translateX(0)';
+                collapseBtn.innerHTML = '◀';
+                collapseBtn.title = 'Collapse Sidebar';
+            } else {
+                // Collapse sidebar (keep 15px visible for the button)
+                sidebar.style.transform = 'translateX(-265px)';
+                collapseBtn.innerHTML = '▶';
+                collapseBtn.title = 'Expand Sidebar';
+            }
+        }
+
+        function switchSidebarTab(tab) {
+            const objectTreeTab = document.getElementById('object-tree-tab');
+            const addPiecesTab = document.getElementById('add-pieces-tab');
+            const objectTreeContent = document.getElementById('object-tree-content');
+            const addPiecesContent = document.getElementById('add-pieces-content');
+            
+            if (tab === 'objects') {
+                objectTreeTab.classList.add('active');
+                addPiecesTab.classList.remove('active');
+                objectTreeTab.style.background = '#007bff';
+                addPiecesTab.style.background = '#495057';
+                objectTreeContent.style.display = 'block';
+                addPiecesContent.style.display = 'none';
+            } else if (tab === 'pieces') {
+                addPiecesTab.classList.add('active');
+                objectTreeTab.classList.remove('active');
+                addPiecesTab.style.background = '#007bff';
+                objectTreeTab.style.background = '#495057';
+                addPiecesContent.style.display = 'block';
+                objectTreeContent.style.display = 'none';
+                
+                // Initialize piece selector tree if not done
+                if (!document.getElementById('piece-selector-tree').innerHTML) {
+                    createPieceSelectorTree();
+                }
+            }
+        }
+
+        function createPieceSelectorTree() {
+            const selectorTree = document.getElementById('piece-selector-tree');
+            
+            // Define piece categories organized hierarchically
+            const pieceCategories = {
+                'Track Pieces': {
+                    icon: '🛤️',
+                    pieces: {
+                        'start': { icon: '🏁', name: 'Start Platform' },
+                        'straight': { icon: '➡️', name: 'Straight' },
+                        'curve': { icon: '↪️', name: 'Curve' },
+                        'end': { icon: '🎯', name: 'End Platform' },
+                        'pipe': { icon: '🚇', name: 'Pipe' },
+                        'half-pipe': { icon: '⛷️', name: 'Half-pipe' }
+                    }
+                },
+                'Obstacles': {
+                    icon: '🚧',
+                    pieces: {
+                        'ball': { icon: '⚽', name: 'Ball (Pinned)' },
+                        'pyramid': { icon: '🔺', name: 'Pyramid' },
+                        'cylinder': { icon: '🥫', name: 'Cylinder' },
+                        'cube': { icon: '🧊', name: 'Cube' },
+                        'prism': { icon: '💎', name: 'Prism' }
+                    }
+                },
+                'Physics Affectors': {
+                    icon: '🌊',
+                    pieces: {
+                        'water': { icon: '💧', name: 'Water Zone' },
+                        'zero-g': { icon: '🌌', name: 'Zero Gravity' },
+                        'moon-g': { icon: '🌙', name: 'Moon Gravity' },
+                        'accelerator': { icon: '⚡', name: 'Accelerator' },
+                        'brakes': { icon: '🛑', name: 'Brake Zone' },
+                        'ice': { icon: '🧊', name: 'Ice Zone' }
+                    }
+                },
+                'Lights & Effects': {
+                    icon: '💡',
+                    pieces: {
+                        'spot-light': { icon: '🔦', name: 'Spot Light' },
+                        'point-light': { icon: '💡', name: 'Point Light' },
+                        'strobe-light': { icon: '⚡', name: 'Strobe Light' },
+                        'directional-light': { icon: '☀️', name: 'Directional Light' },
+                        'particle-gen': { icon: '✨', name: 'Particle Generator' }
+                    }
+                },
+                'Camera Controls': {
+                    icon: '📹',
+                    pieces: {
+                        'camera-set': { icon: '📷', name: 'Camera Set' }
+                    }
+                },
+                'Ball Placement': {
+                    icon: '🎯',
+                    pieces: {
+                        'ball-set': { icon: '🏁', name: 'Ball Set' }
+                    }
+                },
+                'Custom': {
+                    icon: '📦',
+                    pieces: {
+                        'custom': { icon: '📦', name: 'Custom (.obj)...' }
+                    }
+                }
+            };
+            
+            let html = '';
+            
+            Object.entries(pieceCategories).forEach(([categoryName, categoryData]) => {
+                const categoryId = categoryName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                
+                html += `
+                    <div class="piece-category" style="margin-bottom: 8px;">
+                        <div class="piece-category-header" data-category="${categoryId}" 
+                             style="padding: 6px 8px; background: #495057; cursor: pointer; user-select: none; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 4px;">
+                            <span class="expand-icon" id="expand-${categoryId}">▶</span>
+                            <span>${categoryData.icon} ${categoryName}</span>
+                        </div>
+                        <div id="${categoryId}-pieces" class="piece-list" style="margin-left: 16px; display: none;">
+                `;
+                
+                Object.entries(categoryData.pieces).forEach(([pieceType, pieceData]) => {
+                    html += `
+                        <div class="piece-item" data-piece-type="${pieceType}" 
+                             style="padding: 6px 8px; cursor: pointer; user-select: none; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 2px; background: rgba(255,255,255,0.05); border: 1px solid transparent;"
+                             onmouseover="this.style.background='rgba(0,123,255,0.2)'; this.style.borderColor='#007bff';"
+                             onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='transparent';">
+                            <span>${pieceData.icon}</span>
+                            <span>${pieceData.name}</span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            selectorTree.innerHTML = html;
+            
+            // Add event listeners after HTML is created
+            document.querySelectorAll('.piece-category-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const categoryId = header.getAttribute('data-category');
+                    togglePieceCategory(categoryId);
+                });
+            });
+            
+            document.querySelectorAll('.piece-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const pieceType = item.getAttribute('data-piece-type');
+                    addPieceFromSelector(pieceType);
+                });
+            });
+        }
+
+        function togglePieceCategory(categoryId) {
+            const pieceList = document.getElementById(`${categoryId}-pieces`);
+            const expandIcon = document.getElementById(`expand-${categoryId}`);
+            
+            if (pieceList.style.display === 'none') {
+                pieceList.style.display = 'block';
+                expandIcon.textContent = '▼';
+            } else {
+                pieceList.style.display = 'none';
+                expandIcon.textContent = '▶';
+            }
+        }
+
+        function addPieceFromSelector(pieceType) {
+            if (pieceType === 'custom') {
+                // Trigger custom file input
+                document.getElementById('add-custom-input').click();
+            } else {
+                // Add piece directly
+                addPiece(pieceType);
+                captureStateInternal(`Add ${pieceType}`);
             }
         }
 
@@ -5515,7 +6088,7 @@
             if (!piece) return;
             
             // Capture state before applying material
-            captureState();
+            captureState('material', 'Apply material');
             
             // Update material data
             piece.materialData = {
@@ -5751,11 +6324,6 @@
                 }
             }
             
-            // Capture state before face painting (only on first paint of this object)
-            if (!mesh.userData.paintedFaces || mesh.userData.paintedFaces.size === 0) {
-                captureState();
-            }
-            
             // Get current paint settings
             const paintColor = document.getElementById('face-paint-color').value;
             const paintTransparency = parseFloat(document.getElementById('face-paint-transparency').value);
@@ -5778,6 +6346,9 @@
             
             // Use multi-material approach for true per-face material properties
             applyPerFaceMaterials(mesh, faceIndex);
+            
+            // Capture state AFTER face paint is applied
+            captureState('paint', `Paint face ${faceIndex}`);
             
             showMessage(`Painted face ${faceIndex} with ${Object.keys(mesh.userData.paintedFaces.get(faceIndex)).length} properties`, 'success');
         }
@@ -5896,8 +6467,11 @@
         }
         
         function handleFacePaintClick(event) {
-            
-            pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            // Adjust coordinates for the new layout (toolbar + sidebar offset)
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            pointer.set(x, y);
             raycaster.setFromCamera(pointer, camera);
             
             // Try to find any intersectable object first
@@ -5933,7 +6507,11 @@
         function handleFaceHover(event) {
             if (!transformControls.object) return;
             
-            pointer.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+            // Adjust coordinates for the new layout (toolbar + sidebar offset)
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            pointer.set(x, y);
             raycaster.setFromCamera(pointer, camera);
             
             const piece = trackPieces.find(p => p.group === transformControls.object);
@@ -6068,7 +6646,7 @@
             }
             
             // Capture state before clearing face paint
-            captureState();
+            captureState('paint', 'Clear face paint');
             
             // Restore original material and clean up multi-materials
             if (mesh.userData.originalMaterial) {
@@ -6584,6 +7162,10 @@
 
         function openSkyboxSelector() {
             document.getElementById('skybox-selector').style.display = 'block';
+        }
+
+        function openGlobalSettings() {
+            document.getElementById('global-settings-panel').style.display = 'block';
         }
 
         function createGradientSkybox(type) {
@@ -7125,6 +7707,40 @@
     </div>
 
     <div id="message-notification"></div>
+
+    <!-- Bottom toolbar for undo/redo -->
+    <div id="bottom-toolbar" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; background: rgba(0, 0, 0, 0.8); border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); padding: 10px;">
+        <!-- Undo/Redo buttons -->
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 8px;">
+            <button id="undo-btn" title="Undo (Ctrl+Z)" style="background: transparent; border: none; color: white; font-size: 20px; padding: 8px 12px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;">
+                ↶
+            </button>
+            <button id="redo-btn" title="Redo (Ctrl+Y or Ctrl+Shift+Z)" style="background: transparent; border: none; color: white; font-size: 20px; padding: 8px 12px; border-radius: 50%; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;">
+                ↷
+            </button>
+        </div>
+        
+        <!-- Timeline -->
+        <div id="undo-timeline" style="display: flex; align-items: center; gap: 3px; padding: 5px 10px; max-width: 400px; overflow-x: auto; scrollbar-width: thin;">
+            <!-- Timeline states will be populated here -->
+        </div>
+    </div>
+
+    <!-- Hidden file inputs needed by piece selector and toolbar -->
+    <input type="file" id="add-custom-input" accept=".obj" style="display: none;">
+    <input type="file" id="load-track-input" accept=".json" style="display: none;">
+
+    <!-- Main 3D Viewport -->
+    <div id="main-viewport"></div>
+
+    <!-- Bottom-right info panel -->
+    <div id="selection-info-panel" style="position: fixed; bottom: 20px; right: 20px; background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 15px; border-radius: 8px; font-family: monospace; font-size: 11px; z-index: 120; border: 1px solid #444; min-width: 220px;">
+        <div style="font-weight: bold; margin-bottom: 8px; color: #ffd700;">📋 Selection Info</div>
+        <div id="selected-count" style="margin-bottom: 5px; font-weight: bold;">Selected: 0 pieces</div>
+        <div id="selected-coordinates" style="color: #ccc; margin-bottom: 3px;">Position: --</div>
+        <div id="selected-rotation" style="color: #ccc; margin-bottom: 3px;">Rotation: --</div>
+        <div id="selected-scale" style="color: #ccc;">Scale: --</div>
+    </div>
 
 </body>
 </html>
