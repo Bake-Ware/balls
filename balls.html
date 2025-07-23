@@ -2185,7 +2185,7 @@
                     straightShape.lineTo(w/2, -h/2);
                     straightShape.lineTo(-w/2, -h/2);
                     return { geometry: new THREE.ExtrudeGeometry(straightShape, {steps: 1, depth: l, bevelEnabled: false}).rotateX(Math.PI/2) };
-                case "curve":
+                case "ramp":
                     const curvePath = new THREE.CatmullRomCurve3([
                         new THREE.Vector3(0, 0, -l/2),
                         new THREE.Vector3(l/4, 0, -l/4),
@@ -2199,10 +2199,108 @@
                     curveShape.lineTo(w/2, -h/2);
                     curveShape.lineTo(-w/2, -h/2);
                     return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
+                case "wall-45":
+                    // 45-degree flat wall arc - wide on X and Z, flat on Y
+                    const wallRadius45 = (w + 4) / Math.sin(Math.PI/4); // Calculate radius for 45-degree arc
+                    const wallArc45Path = new THREE.EllipseCurve(
+                        0, 0,            // center
+                        wallRadius45, wallRadius45,   // x and y radius
+                        0, Math.PI/4,    // start and end angle (45 degrees)
+                        false,           // clockwise
+                        0               // rotation
+                    );
+                    const wallArc45Points = wallArc45Path.getPoints(20);
+                    const wallArc45Path3D = new THREE.CatmullRomCurve3(
+                        wallArc45Points.map(p => new THREE.Vector3(p.x, 0, p.y))
+                    );
+                    // Create flat wall shape - thin in Y, wide in local coordinates
+                    const wall45Shape = new THREE.Shape();
+                    const wallThickness = t; // Use thin thickness
+                    wall45Shape.moveTo(-w/2, -wallThickness/2);
+                    wall45Shape.lineTo(-w/2, wallThickness/2);
+                    wall45Shape.lineTo(w/2, wallThickness/2);
+                    wall45Shape.lineTo(w/2, -wallThickness/2);
+                    wall45Shape.lineTo(-w/2, -wallThickness/2);
+                    const wall45Geometry = new THREE.ExtrudeGeometry(wall45Shape, { extrudePath: wallArc45Path3D, steps: 20, bevelEnabled: false });
+                    wall45Geometry.rotateX(Math.PI/2); // Rotate so it's vertical like a wall
+                    return { geometry: wall45Geometry };
+                case "wall-90":
+                    // 90-degree flat wall arc - wide on X and Z, flat on Y
+                    const wallRadius90 = (w + 4) / Math.sin(Math.PI/2); // Calculate radius for 90-degree arc
+                    const wallArc90Path = new THREE.EllipseCurve(
+                        0, 0,            // center
+                        wallRadius90, wallRadius90,   // x and y radius
+                        0, Math.PI/2,    // start and end angle (90 degrees)
+                        false,           // clockwise
+                        0               // rotation
+                    );
+                    const wallArc90Points = wallArc90Path.getPoints(30);
+                    const wallArc90Path3D = new THREE.CatmullRomCurve3(
+                        wallArc90Points.map(p => new THREE.Vector3(p.x, 0, p.y))
+                    );
+                    // Create flat wall shape - thin in Y, wide in local coordinates
+                    const wall90Shape = new THREE.Shape();
+                    const wallThickness90 = t; // Use thin thickness
+                    wall90Shape.moveTo(-w/2, -wallThickness90/2);
+                    wall90Shape.lineTo(-w/2, wallThickness90/2);
+                    wall90Shape.lineTo(w/2, wallThickness90/2);
+                    wall90Shape.lineTo(w/2, -wallThickness90/2);
+                    wall90Shape.lineTo(-w/2, -wallThickness90/2);
+                    const wall90Geometry = new THREE.ExtrudeGeometry(wall90Shape, { extrudePath: wallArc90Path3D, steps: 30, bevelEnabled: false });
+                    wall90Geometry.rotateX(Math.PI/2); // Rotate so it's vertical like a wall
+                    return { geometry: wall90Geometry };
+                case "curve-45":
+                    // 45-degree curved track - flat wide path that bends
+                    const trackRadius45 = (w + 4) * 1.5; // Larger radius for smoother track curves
+                    const trackArc45Path = new THREE.EllipseCurve(
+                        0, 0,            // center
+                        trackRadius45, trackRadius45,   // x and y radius
+                        0, Math.PI/4,    // start and end angle (45 degrees)
+                        false,           // clockwise
+                        0               // rotation
+                    );
+                    const trackArc45Points = trackArc45Path.getPoints(20);
+                    const trackArc45Path3D = new THREE.CatmullRomCurve3(
+                        trackArc45Points.map(p => new THREE.Vector3(p.x, 0, p.y))
+                    );
+                    // Create track cross-section - twice as thick, 1.5 units tall
+                    const track45Shape = new THREE.Shape();
+                    const trackWidth = 1.5; // this is height
+                    const trackHeight = w * 1.25; // this is width
+                    track45Shape.moveTo(-trackWidth/2, -trackHeight/2);
+                    track45Shape.lineTo(-trackWidth/2, trackHeight/2);
+                    track45Shape.lineTo(trackWidth/2, trackHeight/2);
+                    track45Shape.lineTo(trackWidth/2, -trackHeight/2);
+                    track45Shape.lineTo(-trackWidth/2, -trackHeight/2);
+                    return { geometry: new THREE.ExtrudeGeometry(track45Shape, { extrudePath: trackArc45Path3D, steps: 20, bevelEnabled: false }) };
+                case "curve-90":
+                    // 90-degree curved track - flat wide path that bends
+                    const trackRadius90 = (w + 4) * 1.5; // Larger radius for smoother track curves
+                    const trackArc90Path = new THREE.EllipseCurve(
+                        0, 0,            // center
+                        trackRadius90, trackRadius90,   // x and y radius
+                        0, Math.PI/2,    // start and end angle (90 degrees)
+                        false,           // clockwise
+                        0               // rotation
+                    );
+                    const trackArc90Points = trackArc90Path.getPoints(30);
+                    const trackArc90Path3D = new THREE.CatmullRomCurve3(
+                        trackArc90Points.map(p => new THREE.Vector3(p.x, 0, p.y))
+                    );
+                    // Create track cross-section - twice as thick, 1.5 units tall
+                    const track90Shape = new THREE.Shape();
+                    const trackWidth90 = 1.5; // this is height
+                    const trackHeight90 = w * 1.25; // this is width
+                    track90Shape.moveTo(-trackWidth90/2, -trackHeight90/2);
+                    track90Shape.lineTo(-trackWidth90/2, trackHeight90/2);
+                    track90Shape.lineTo(trackWidth90/2, trackHeight90/2);
+                    track90Shape.lineTo(trackWidth90/2, -trackHeight90/2);
+                    track90Shape.lineTo(-trackWidth90/2, -trackHeight90/2);
+                    return { geometry: new THREE.ExtrudeGeometry(track90Shape, { extrudePath: trackArc90Path3D, steps: 30, bevelEnabled: false }) };
                 case "ball":
                     return { geometry: new THREE.SphereGeometry(2, 16, 16), pinned: true };
                 case "pyramid":
-                    return { geometry: new THREE.ConeGeometry(3, 6, 8) };
+                    return { geometry: new THREE.ConeGeometry(3, 6, 4) };
                 case "cylinder":
                     return { geometry: new THREE.CylinderGeometry(2, 2, 6, 16) };
                 case "pipe":
@@ -2286,6 +2384,125 @@
                     pipeGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
                     
                     return { geometry: pipeGeometry };
+                case "arch":
+                    // Create a squared arch with custom geometry
+                    const archRadius = 8;
+                    const squareSize = 2; // Size of the square cross-section
+                    const segments = 32; // Number of segments along the arch
+                    
+                    // Create custom geometry for squared arch
+                    const archGeometry = new THREE.BufferGeometry();
+                    
+                    // Arrays to store geometry data
+                    const archVertices = [];
+                    const archIndices = [];
+                    const archNormals = [];
+                    const archUvs = [];
+                    
+                    // Create vertices for the arch path (half circle)
+                    for (let i = 0; i <= segments; i++) {
+                        const angle = (i / segments) * Math.PI; // 0 to PI for half circle
+                        const x = Math.cos(angle) * archRadius;
+                        const y = Math.sin(angle) * archRadius;
+                        const z = 0;
+                        
+                        // Create square cross-section at this point
+                        const halfSize = squareSize / 2;
+                        
+                        // Calculate tangent for proper orientation
+                        const tangentX = -Math.sin(angle);
+                        const tangentY = Math.cos(angle);
+                        
+                        // Calculate normal perpendicular to the arch
+                        const normalX = Math.cos(angle);
+                        const normalY = Math.sin(angle);
+                        
+                        // Create 4 vertices for square cross-section
+                        const squareVerts = [
+                            [-halfSize, -halfSize], [halfSize, -halfSize],
+                            [halfSize, halfSize], [-halfSize, halfSize]
+                        ];
+                        
+                        for (let j = 0; j < 4; j++) {
+                            const localX = squareVerts[j][0];
+                            const localZ = squareVerts[j][1];
+                            
+                            // Position vertex
+                            archVertices.push(x + localX * normalX, y + localX * normalY, z + localZ);
+                            
+                            // Normal (pointing outward from square face)
+                            if (j < 2) archNormals.push(-normalY, normalX, 0); // Bottom face
+                            else archNormals.push(normalY, -normalX, 0); // Top face
+                            
+                            // UV coordinates
+                            archUvs.push(i / segments, j / 3);
+                        }
+                    }
+                    
+                    // Create indices for the arch surface
+                    for (let i = 0; i < segments; i++) {
+                        const base = i * 4;
+                        const next = (i + 1) * 4;
+                        
+                        // Create quads for each face of the square tube
+                        for (let face = 0; face < 4; face++) {
+                            const v1 = base + face;
+                            const v2 = base + ((face + 1) % 4);
+                            const v3 = next + face;
+                            const v4 = next + ((face + 1) % 4);
+                            
+                            // Two triangles per quad (reversed winding for correct normals)
+                            archIndices.push(v1, v3, v2);
+                            archIndices.push(v2, v3, v4);
+                        }
+                    }
+                    
+                    // Add square caps at the feet of the arch (bottom ends)
+                    const leftFootBase = archVertices.length / 3;
+                    const rightFootBase = leftFootBase + 4;
+                    
+                    // Left foot cap (at angle 0, bottom of arch)
+                    const leftX = archRadius;
+                    const leftY = 0;
+                    const halfSize = squareSize / 2;
+                    archVertices.push(
+                        leftX - halfSize, leftY, -halfSize,  // bottom-left
+                        leftX + halfSize, leftY, -halfSize,  // bottom-right  
+                        leftX + halfSize, leftY, halfSize,   // top-right
+                        leftX - halfSize, leftY, halfSize    // top-left
+                    );
+                    for (let i = 0; i < 4; i++) {
+                        archNormals.push(0, -1, 0); // Normal pointing down
+                        archUvs.push(i % 2, Math.floor(i / 2));
+                    }
+                    
+                    // Right foot cap (at angle PI, bottom of arch)
+                    const rightX = -archRadius;
+                    const rightY = 0;
+                    archVertices.push(
+                        rightX + halfSize, rightY, -halfSize,  // bottom-left
+                        rightX - halfSize, rightY, -halfSize,  // bottom-right
+                        rightX - halfSize, rightY, halfSize,   // top-right  
+                        rightX + halfSize, rightY, halfSize    // top-left
+                    );
+                    for (let i = 0; i < 4; i++) {
+                        archNormals.push(0, -1, 0); // Normal pointing down
+                        archUvs.push(i % 2, Math.floor(i / 2));
+                    }
+                    
+                    // Add cap indices (correct winding for downward-facing normals)
+                    archIndices.push(leftFootBase, leftFootBase + 1, leftFootBase + 2);
+                    archIndices.push(leftFootBase, leftFootBase + 2, leftFootBase + 3);
+                    archIndices.push(rightFootBase, rightFootBase + 2, rightFootBase + 1);
+                    archIndices.push(rightFootBase, rightFootBase + 3, rightFootBase + 2);
+                    
+                    // Set geometry attributes
+                    archGeometry.setAttribute('position', new THREE.Float32BufferAttribute(archVertices, 3));
+                    archGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(archNormals, 3));
+                    archGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(archUvs, 2));
+                    archGeometry.setIndex(archIndices);
+                    
+                    return { geometry: archGeometry };
                 case "cube":
                     return { geometry: new THREE.BoxGeometry(4, 4, 4) };
                 case "prism":
@@ -4964,16 +5181,20 @@
                     pieces: {
                         'start': { icon: '🏁', name: 'Start Platform' },
                         'straight': { icon: '➡️', name: 'Straight' },
-                        'curve': { icon: '↪️', name: 'Curve' },
+                        'ramp': { icon: '📐', name: 'Ramp' },
+                        'wall-45': { icon: '↗️', name: 'Wall 45°' },
+                        'wall-90': { icon: '↪️', name: 'Wall 90°' },
+                        'curve-45': { icon: '🌗', name: 'Curve 45°' },
+                        'curve-90': { icon: '🌓', name: 'Curve 90°' },
                         'end': { icon: '🎯', name: 'End Platform' },
                         'pipe': { icon: '🚇', name: 'Pipe' },
-                        'half-pipe': { icon: '⛷️', name: 'Half-pipe' }
+                        'arch': { icon: '🌈', name: 'Arch' }
                     }
                 },
                 'Obstacles': {
                     icon: '🚧',
                     pieces: {
-                        'ball': { icon: '⚽', name: 'Ball (Pinned)' },
+                        'ball': { icon: '⚽', name: 'Sphere' },
                         'pyramid': { icon: '🔺', name: 'Pyramid' },
                         'cylinder': { icon: '🥫', name: 'Cylinder' },
                         'cube': { icon: '🧊', name: 'Cube' },
