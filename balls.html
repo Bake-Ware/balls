@@ -475,6 +475,7 @@
 
         <!-- Transform Tools -->
         <button id="toggle-transform-btn-toolbar" title="Toggle Transform Controls (W/E/R)" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🎯</button>
+        <button id="bend-tool-btn-toolbar" title="Bend Tool (B)" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🌀</button>
         <button id="duplicate-piece-btn-toolbar" title="Duplicate Selected" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📋</button>
         <button id="remove-piece-btn-toolbar" title="Delete Selected" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🗑️</button>
 
@@ -1007,6 +1008,105 @@
             </div>
         </div>
         
+        <!-- Custom Curve Settings Section -->
+        <div class="material-option" id="custom-curve-settings" style="display: none;">
+            <label>🌊 Custom Curve Settings</label>
+            <hr style="border-color: #444; margin: 10px 0;">
+            
+            <div class="material-option">
+                <label for="curve-settings-angle-x">Angle X (pitch): <span id="curve-angle-x-value">0</span>°</label>
+                <input type="range" id="curve-settings-angle-x" min="-360" max="360" step="5" value="0">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-angle-y">Angle Y (yaw): <span id="curve-angle-y-value">90</span>°</label>
+                <input type="range" id="curve-settings-angle-y" min="-360" max="360" step="5" value="90">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-angle-z">Angle Z (roll): <span id="curve-angle-z-value">0</span>°</label>
+                <input type="range" id="curve-settings-angle-z" min="-360" max="360" step="5" value="0">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-radius-x">Radius X: <span id="curve-radius-x-value">16</span></label>
+                <input type="range" id="curve-settings-radius-x" min="1" max="50" step="0.5" value="16">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-radius-y">Radius Y: <span id="curve-radius-y-value">16</span></label>
+                <input type="range" id="curve-settings-radius-y" min="1" max="50" step="0.5" value="16">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-radius-z">Radius Z: <span id="curve-radius-z-value">16</span></label>
+                <input type="range" id="curve-settings-radius-z" min="1" max="50" step="0.5" value="16">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-width">Width: <span id="curve-width-value">8</span></label>
+                <input type="range" id="curve-settings-width" min="1" max="20" step="0.5" value="8">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-height">Height: <span id="curve-height-value">1.5</span></label>
+                <input type="range" id="curve-settings-height" min="0.1" max="5" step="0.1" value="1.5">
+            </div>
+            
+            <div class="material-option">
+                <label for="curve-settings-segments">Segments: <span id="curve-segments-value">30</span></label>
+                <input type="range" id="curve-settings-segments" min="8" max="100" step="1" value="30">
+            </div>
+            
+            <div class="material-option">
+                <label><input type="checkbox" id="curve-settings-clockwise"> Clockwise</label>
+            </div>
+        </div>
+        
+        <!-- Bend Tool Settings Section -->
+        <div class="material-option" id="bend-tool-settings" style="display: none;">
+            <label>🌀 Bend Tool Settings</label>
+            <hr style="border-color: #444; margin: 10px 0;">
+            
+            <div class="material-option">
+                <label for="bend-axis">Bend Axis:</label>
+                <select id="bend-axis" style="width: 100%; padding: 5px; background: #444; color: white; border: 1px solid #666; border-radius: 3px;">
+                    <option value="x">X-Axis (Left/Right)</option>
+                    <option value="y">Y-Axis (Up/Down)</option>
+                    <option value="z">Z-Axis (Forward/Back)</option>
+                </select>
+            </div>
+            
+            <div class="material-option">
+                <label for="bend-angle">Bend Angle: <span id="bend-angle-value">0</span>°</label>
+                <input type="range" id="bend-angle" min="-180" max="180" step="5" value="0">
+            </div>
+            
+            <div class="material-option">
+                <label for="bend-center">Bend Center: <span id="bend-center-value">0.5</span></label>
+                <input type="range" id="bend-center" min="0" max="1" step="0.1" value="0.5">
+                <div style="font-size: 11px; color: #aaa;">0 = start, 0.5 = middle, 1 = end</div>
+            </div>
+            
+            <div class="material-option">
+                <label for="bend-falloff">Bend Falloff: <span id="bend-falloff-value">1.0</span></label>
+                <input type="range" id="bend-falloff" min="0.1" max="2.0" step="0.1" value="1.0">
+                <div style="font-size: 11px; color: #aaa;">How gradually the bend fades</div>
+            </div>
+            
+            <div class="material-option">
+                <button id="apply-bend-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">🌀 Apply Bend</button>
+                <button id="reset-bend-btn" style="padding: 8px 16px; background: #6c757d; border: none; color: white; border-radius: 4px; cursor: pointer;">↩️ Reset</button>
+            </div>
+            
+            <div class="material-option">
+                <small style="color: #888;">
+                    Select an object and adjust bend settings above, then click Apply Bend.
+                    The bend will deform the geometry permanently.
+                </small>
+            </div>
+        </div>
+        
         <div style="text-align: center; margin-top: 20px;">
             <button id="apply-material-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
             <button id="close-material-editor-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
@@ -1018,6 +1118,20 @@
         
         <div style="margin-bottom: 15px; text-align: center;">
             <div id="face-paint-status" style="color: #ffd700; font-size: 14px;">Select an object and click on faces to paint them</div>
+        </div>
+        
+        <div class="material-option">
+            <label for="face-paint-mode">Paint Mode:</label>
+            <select id="face-paint-mode" style="width: 100%; padding: 8px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px;">
+                <option value="single">Single Triangle</option>
+                <option value="angle">Cascade (Adjacent Similar)</option>
+            </select>
+        </div>
+        
+        <div class="material-option" id="angle-threshold-option" style="display: none;">
+            <label for="face-paint-angle-threshold">Angle Threshold: <span id="face-angle-value">30</span>°</label>
+            <input type="range" id="face-paint-angle-threshold" min="5" max="90" step="5" value="30">
+            <small style="color: #888; display: block; margin-top: 5px;">Cascade paint to adjacent triangles with similar normals (flood-fill)</small>
         </div>
         
         <div class="material-option">
@@ -1180,6 +1294,7 @@
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
         let isRaceMode = false;
+        let isBendMode = false;
         let raceFinishers = [];
         let raceFinished = false;
         let cameraAngle = 0;
@@ -2173,56 +2288,56 @@
         // Flexible helper function to create arc-based geometry with various transforms
         function createArcGeometry(options = {}) {
             const {
-                angle = Math.PI/2,           // Arc angle in radians
+                angleX = 0,                  // Rotation angle around X axis (pitch)
+                angleY = Math.PI/2,          // Rotation angle around Y axis (yaw) 
+                angleZ = 0,                  // Rotation angle around Z axis (roll)
                 width = 8,                   // Cross-section width
                 height = 1.5,                // Cross-section height  
-                radius = null,               // Arc radius (auto-calculated if null)
-                banking = 0,                 // Banking angle in radians (positive = bank inward)
-                elevation = 0,               // Start elevation offset
-                elevationEnd = null,         // End elevation (null = same as start)
-                twist = 0,                   // Twist along path in radians
+                radiusX = 16,                // Arc radius in X axis
+                radiusY = 16,                // Arc radius in Y axis
+                radiusZ = 16,                // Arc radius in Z axis
                 segments = null,             // Number of segments (auto-calculated if null)
                 clockwise = false            // Arc direction
             } = options;
             
-            const w = 8; // Base width for radius calculations
+            // Calculate segments if not provided (use the largest angle)
+            const maxAngle = Math.max(Math.abs(angleX), Math.abs(angleY), Math.abs(angleZ));
+            const arcSegments = segments || Math.max(8, Math.floor(maxAngle * 30 / Math.PI));
             
-            // Calculate radius if not provided
-            const arcRadius = radius || (w + 4) * 1.5;
-            
-            // Calculate segments if not provided
-            const arcSegments = segments || (angle <= Math.PI/4 ? 20 : 30);
-            
-            // Create the arc path
-            const arcPath = new THREE.EllipseCurve(
-                0, 0,                    // center
-                arcRadius, arcRadius,    // x and y radius
-                0, angle,               // start and end angle
-                clockwise,              // direction
-                0                       // rotation
-            );
-            
-            const arcPoints = arcPath.getPoints(arcSegments);
-            
-            // Create 3D path with elevation and banking
-            const path3DPoints = arcPoints.map((p, i) => {
-                const t = i / (arcPoints.length - 1); // Progress along path (0 to 1)
+            // Create a custom 3D curve that directly defines the path mathematically
+            class CustomArcCurve extends THREE.Curve {
+                constructor(radiusX, radiusY, radiusZ, angleX, angleY, angleZ, clockwise) {
+                    super();
+                    this.radiusX = radiusX;
+                    this.radiusY = radiusY;
+                    this.radiusZ = radiusZ;
+                    this.angleX = angleX;
+                    this.angleY = angleY;
+                    this.angleZ = angleZ;
+                    this.clockwise = clockwise;
+                }
                 
-                // Calculate elevation at this point
-                const currentElevation = elevation + (elevationEnd !== null ? 
-                    (elevationEnd - elevation) * t : 0);
-                
-                // Calculate banking rotation at this point
-                const currentBanking = banking * Math.sin(t * Math.PI); // Smooth banking curve
-                
-                return {
-                    point: new THREE.Vector3(p.x, currentElevation, p.y),
-                    banking: currentBanking,
-                    twist: twist * t
-                };
-            });
+                getPoint(t) { // t goes from 0 to 1
+                    const direction = this.clockwise ? -1 : 1;
+                    
+                    // Calculate current angles for each axis
+                    const currentAngleX = direction * this.angleX * t;
+                    const currentAngleY = direction * this.angleY * t;
+                    const currentAngleZ = direction * this.angleZ * t;
+                    
+                    // Create 3D arc using separate angles and radii for each axis
+                    const x = this.radiusX * (Math.cos(currentAngleY) - 1); // Y rotation affects X position (yaw)
+                    const y = this.radiusY * Math.sin(currentAngleX);        // X rotation affects Y position (pitch)
+                    const z = this.radiusZ * Math.sin(currentAngleY);        // Y rotation affects Z position (yaw)
+                    
+                    return new THREE.Vector3(x, y, z);
+                }
+            }
             
-            // Create the cross-section shape
+            // Create the parametric curve
+            const path3D = new CustomArcCurve(radiusX, radiusY, radiusZ, angleX, angleY, angleZ, clockwise);
+            
+            // Create the cross-section shape (width = horizontal, height = vertical)
             const shape = new THREE.Shape();
             shape.moveTo(-width/2, -height/2);
             shape.lineTo(-width/2, height/2);
@@ -2230,22 +2345,109 @@
             shape.lineTo(width/2, -height/2);
             shape.lineTo(-width/2, -height/2);
             
-            // For now, create basic geometry (banking/twist would need custom geometry generation)
-            const path3D = new THREE.CatmullRomCurve3(path3DPoints.map(p => p.point));
+            // Create extruded geometry
             const geometry = new THREE.ExtrudeGeometry(shape, { 
                 extrudePath: path3D, 
                 steps: arcSegments, 
                 bevelEnabled: false 
             });
             
-            // Apply any additional transforms
-            if (banking !== 0 || twist !== 0) {
-                // For complex banking/twist, we'd need to manually transform vertices
-                // For now, apply a simple overall rotation as a placeholder
-                if (banking !== 0) {
-                    geometry.rotateZ(banking * 0.5); // Simplified banking effect
-                }
+            return geometry;
+        }
+        
+        // Bend Tool: Apply bend deformation to geometry
+        function applyBendToGeometry(geometry, axis, angle, center, falloff) {
+            const positions = geometry.attributes.position;
+            const vertex = new THREE.Vector3();
+            
+            // Get bounding box to understand the geometry extents
+            geometry.computeBoundingBox();
+            const bbox = geometry.boundingBox;
+            
+            // Determine the primary axis for bending
+            let axisIndex, size, minCoord, maxCoord;
+            switch(axis) {
+                case 'x':
+                    axisIndex = 0;
+                    size = bbox.max.x - bbox.min.x;
+                    minCoord = bbox.min.x;
+                    maxCoord = bbox.max.x;
+                    break;
+                case 'y':
+                    axisIndex = 1;
+                    size = bbox.max.y - bbox.min.y;
+                    minCoord = bbox.min.y;
+                    maxCoord = bbox.max.y;
+                    break;
+                case 'z':
+                    axisIndex = 2;
+                    size = bbox.max.z - bbox.min.z;
+                    minCoord = bbox.min.z;
+                    maxCoord = bbox.max.z;
+                    break;
             }
+            
+            const bendCenter = minCoord + size * center;
+            const angleRad = angle * Math.PI / 180;
+            
+            // Apply bend to each vertex
+            for (let i = 0; i < positions.count; i++) {
+                vertex.fromBufferAttribute(positions, i);
+                
+                // Get position along the bend axis
+                const axisPos = vertex.getComponent(axisIndex);
+                
+                // Calculate distance from bend center (normalized 0-1)
+                const distFromCenter = Math.abs(axisPos - bendCenter) / (size * 0.5);
+                
+                // Calculate falloff factor
+                let falloffFactor = 1.0;
+                if (distFromCenter > 0) {
+                    falloffFactor = Math.pow(1.0 - Math.min(distFromCenter, 1.0), falloff);
+                }
+                
+                // Calculate bend amount for this vertex
+                const bendAmount = angleRad * falloffFactor;
+                
+                // Apply bend based on axis
+                if (Math.abs(bendAmount) > 0.001) { // Only bend if significant
+                    const relativePos = (axisPos - bendCenter) / size;
+                    
+                    if (axis === 'x') {
+                        // Bending around X-axis affects Y and Z
+                        const originalY = vertex.y;
+                        const originalZ = vertex.z;
+                        const radius = Math.abs(relativePos) * size;
+                        
+                        vertex.y = originalY * Math.cos(bendAmount) - originalZ * Math.sin(bendAmount);
+                        vertex.z = originalY * Math.sin(bendAmount) + originalZ * Math.cos(bendAmount);
+                        
+                    } else if (axis === 'y') {
+                        // Bending around Y-axis affects X and Z
+                        const originalX = vertex.x;
+                        const originalZ = vertex.z;
+                        const radius = Math.abs(relativePos) * size;
+                        
+                        vertex.x = originalX * Math.cos(bendAmount) + originalZ * Math.sin(bendAmount);
+                        vertex.z = -originalX * Math.sin(bendAmount) + originalZ * Math.cos(bendAmount);
+                        
+                    } else if (axis === 'z') {
+                        // Bending around Z-axis affects X and Y
+                        const originalX = vertex.x;
+                        const originalY = vertex.y;
+                        const radius = Math.abs(relativePos) * size;
+                        
+                        vertex.x = originalX * Math.cos(bendAmount) - originalY * Math.sin(bendAmount);
+                        vertex.y = originalX * Math.sin(bendAmount) + originalY * Math.cos(bendAmount);
+                    }
+                }
+                
+                positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            
+            positions.needsUpdate = true;
+            geometry.computeVertexNormals(); // Recalculate normals after deformation
+            geometry.computeBoundingBox(); // Update bounding box
             
             return geometry;
         }
@@ -3520,6 +3722,7 @@
             document.getElementById('restart-race-btn-toolbar').addEventListener('click', restartRace);
             document.getElementById('edit-track-btn-toolbar').addEventListener('click', editTrack);
             document.getElementById('toggle-transform-btn-toolbar').addEventListener('click', toggleTransformControls);
+            document.getElementById('bend-tool-btn-toolbar').addEventListener('click', toggleBendMode);
             document.getElementById('duplicate-piece-btn-toolbar').addEventListener('click', duplicateSelectedPiece);
             document.getElementById('remove-piece-btn-toolbar').addEventListener('click', removeSelectedPiece);
             document.getElementById('edit-material-btn-toolbar').addEventListener('click', openMaterialEditor);
@@ -3747,6 +3950,21 @@
                 document.getElementById('face-emissive-value').textContent = e.target.value;
             });
             
+            // Face paint mode selector
+            document.getElementById('face-paint-mode').addEventListener('change', (e) => {
+                const angleOption = document.getElementById('angle-threshold-option');
+                if (e.target.value === 'angle') {
+                    angleOption.style.display = 'block';
+                } else {
+                    angleOption.style.display = 'none';
+                }
+            });
+            
+            // Face paint angle threshold slider
+            document.getElementById('face-paint-angle-threshold').addEventListener('input', (e) => {
+                document.getElementById('face-angle-value').textContent = e.target.value;
+            });
+            
             // Face texture type handling
             document.getElementById('face-texture-type').addEventListener('change', (e) => {
                 const uploadInput = document.getElementById('face-texture-upload');
@@ -3886,6 +4104,25 @@
             // Particle type and shape selectors
             document.getElementById('particle-type').addEventListener('change', applyParticleTypePreset);
             document.getElementById('particle-shape').addEventListener('change', applyParticleSettingsRealTime);
+            
+            // Custom curve settings real-time updates
+            document.getElementById('curve-settings-angle-x').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-angle-y').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-angle-z').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-radius-x').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-radius-y').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-radius-z').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-width').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-height').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-segments').addEventListener('input', updateCustomCurveRealTime);
+            document.getElementById('curve-settings-clockwise').addEventListener('change', updateCustomCurveRealTime);
+            
+            // Bend tool settings updates
+            document.getElementById('bend-angle').addEventListener('input', updateBendValueDisplays);
+            document.getElementById('bend-center').addEventListener('input', updateBendValueDisplays);
+            document.getElementById('bend-falloff').addEventListener('input', updateBendValueDisplays);
+            document.getElementById('apply-bend-btn').addEventListener('click', applyBendToSelected);
+            document.getElementById('reset-bend-btn').addEventListener('click', resetBendSettings);
             
             // Rotation settings toggle
             document.getElementById('piece-rotation-enabled').addEventListener('change', (e) => {
@@ -4083,6 +4320,10 @@
                         case 'w': transformControls.setMode('translate'); break;
                         case 'e': transformControls.setMode('rotate'); break;
                         case 'r': transformControls.setMode('scale'); break;
+                        case 'b': 
+                            e.preventDefault();
+                            toggleBendMode(); 
+                            break;
                     }
                 }
                 
@@ -4130,21 +4371,20 @@
         
         function createCustomCurve() {
             // Get values from dialog
-            const angle = parseFloat(document.getElementById('curve-angle').value) * Math.PI / 180; // Convert to radians
-            const radius = parseFloat(document.getElementById('curve-radius').value);
+            const angleX = parseFloat(document.getElementById('curve-angle-x').value) * Math.PI / 180; // Convert to radians
+            const angleY = parseFloat(document.getElementById('curve-angle-y').value) * Math.PI / 180; // Convert to radians
+            const angleZ = parseFloat(document.getElementById('curve-angle-z').value) * Math.PI / 180; // Convert to radians
             const width = parseFloat(document.getElementById('curve-width').value);
             const height = parseFloat(document.getElementById('curve-height').value);
-            const banking = parseFloat(document.getElementById('curve-banking').value) * Math.PI / 180; // Convert to radians
-            const elevation = parseFloat(document.getElementById('curve-elevation').value);
-            const elevationEnd = parseFloat(document.getElementById('curve-elevation-end').value);
-            const twist = parseFloat(document.getElementById('curve-twist').value) * Math.PI / 180; // Convert to radians
+            const radiusX = parseFloat(document.getElementById('curve-radius-x').value);
+            const radiusY = parseFloat(document.getElementById('curve-radius-y').value);
+            const radiusZ = parseFloat(document.getElementById('curve-radius-z').value);
             const segments = parseInt(document.getElementById('curve-segments').value);
             const clockwise = document.getElementById('curve-clockwise').checked;
             
             // Validate inputs
-            if (isNaN(angle) || isNaN(radius) || isNaN(width) || isNaN(height) || 
-                isNaN(banking) || isNaN(elevation) || isNaN(elevationEnd) || 
-                isNaN(twist) || isNaN(segments)) {
+            if (isNaN(angleX) || isNaN(angleY) || isNaN(angleZ) || isNaN(width) || isNaN(height) || 
+                isNaN(radiusX) || isNaN(radiusY) || isNaN(radiusZ) || isNaN(segments)) {
                 showMessage('Please enter valid numbers for all fields', 'error');
                 return;
             }
@@ -4157,14 +4397,14 @@
             try {
                 // Create the custom curve geometry using createArcGeometry
                 const geometry = createArcGeometry({
-                    angle: angle,
+                    angleX: angleX,
+                    angleY: angleY,
+                    angleZ: angleZ,
                     width: width,
                     height: height,
-                    radius: radius,
-                    banking: banking,
-                    elevation: elevation,
-                    elevationEnd: elevationEnd,
-                    twist: twist,
+                    radiusX: radiusX,
+                    radiusY: radiusY,
+                    radiusZ: radiusZ,
                     segments: segments,
                     clockwise: clockwise
                 });
@@ -4193,14 +4433,14 @@
                     isTrackPiece: true, 
                     type: 'custom-curve',
                     customData: {
-                        angle: angle,
+                        angleX: angleX,
+                        angleY: angleY,
+                        angleZ: angleZ,
                         width: width,
                         height: height,
-                        radius: radius,
-                        banking: banking,
-                        elevation: elevation,
-                        elevationEnd: elevationEnd,
-                        twist: twist,
+                        radiusX: radiusX,
+                        radiusY: radiusY,
+                        radiusZ: radiusZ,
                         segments: segments,
                         clockwise: clockwise
                     }
@@ -4710,36 +4950,52 @@
         }
 
         function startRace() {
-            if (isRaceMode) return;
-            isRaceMode = true;
-            updateRaceUI();
-            transformControls.detach();
-            transformControls.visible = false;
-            
-            // Configure orbit controls for race mode - disable rotation but allow pan and zoom
-            orbitControls.enabled = true;
-            orbitControls.enableRotate = false;
-            orbitControls.enablePan = true;
-            orbitControls.enableZoom = true;
-            
-            // Find all placement balls
-            const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
-            if(placementBalls.length === 0) { 
-                showMessage("At least one 'Ball Set' placement ball is required to race!", 'error'); 
-                isRaceMode = false;
-                updateRaceUI(); // Fix UI state to match the reset race mode
-                return; 
+            console.log('startRace called, isRaceMode:', isRaceMode);
+            if (isRaceMode) {
+                showMessage('Race is already in progress', 'error');
+                return;
             }
+            
+            try {
+                isRaceMode = true;
+                updateRaceUI();
+                transformControls.detach();
+                transformControls.visible = false;
+            
+                // Configure orbit controls for race mode - disable rotation but allow pan and zoom
+                orbitControls.enabled = true;
+                orbitControls.enableRotate = false;
+                orbitControls.enablePan = true;
+                orbitControls.enableZoom = true;
+                
+                // Find all placement balls
+                const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+                console.log('Found placement balls:', placementBalls.length);
+                
+                if(placementBalls.length === 0) { 
+                    showMessage("At least one 'Ball Set' placement ball is required to race! Add one from Objects > Other > Ball Set", 'error'); 
+                    isRaceMode = false;
+                    updateRaceUI(); // Fix UI state to match the reset race mode
+                    return; 
+                }
 
-            // Hide placement balls during race
-            placementBalls.forEach(ball => {
-                ball.group.visible = false;
-            });
+                // Hide placement balls during race
+                placementBalls.forEach(ball => {
+                    ball.group.visible = false;
+                });
 
-            // Update visibility of hidden objects for race mode
-            updateHiddenObjectVisibility();
+                // Update visibility of hidden objects for race mode
+                updateHiddenObjectVisibility();
 
-            spawnMarblesFromPlacements(placementBalls);
+                spawnMarblesFromPlacements(placementBalls);
+                
+            } catch (error) {
+                console.error('Error starting race:', error);
+                showMessage('Error starting race: ' + error.message, 'error');
+                // Reset race mode if there was an error
+                isRaceMode = false;
+                updateRaceUI();
+            }
         }
 
         function restartRace() {
@@ -5278,10 +5534,10 @@
             const viewcube = document.getElementById('viewcube');
 
             if (isRaceMode) {
-                startBtn.style.display = 'none';
-                restartBtn.style.display = 'block';
-                editBtn.style.display = 'block';
-                speedControl.style.display = 'block';
+                if (startBtn) startBtn.style.display = 'none';
+                if (restartBtn) restartBtn.style.display = 'block';
+                if (editBtn) editBtn.style.display = 'block';
+                if (speedControl) speedControl.style.display = 'block';
                 
                 // Update toolbar buttons
                 if (startBtnToolbar) startBtnToolbar.style.display = 'none';
@@ -5300,10 +5556,10 @@
                 fileInputs.forEach(f => f.style.display = 'none');
                 if (viewcube) viewcube.style.display = 'none';
             } else {
-                startBtn.style.display = 'block';
-                restartBtn.style.display = 'none';
-                editBtn.style.display = 'none';
-                speedControl.style.display = 'none';
+                if (startBtn) startBtn.style.display = 'block';
+                if (restartBtn) restartBtn.style.display = 'none';
+                if (editBtn) editBtn.style.display = 'none';
+                if (speedControl) speedControl.style.display = 'none';
                 
                 // Update toolbar buttons
                 if (startBtnToolbar) {
@@ -6353,6 +6609,51 @@
                 cameraSettings.style.display = 'none';
             }
             
+            // Load custom curve settings
+            const customCurveSettings = document.getElementById('custom-curve-settings');
+            if (piece.type === 'custom-curve' && piece.group.userData.customData) {
+                customCurveSettings.style.display = 'block';
+                const curveData = piece.group.userData.customData;
+                
+                // Load values from stored data (convert radians to degrees)
+                const angleX = (curveData.angleX || 0) * 180 / Math.PI;
+                const angleY = (curveData.angleY || Math.PI/2) * 180 / Math.PI;
+                const angleZ = (curveData.angleZ || 0) * 180 / Math.PI;
+                
+                document.getElementById('curve-settings-angle-x').value = angleX;
+                document.getElementById('curve-settings-angle-y').value = angleY;
+                document.getElementById('curve-settings-angle-z').value = angleZ;
+                document.getElementById('curve-settings-radius-x').value = curveData.radiusX || 16;
+                document.getElementById('curve-settings-radius-y').value = curveData.radiusY || 16;
+                document.getElementById('curve-settings-radius-z').value = curveData.radiusZ || 16;
+                document.getElementById('curve-settings-width').value = curveData.width || 8;
+                document.getElementById('curve-settings-height').value = curveData.height || 1.5;
+                document.getElementById('curve-settings-segments').value = curveData.segments || 30;
+                document.getElementById('curve-settings-clockwise').checked = curveData.clockwise || false;
+                
+                // Update value displays
+                document.getElementById('curve-angle-x-value').textContent = Math.round(angleX);
+                document.getElementById('curve-angle-y-value').textContent = Math.round(angleY);
+                document.getElementById('curve-angle-z-value').textContent = Math.round(angleZ);
+                document.getElementById('curve-radius-x-value').textContent = curveData.radiusX || 16;
+                document.getElementById('curve-radius-y-value').textContent = curveData.radiusY || 16;
+                document.getElementById('curve-radius-z-value').textContent = curveData.radiusZ || 16;
+                document.getElementById('curve-width-value').textContent = curveData.width || 8;
+                document.getElementById('curve-height-value').textContent = curveData.height || 1.5;
+                document.getElementById('curve-segments-value').textContent = curveData.segments || 30;
+            } else {
+                customCurveSettings.style.display = 'none';
+            }
+            
+            // Show/hide bend tool settings based on bend mode
+            const bendToolSettings = document.getElementById('bend-tool-settings');
+            if (isBendMode) {
+                bendToolSettings.style.display = 'block';
+                updateBendValueDisplays(); // Ensure displays are current
+            } else {
+                bendToolSettings.style.display = 'none';
+            }
+            
             // Show/hide settings based on enabled states
             document.getElementById('rotation-settings').style.display = rotSettings.enabled ? 'block' : 'none';
             document.getElementById('pathing-settings').style.display = pathSettings.enabled ? 'block' : 'none';
@@ -6625,6 +6926,176 @@
             setTimeout(() => editor.style.display = 'none', 300);
         }
 
+        function toggleBendMode() {
+            isBendMode = !isBendMode;
+            const btn = document.getElementById('bend-tool-btn-toolbar');
+            
+            if (isBendMode) {
+                btn.style.background = '#28a745'; // Green when active
+                btn.title = 'Bend Tool Active (B) - Click to Disable';
+                showMessage('Bend Mode: Select objects and use Material Editor to adjust bend settings', 'info');
+                
+                // Show bend settings if material editor is open
+                const editor = document.getElementById('material-editor');
+                if (editor.style.display === 'block') {
+                    showBendSettings();
+                }
+            } else {
+                btn.style.background = '#495057'; // Default gray
+                btn.title = 'Bend Tool (B)';
+                hideBendSettings();
+            }
+        }
+        
+        function showBendSettings() {
+            const bendSettings = document.getElementById('bend-tool-settings');
+            if (bendSettings) {
+                bendSettings.style.display = 'block';
+            }
+        }
+        
+        function hideBendSettings() {
+            const bendSettings = document.getElementById('bend-tool-settings');
+            if (bendSettings) {
+                bendSettings.style.display = 'none';
+            }
+        }
+        
+        function updateBendValueDisplays() {
+            document.getElementById('bend-angle-value').textContent = document.getElementById('bend-angle').value;
+            document.getElementById('bend-center-value').textContent = document.getElementById('bend-center').value;
+            document.getElementById('bend-falloff-value').textContent = document.getElementById('bend-falloff').value;
+        }
+        
+        function resetBendSettings() {
+            document.getElementById('bend-angle').value = 0;
+            document.getElementById('bend-center').value = 0.5;
+            document.getElementById('bend-falloff').value = 1.0;
+            document.getElementById('bend-axis').value = 'x';
+            updateBendValueDisplays();
+        }
+        
+        function applyBendToSelected() {
+            if (!transformControls.object) {
+                showMessage('Please select an object first', 'error');
+                return;
+            }
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece) {
+                showMessage('Selected object is not a track piece', 'error');
+                return;
+            }
+            
+            // Get bend settings
+            const axis = document.getElementById('bend-axis').value;
+            const angle = parseFloat(document.getElementById('bend-angle').value);
+            const center = parseFloat(document.getElementById('bend-center').value);
+            const falloff = parseFloat(document.getElementById('bend-falloff').value);
+            
+            if (Math.abs(angle) < 1) {
+                showMessage('Bend angle is too small to have an effect', 'error');
+                return;
+            }
+            
+            // Capture state for undo
+            captureStateInternal('Apply bend deformation');
+            
+            try {
+                // Get the mesh and apply bend
+                const mesh = piece.group.children[0];
+                const geometry = mesh.geometry;
+                
+                // Clone geometry to avoid modifying the original
+                const newGeometry = geometry.clone();
+                
+                // Apply bend
+                applyBendToGeometry(newGeometry, axis, angle, center, falloff);
+                
+                // Replace the geometry
+                mesh.geometry.dispose();
+                mesh.geometry = newGeometry;
+                
+                // Update physics
+                updatePhysicsForPiece(piece);
+                
+                showMessage(`Bend applied successfully! (${axis.toUpperCase()}-axis, ${angle}°)`, 'success');
+                
+                // Reset bend settings after applying
+                resetBendSettings();
+                
+            } catch (error) {
+                console.error('Error applying bend:', error);
+                showMessage('Error applying bend: ' + error.message, 'error');
+            }
+        }
+        
+        function updateCustomCurveRealTime() {
+            if (!transformControls.object) return;
+            
+            const piece = trackPieces.find(p => p.group === transformControls.object);
+            if (!piece || piece.type !== 'custom-curve') return;
+            
+            // Get current values from the UI (convert degrees to radians)
+            const angleX = parseFloat(document.getElementById('curve-settings-angle-x').value) * Math.PI / 180;
+            const angleY = parseFloat(document.getElementById('curve-settings-angle-y').value) * Math.PI / 180;
+            const angleZ = parseFloat(document.getElementById('curve-settings-angle-z').value) * Math.PI / 180;
+            const radiusX = parseFloat(document.getElementById('curve-settings-radius-x').value);
+            const radiusY = parseFloat(document.getElementById('curve-settings-radius-y').value);
+            const radiusZ = parseFloat(document.getElementById('curve-settings-radius-z').value);
+            const width = parseFloat(document.getElementById('curve-settings-width').value);
+            const height = parseFloat(document.getElementById('curve-settings-height').value);
+            const segments = parseInt(document.getElementById('curve-settings-segments').value);
+            const clockwise = document.getElementById('curve-settings-clockwise').checked;
+            
+            // Update value displays
+            document.getElementById('curve-angle-x-value').textContent = Math.round(angleX * 180 / Math.PI);
+            document.getElementById('curve-angle-y-value').textContent = Math.round(angleY * 180 / Math.PI);
+            document.getElementById('curve-angle-z-value').textContent = Math.round(angleZ * 180 / Math.PI);
+            document.getElementById('curve-radius-x-value').textContent = radiusX;
+            document.getElementById('curve-radius-y-value').textContent = radiusY;
+            document.getElementById('curve-radius-z-value').textContent = radiusZ;
+            document.getElementById('curve-width-value').textContent = width;
+            document.getElementById('curve-height-value').textContent = height;
+            document.getElementById('curve-segments-value').textContent = segments;
+            
+            // Update stored data
+            piece.group.userData.customData = {
+                angleX: angleX,
+                angleY: angleY,
+                angleZ: angleZ,
+                radiusX: radiusX,
+                radiusY: radiusY,
+                radiusZ: radiusZ,
+                width: width,
+                height: height,
+                segments: segments,
+                clockwise: clockwise
+            };
+            
+            // Create new geometry with updated parameters
+            const newGeometry = createArcGeometry({
+                angleX: angleX,
+                angleY: angleY,
+                angleZ: angleZ,
+                width: width,
+                height: height,
+                radiusX: radiusX,
+                radiusY: radiusY,
+                radiusZ: radiusZ,
+                segments: segments,
+                clockwise: clockwise
+            });
+            
+            // Update the mesh geometry
+            const mesh = piece.group.children[0];
+            mesh.geometry.dispose(); // Clean up old geometry
+            mesh.geometry = newGeometry;
+            
+            // Update physics
+            updatePhysicsForPiece(piece);
+        }
+        
         function applyMaterialRealTime() {
             if (!transformControls.object) return;
             
@@ -6888,6 +7359,130 @@
             });
         }
         
+        function findSimilarFaces(mesh, baseFaceIndex, angleThresholdDegrees) {
+            const geometry = mesh.geometry;
+            const indexAttribute = geometry.index;
+            
+            if (!indexAttribute) {
+                return [baseFaceIndex]; // No index, can't find similar faces
+            }
+            
+            const angleThresholdRadians = (angleThresholdDegrees * Math.PI) / 180;
+            const faceCount = indexAttribute.count / 3;
+            
+            // Build adjacency map for all faces
+            const adjacencyMap = buildFaceAdjacencyMap(geometry);
+            
+            // Get the normal of the base face
+            const baseFaceNormal = getFaceNormal(geometry, baseFaceIndex);
+            if (!baseFaceNormal) {
+                return [baseFaceIndex];
+            }
+            
+            // Flood fill algorithm - cascade from the clicked triangle
+            const paintedFaces = new Set();
+            const queue = [baseFaceIndex];
+            paintedFaces.add(baseFaceIndex);
+            
+            while (queue.length > 0) {
+                const currentFace = queue.shift();
+                const adjacentFaces = adjacencyMap.get(currentFace) || [];
+                
+                for (const adjacentFace of adjacentFaces) {
+                    // Skip if already painted
+                    if (paintedFaces.has(adjacentFace)) {
+                        continue;
+                    }
+                    
+                    // Check if the adjacent face has a similar normal
+                    const adjacentNormal = getFaceNormal(geometry, adjacentFace);
+                    if (adjacentNormal) {
+                        const angle = Math.acos(Math.max(-1, Math.min(1, baseFaceNormal.dot(adjacentNormal))));
+                        if (angle <= angleThresholdRadians) {
+                            paintedFaces.add(adjacentFace);
+                            queue.push(adjacentFace); // Add to queue for further expansion
+                        }
+                    }
+                }
+            }
+            
+            return Array.from(paintedFaces);
+        }
+        
+        function buildFaceAdjacencyMap(geometry) {
+            const indexAttribute = geometry.index;
+            const faceCount = indexAttribute.count / 3;
+            const adjacencyMap = new Map();
+            
+            // Initialize adjacency map
+            for (let i = 0; i < faceCount; i++) {
+                adjacencyMap.set(i, []);
+            }
+            
+            // Build edge-to-face map to find shared edges
+            const edgeToFaces = new Map();
+            
+            for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
+                // Get the three vertices of the face
+                const i1 = indexAttribute.getX(faceIndex * 3);
+                const i2 = indexAttribute.getX(faceIndex * 3 + 1);
+                const i3 = indexAttribute.getX(faceIndex * 3 + 2);
+                
+                // Create edges (order vertices consistently: smaller index first)
+                const edges = [
+                    [Math.min(i1, i2), Math.max(i1, i2)],
+                    [Math.min(i2, i3), Math.max(i2, i3)],
+                    [Math.min(i3, i1), Math.max(i3, i1)]
+                ];
+                
+                for (const edge of edges) {
+                    const edgeKey = `${edge[0]}-${edge[1]}`;
+                    
+                    if (!edgeToFaces.has(edgeKey)) {
+                        edgeToFaces.set(edgeKey, []);
+                    }
+                    edgeToFaces.get(edgeKey).push(faceIndex);
+                }
+            }
+            
+            // Build adjacency relationships from shared edges
+            edgeToFaces.forEach((faces) => {
+                if (faces.length === 2) {
+                    // Two faces share this edge - they are adjacent
+                    const [face1, face2] = faces;
+                    adjacencyMap.get(face1).push(face2);
+                    adjacencyMap.get(face2).push(face1);
+                }
+            });
+            
+            return adjacencyMap;
+        }
+        
+        function getFaceNormal(geometry, faceIndex) {
+            const positionAttribute = geometry.getAttribute('position');
+            const indexAttribute = geometry.index;
+            
+            if (!indexAttribute || !positionAttribute) {
+                return null;
+            }
+            
+            // Get the three vertices of the face
+            const i1 = indexAttribute.getX(faceIndex * 3);
+            const i2 = indexAttribute.getX(faceIndex * 3 + 1);
+            const i3 = indexAttribute.getX(faceIndex * 3 + 2);
+            
+            const v1 = new THREE.Vector3().fromBufferAttribute(positionAttribute, i1);
+            const v2 = new THREE.Vector3().fromBufferAttribute(positionAttribute, i2);
+            const v3 = new THREE.Vector3().fromBufferAttribute(positionAttribute, i3);
+            
+            // Calculate face normal using cross product
+            const edge1 = new THREE.Vector3().subVectors(v2, v1);
+            const edge2 = new THREE.Vector3().subVectors(v3, v1);
+            const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
+            
+            return normal;
+        }
+        
         function handleFacePaintClick(event) {
             // Adjust coordinates for the new layout (toolbar + sidebar offset)
             const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
@@ -6916,8 +7511,23 @@
                 
                 
                 if (faceIndex !== undefined) {
-                    paintFace(mesh, faceIndex);
-                    showMessage(`Painted face ${faceIndex} on ${mesh.parent.userData.pieceType || 'object'}`, 'success');
+                    const paintMode = document.getElementById('face-paint-mode').value;
+                    
+                    if (paintMode === 'single') {
+                        // Single triangle painting
+                        paintFace(mesh, faceIndex);
+                        showMessage(`Painted face ${faceIndex} on ${mesh.parent.userData.pieceType || 'object'}`, 'success');
+                    } else if (paintMode === 'angle') {
+                        // Angle-based painting
+                        const angleThreshold = parseFloat(document.getElementById('face-paint-angle-threshold').value);
+                        const facesToPaint = findSimilarFaces(mesh, faceIndex, angleThreshold);
+                        
+                        facesToPaint.forEach(fIndex => {
+                            paintFace(mesh, fIndex);
+                        });
+                        
+                        showMessage(`Cascade painted ${facesToPaint.length} adjacent faces within ${angleThreshold}° angle on ${mesh.parent.userData.pieceType || 'object'}`, 'success');
+                    }
                 } else {
                     showMessage('Could not determine face to paint', 'error');
                 }
@@ -8121,13 +8731,23 @@
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
             <div>
-                <label style="display: block; color: #ccc; margin-bottom: 5px;">Angle (degrees):</label>
-                <input type="number" id="curve-angle" value="90" min="1" max="360" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Angle X (pitch, degrees):</label>
+                <input type="number" id="curve-angle-x" value="0" min="-360" max="360" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
             </div>
             
             <div>
-                <label style="display: block; color: #ccc; margin-bottom: 5px;">Radius:</label>
-                <input type="number" id="curve-radius" value="16" min="1" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Angle Y (yaw, degrees):</label>
+                <input type="number" id="curve-angle-y" value="90" min="-360" max="360" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Angle Z (roll, degrees):</label>
+                <input type="number" id="curve-angle-z" value="0" min="-360" max="360" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Segments:</label>
+                <input type="number" id="curve-segments" value="30" min="8" max="100" step="1" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
             </div>
             
             <div>
@@ -8141,28 +8761,18 @@
             </div>
             
             <div>
-                <label style="display: block; color: #ccc; margin-bottom: 5px;">Banking (degrees):</label>
-                <input type="number" id="curve-banking" value="0" min="-45" max="45" step="1" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Radius X:</label>
+                <input type="number" id="curve-radius-x" value="16" min="1" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
             </div>
             
             <div>
-                <label style="display: block; color: #ccc; margin-bottom: 5px;">Start Elevation:</label>
-                <input type="number" id="curve-elevation" value="0" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Radius Y:</label>
+                <input type="number" id="curve-radius-y" value="16" min="1" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
             </div>
             
             <div>
-                <label style="display: block; color: #ccc; margin-bottom: 5px;">End Elevation:</label>
-                <input type="number" id="curve-elevation-end" value="0" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
-            </div>
-            
-            <div>
-                <label style="display: block; color: #ccc; margin-bottom: 5px;">Twist (degrees):</label>
-                <input type="number" id="curve-twist" value="0" min="-180" max="180" step="5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
-            </div>
-            
-            <div>
-                <label style="display: block; color: #ccc; margin-bottom: 5px;">Segments:</label>
-                <input type="number" id="curve-segments" value="30" min="8" max="100" step="1" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Radius Z:</label>
+                <input type="number" id="curve-radius-z" value="16" min="1" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
             </div>
             
             <div style="display: flex; align-items: center;">

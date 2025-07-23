@@ -34,6 +34,12 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Per-Face Material Control**: Each face can have unique color, transparency, metalness, roughness, and glow properties
 - **🌈 Vertex Color System**: Advanced vertex coloring with full PBR material support
 - **Real-time Visual Feedback**: Immediate color application with smooth transitions
+- **🖌️ Dual Painting Modes**:
+  - **Single Triangle**: Paint individual triangles with precise control
+  - **Cascade (Adjacent Similar)**: Flood-fill painting that spreads to connected triangles with similar normals
+- **🌊 Intelligent Flood-Fill Algorithm**: Paint cascades across connected surfaces, following curves and edges naturally
+- **📐 Angle Threshold Control**: Adjustable angle tolerance (5°-90°) for cascade painting precision
+- **🔗 Adjacency-Based Spreading**: Triangles must be physically adjacent (sharing an edge) to be included in cascade painting
 - **Procedural Textures**: Apply polka dots, stripes, marble patterns, or upload custom textures to individual faces
 - **🧽 Selective Clearing**: Clear all face paint from selected objects or start fresh anytime
 - **Material Preservation**: Original object materials are preserved and can be restored
@@ -232,6 +238,7 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Real-time UI Updates**: Instant feedback system without apply buttons for smooth editing
 - **3D Navigation**: ViewCube with spherical coordinate camera positioning
 - **Face-Level Rendering**: Individual face material control with raycasting for precise selection
+- **Triangle Adjacency System**: Edge-based adjacency mapping for cascade painting and flood-fill algorithms
 
 ### Performance
 - **SAP Broadphase**: Advanced collision detection algorithm for better performance
@@ -300,7 +307,11 @@ balls/
 
 ### Surface Painting Mode
 - **🖌️ Face Paint Button**: Activate face painting mode (select object first)
-- **Mouse Click**: Paint individual faces with current paint settings
+- **Paint Mode Selection**: Choose between Single Triangle or Cascade (Adjacent Similar) modes
+- **Mouse Click**: Paint faces with current paint settings
+  - **Single Mode**: Paints only the clicked triangle
+  - **Cascade Mode**: Flood-fills to adjacent triangles with similar normals within angle threshold
+- **📐 Angle Threshold Slider**: Adjust cascade painting sensitivity (5°-90°) when in cascade mode
 - **Crosshair Cursor**: Precise face selection targeting
 - **🗑️ Clear All**: Remove all face paint from selected object
 - **❌ Close**: Exit face painting mode and re-enable transform controls
@@ -329,13 +340,19 @@ balls/
 ### Creating Custom Surface Designs with Face Painting
 1. Select any track piece or obstacle you want to customize
 2. Click "🖌️ Face Paint" to open the Surface Painting panel
-3. Choose your paint color and adjust transparency, metalness, roughness
-4. Set glow intensity and glow color for emissive effects
-5. Select texture type: None, Upload Custom, Polka Dots, Stripes, or Marble
-6. Click individual faces on the 3D object to apply your custom paint
-7. Each face can have completely different materials and colors
-8. Use "🗑️ Clear All" to reset the object to its original appearance
-9. Perfect for creating racing stripes, team colors, artistic patterns, or unique designs
+3. Choose your paint mode:
+   - **Single Triangle**: For precise, individual face control
+   - **Cascade (Adjacent Similar)**: For painting entire surfaces or sides
+4. If using Cascade mode, adjust the angle threshold (5°-90°) to control how far the paint spreads
+5. Choose your paint color and adjust transparency, metalness, roughness
+6. Set glow intensity and glow color for emissive effects
+7. Select texture type: None, Upload Custom, Polka Dots, Stripes, or Marble
+8. Click on faces to apply your custom paint:
+   - **Single mode**: Paints only the clicked triangle
+   - **Cascade mode**: Paint spreads to all connected triangles with similar orientations
+9. Each face can have completely different materials and colors
+10. Use "🗑️ Clear All" to reset the object to its original appearance
+11. Perfect for creating racing stripes, team colors, curved surface designs, or artistic patterns
 
 ### Night Race Scene with Lighting Effects
 1. Open Skybox Selector and choose "Space" skybox
