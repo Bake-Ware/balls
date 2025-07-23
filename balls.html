@@ -3922,6 +3922,10 @@
                 }
             });
             
+            // Custom curve dialog event listeners
+            document.getElementById('custom-curve-create').addEventListener('click', createCustomCurve);
+            document.getElementById('custom-curve-cancel').addEventListener('click', hideCustomCurveDialog);
+            
             // Select all button (old main menu version - functionality could be added to toolbar)
             const selectAllBtn = document.getElementById('select-all-btn');
             if (selectAllBtn) {
@@ -4113,6 +4117,193 @@
             document.getElementById('save-dialog').style.display = 'block';
             document.getElementById('save-filename').focus();
             document.getElementById('save-filename').select();
+        }
+        
+        function showCustomCurveDialog() {
+            document.getElementById('custom-curve-dialog').style.display = 'block';
+            document.getElementById('curve-angle').focus();
+        }
+        
+        function hideCustomCurveDialog() {
+            document.getElementById('custom-curve-dialog').style.display = 'none';
+        }
+        
+        function createCustomCurve() {
+            // Get values from dialog
+            const angle = parseFloat(document.getElementById('curve-angle').value) * Math.PI / 180; // Convert to radians
+            const radius = parseFloat(document.getElementById('curve-radius').value);
+            const width = parseFloat(document.getElementById('curve-width').value);
+            const height = parseFloat(document.getElementById('curve-height').value);
+            const banking = parseFloat(document.getElementById('curve-banking').value) * Math.PI / 180; // Convert to radians
+            const elevation = parseFloat(document.getElementById('curve-elevation').value);
+            const elevationEnd = parseFloat(document.getElementById('curve-elevation-end').value);
+            const twist = parseFloat(document.getElementById('curve-twist').value) * Math.PI / 180; // Convert to radians
+            const segments = parseInt(document.getElementById('curve-segments').value);
+            const clockwise = document.getElementById('curve-clockwise').checked;
+            
+            // Validate inputs
+            if (isNaN(angle) || isNaN(radius) || isNaN(width) || isNaN(height) || 
+                isNaN(banking) || isNaN(elevation) || isNaN(elevationEnd) || 
+                isNaN(twist) || isNaN(segments)) {
+                showMessage('Please enter valid numbers for all fields', 'error');
+                return;
+            }
+            
+            if (segments < 8 || segments > 100) {
+                showMessage('Segments must be between 8 and 100', 'error');
+                return;
+            }
+            
+            try {
+                // Create the custom curve geometry using createArcGeometry
+                const geometry = createArcGeometry({
+                    angle: angle,
+                    width: width,
+                    height: height,
+                    radius: radius,
+                    banking: banking,
+                    elevation: elevation,
+                    elevationEnd: elevationEnd,
+                    twist: twist,
+                    segments: segments,
+                    clockwise: clockwise
+                });
+                
+                // Create material for the curve
+                const materialData = {
+                    color: '#888888',
+                    transparency: 0,
+                    metalness: 0,
+                    roughness: 0.8,
+                    bounciness: 0.3,
+                    emissive: 0,
+                    emissiveColor: '#888888',
+                    textureType: 'none',
+                    textureData: null
+                };
+                
+                const material = new THREE.MeshLambertMaterial({ color: 0x888888 });
+                
+                // Create mesh
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                // Create group and add mesh to it
+                const group = new THREE.Group();
+                group.userData = { 
+                    isTrackPiece: true, 
+                    type: 'custom-curve',
+                    customData: {
+                        angle: angle,
+                        width: width,
+                        height: height,
+                        radius: radius,
+                        banking: banking,
+                        elevation: elevation,
+                        elevationEnd: elevationEnd,
+                        twist: twist,
+                        segments: segments,
+                        clockwise: clockwise
+                    }
+                };
+                group.add(mesh);
+                group.position.set(0, 5, 0);
+                
+                // Create track piece object following the standard pattern
+                const piece = {
+                    group: group,
+                    type: 'custom-curve',
+                    physicsBodies: [],
+                    materialData: materialData,
+                    rotationSettings: {
+                        enabled: false,
+                        speed: 1,
+                        axis: 'y',
+                        global: false
+                    },
+                    raycastMirror: false,
+                    pathingSettings: {
+                        enabled: false,
+                        mode: 'loop',
+                        speed: 1,
+                        transformTypes: { move: true, rotate: false, scale: false },
+                        points: [],
+                        isRecording: false,
+                        isPlaying: false,
+                        currentPointIndex: 0,
+                        playbackTime: 0,
+                        direction: 1,
+                        triggered: false
+                    },
+                    isAffector: false,
+                    affectorType: null,
+                    affectorSettings: {
+                        strength: 5.0,
+                        direction: new THREE.Vector3(0, 0, 1)
+                    },
+                    isLight: false,
+                    lightType: null,
+                    lightSettings: {
+                        color: 0xffffff,
+                        intensity: 2,
+                        distance: 30,
+                        angle: 0,
+                        penumbra: 0,
+                        decay: 2,
+                        castShadow: true
+                    },
+                    isParticleGen: false,
+                    particleSettings: {
+                        count: 200,
+                        spread: 2,
+                        velocity: 0.1,
+                        gravity: 0.005,
+                        color: 0xffa500
+                    },
+                    isCameraSet: false,
+                    cameraSettings: {
+                        position: new THREE.Vector3(0, 10, 10),
+                        target: new THREE.Vector3(0, 0, 0),
+                        followMode: 'static'
+                    },
+                    isBallSet: false,
+                    isPlacementBall: false
+                };
+                
+                // Add physics and add to scene
+                updatePhysicsForPiece(piece);
+                trackPieces.push(piece);
+                scene.add(group);
+                
+                // Capture state after adding custom curve
+                captureStateInternal('Add custom curve');
+                
+                // Clear current selection
+                if (selectedPieces.length > 0) {
+                    selectedPieces.forEach(selectedPiece => {
+                        const selectedMesh = selectedPiece.group.children[0];
+                        if (selectedMesh && selectedMesh.originalMaterial) {
+                            selectedMesh.material = selectedMesh.originalMaterial;
+                            delete selectedMesh.originalMaterial;
+                        }
+                    });
+                }
+                
+                // Select the new piece
+                selectedPieces = [piece];
+                mesh.originalMaterial = mesh.material;
+                mesh.material = new THREE.MeshLambertMaterial({ color: 0xffff00 });
+                
+                // Update UI
+                updateObjectTree();
+                updateSelectionUI();
+                
+                showMessage('Custom curve created successfully!', 'success');
+                hideCustomCurveDialog();
+                
+            } catch (error) {
+                console.error('Error creating custom curve:', error);
+                showMessage('Error creating custom curve: ' + error.message, 'error');
+            }
         }
         
         function performSave() {
@@ -5243,7 +5434,8 @@
                 'Custom': {
                     icon: '📦',
                     pieces: {
-                        'custom': { icon: '📦', name: 'Custom (.obj)...' }
+                        'custom': { icon: '📦', name: 'Custom (.obj)...' },
+                        'custom-curve': { icon: '🌊', name: 'Custom Curve...' }
                     }
                 }
             };
@@ -5316,6 +5508,9 @@
             if (pieceType === 'custom') {
                 // Trigger custom file input
                 document.getElementById('add-custom-input').click();
+            } else if (pieceType === 'custom-curve') {
+                // Show custom curve dialog
+                showCustomCurveDialog();
             } else {
                 // Add piece directly
                 addPiece(pieceType);
@@ -7917,6 +8112,68 @@
         <div class="button-group">
             <button class="save-confirm" id="save-confirm-btn">💾 Save</button>
             <button class="save-cancel" id="save-cancel-btn">❌ Cancel</button>
+        </div>
+    </div>
+
+    <!-- Custom Curve Dialog -->
+    <div id="custom-curve-dialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2a2a2a; border: 2px solid #444; border-radius: 8px; padding: 20px; z-index: 10001; max-width: 400px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="color: #ffd700; margin-top: 0;">🌊 Create Custom Curve</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Angle (degrees):</label>
+                <input type="number" id="curve-angle" value="90" min="1" max="360" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Radius:</label>
+                <input type="number" id="curve-radius" value="16" min="1" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Width:</label>
+                <input type="number" id="curve-width" value="8" min="1" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Height:</label>
+                <input type="number" id="curve-height" value="1.5" min="0.1" step="0.1" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Banking (degrees):</label>
+                <input type="number" id="curve-banking" value="0" min="-45" max="45" step="1" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Start Elevation:</label>
+                <input type="number" id="curve-elevation" value="0" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">End Elevation:</label>
+                <input type="number" id="curve-elevation-end" value="0" step="0.5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Twist (degrees):</label>
+                <input type="number" id="curve-twist" value="0" min="-180" max="180" step="5" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Segments:</label>
+                <input type="number" id="curve-segments" value="30" min="8" max="100" step="1" style="width: 100%; padding: 5px; background: #444; border: 1px solid #666; color: white; border-radius: 3px;">
+            </div>
+            
+            <div style="display: flex; align-items: center;">
+                <input type="checkbox" id="curve-clockwise" style="margin-right: 8px;">
+                <label for="curve-clockwise" style="color: #ccc;">Clockwise</label>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="custom-curve-create" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">🌊 Create Curve</button>
+            <button id="custom-curve-cancel" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer;">❌ Cancel</button>
         </div>
     </div>
 
