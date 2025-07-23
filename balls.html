@@ -2170,6 +2170,86 @@
             piece.physicsBodies.push(body);
         }
         
+        // Flexible helper function to create arc-based geometry with various transforms
+        function createArcGeometry(options = {}) {
+            const {
+                angle = Math.PI/2,           // Arc angle in radians
+                width = 8,                   // Cross-section width
+                height = 1.5,                // Cross-section height  
+                radius = null,               // Arc radius (auto-calculated if null)
+                banking = 0,                 // Banking angle in radians (positive = bank inward)
+                elevation = 0,               // Start elevation offset
+                elevationEnd = null,         // End elevation (null = same as start)
+                twist = 0,                   // Twist along path in radians
+                segments = null,             // Number of segments (auto-calculated if null)
+                clockwise = false            // Arc direction
+            } = options;
+            
+            const w = 8; // Base width for radius calculations
+            
+            // Calculate radius if not provided
+            const arcRadius = radius || (w + 4) * 1.5;
+            
+            // Calculate segments if not provided
+            const arcSegments = segments || (angle <= Math.PI/4 ? 20 : 30);
+            
+            // Create the arc path
+            const arcPath = new THREE.EllipseCurve(
+                0, 0,                    // center
+                arcRadius, arcRadius,    // x and y radius
+                0, angle,               // start and end angle
+                clockwise,              // direction
+                0                       // rotation
+            );
+            
+            const arcPoints = arcPath.getPoints(arcSegments);
+            
+            // Create 3D path with elevation and banking
+            const path3DPoints = arcPoints.map((p, i) => {
+                const t = i / (arcPoints.length - 1); // Progress along path (0 to 1)
+                
+                // Calculate elevation at this point
+                const currentElevation = elevation + (elevationEnd !== null ? 
+                    (elevationEnd - elevation) * t : 0);
+                
+                // Calculate banking rotation at this point
+                const currentBanking = banking * Math.sin(t * Math.PI); // Smooth banking curve
+                
+                return {
+                    point: new THREE.Vector3(p.x, currentElevation, p.y),
+                    banking: currentBanking,
+                    twist: twist * t
+                };
+            });
+            
+            // Create the cross-section shape
+            const shape = new THREE.Shape();
+            shape.moveTo(-width/2, -height/2);
+            shape.lineTo(-width/2, height/2);
+            shape.lineTo(width/2, height/2);
+            shape.lineTo(width/2, -height/2);
+            shape.lineTo(-width/2, -height/2);
+            
+            // For now, create basic geometry (banking/twist would need custom geometry generation)
+            const path3D = new THREE.CatmullRomCurve3(path3DPoints.map(p => p.point));
+            const geometry = new THREE.ExtrudeGeometry(shape, { 
+                extrudePath: path3D, 
+                steps: arcSegments, 
+                bevelEnabled: false 
+            });
+            
+            // Apply any additional transforms
+            if (banking !== 0 || twist !== 0) {
+                // For complex banking/twist, we'd need to manually transform vertices
+                // For now, apply a simple overall rotation as a placeholder
+                if (banking !== 0) {
+                    geometry.rotateZ(banking * 0.5); // Simplified banking effect
+                }
+            }
+            
+            return geometry;
+        }
+        
         function getPieceConfig(type) {
             const w = 8, l = 10, h = 1.5, t = 0.5;
             switch(type) {
@@ -2200,103 +2280,29 @@
                     curveShape.lineTo(-w/2, -h/2);
                     return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
                 case "wall-45":
-                    // 45-degree flat wall arc - wide on X and Z, flat on Y
-                    const wallRadius45 = (w + 4) / Math.sin(Math.PI/4); // Calculate radius for 45-degree arc
-                    const wallArc45Path = new THREE.EllipseCurve(
-                        0, 0,            // center
-                        wallRadius45, wallRadius45,   // x and y radius
-                        0, Math.PI/4,    // start and end angle (45 degrees)
-                        false,           // clockwise
-                        0               // rotation
-                    );
-                    const wallArc45Points = wallArc45Path.getPoints(20);
-                    const wallArc45Path3D = new THREE.CatmullRomCurve3(
-                        wallArc45Points.map(p => new THREE.Vector3(p.x, 0, p.y))
-                    );
-                    // Create flat wall shape - thin in Y, wide in local coordinates
-                    const wall45Shape = new THREE.Shape();
-                    const wallThickness = t; // Use thin thickness
-                    wall45Shape.moveTo(-w/2, -wallThickness/2);
-                    wall45Shape.lineTo(-w/2, wallThickness/2);
-                    wall45Shape.lineTo(w/2, wallThickness/2);
-                    wall45Shape.lineTo(w/2, -wallThickness/2);
-                    wall45Shape.lineTo(-w/2, -wallThickness/2);
-                    const wall45Geometry = new THREE.ExtrudeGeometry(wall45Shape, { extrudePath: wallArc45Path3D, steps: 20, bevelEnabled: false });
-                    wall45Geometry.rotateX(Math.PI/2); // Rotate so it's vertical like a wall
-                    return { geometry: wall45Geometry };
+                    return { geometry: createArcGeometry({ 
+                        angle: Math.PI/4, 
+                        width: w, 
+                        height: t 
+                    }).rotateX(Math.PI/2) };
                 case "wall-90":
-                    // 90-degree flat wall arc - wide on X and Z, flat on Y
-                    const wallRadius90 = (w + 4) / Math.sin(Math.PI/2); // Calculate radius for 90-degree arc
-                    const wallArc90Path = new THREE.EllipseCurve(
-                        0, 0,            // center
-                        wallRadius90, wallRadius90,   // x and y radius
-                        0, Math.PI/2,    // start and end angle (90 degrees)
-                        false,           // clockwise
-                        0               // rotation
-                    );
-                    const wallArc90Points = wallArc90Path.getPoints(30);
-                    const wallArc90Path3D = new THREE.CatmullRomCurve3(
-                        wallArc90Points.map(p => new THREE.Vector3(p.x, 0, p.y))
-                    );
-                    // Create flat wall shape - thin in Y, wide in local coordinates
-                    const wall90Shape = new THREE.Shape();
-                    const wallThickness90 = t; // Use thin thickness
-                    wall90Shape.moveTo(-w/2, -wallThickness90/2);
-                    wall90Shape.lineTo(-w/2, wallThickness90/2);
-                    wall90Shape.lineTo(w/2, wallThickness90/2);
-                    wall90Shape.lineTo(w/2, -wallThickness90/2);
-                    wall90Shape.lineTo(-w/2, -wallThickness90/2);
-                    const wall90Geometry = new THREE.ExtrudeGeometry(wall90Shape, { extrudePath: wallArc90Path3D, steps: 30, bevelEnabled: false });
-                    wall90Geometry.rotateX(Math.PI/2); // Rotate so it's vertical like a wall
-                    return { geometry: wall90Geometry };
+                    return { geometry: createArcGeometry({ 
+                        angle: Math.PI/2, 
+                        width: w, 
+                        height: t 
+                    }).rotateX(Math.PI/2) };
                 case "curve-45":
-                    // 45-degree curved track - flat wide path that bends
-                    const trackRadius45 = (w + 4) * 1.5; // Larger radius for smoother track curves
-                    const trackArc45Path = new THREE.EllipseCurve(
-                        0, 0,            // center
-                        trackRadius45, trackRadius45,   // x and y radius
-                        0, Math.PI/4,    // start and end angle (45 degrees)
-                        false,           // clockwise
-                        0               // rotation
-                    );
-                    const trackArc45Points = trackArc45Path.getPoints(20);
-                    const trackArc45Path3D = new THREE.CatmullRomCurve3(
-                        trackArc45Points.map(p => new THREE.Vector3(p.x, 0, p.y))
-                    );
-                    // Create track cross-section - twice as thick, 1.5 units tall
-                    const track45Shape = new THREE.Shape();
-                    const trackWidth = 1.5; // this is height
-                    const trackHeight = w * 1.25; // this is width
-                    track45Shape.moveTo(-trackWidth/2, -trackHeight/2);
-                    track45Shape.lineTo(-trackWidth/2, trackHeight/2);
-                    track45Shape.lineTo(trackWidth/2, trackHeight/2);
-                    track45Shape.lineTo(trackWidth/2, -trackHeight/2);
-                    track45Shape.lineTo(-trackWidth/2, -trackHeight/2);
-                    return { geometry: new THREE.ExtrudeGeometry(track45Shape, { extrudePath: trackArc45Path3D, steps: 20, bevelEnabled: false }) };
+                    return { geometry: createArcGeometry({ 
+                        angle: Math.PI/4, 
+                        width: h, 
+                        height: w * 1.25
+                    }) };
                 case "curve-90":
-                    // 90-degree curved track - flat wide path that bends
-                    const trackRadius90 = (w + 4) * 1.5; // Larger radius for smoother track curves
-                    const trackArc90Path = new THREE.EllipseCurve(
-                        0, 0,            // center
-                        trackRadius90, trackRadius90,   // x and y radius
-                        0, Math.PI/2,    // start and end angle (90 degrees)
-                        false,           // clockwise
-                        0               // rotation
-                    );
-                    const trackArc90Points = trackArc90Path.getPoints(30);
-                    const trackArc90Path3D = new THREE.CatmullRomCurve3(
-                        trackArc90Points.map(p => new THREE.Vector3(p.x, 0, p.y))
-                    );
-                    // Create track cross-section - twice as thick, 1.5 units tall
-                    const track90Shape = new THREE.Shape();
-                    const trackWidth90 = 1.5; // this is height
-                    const trackHeight90 = w * 1.25; // this is width
-                    track90Shape.moveTo(-trackWidth90/2, -trackHeight90/2);
-                    track90Shape.lineTo(-trackWidth90/2, trackHeight90/2);
-                    track90Shape.lineTo(trackWidth90/2, trackHeight90/2);
-                    track90Shape.lineTo(trackWidth90/2, -trackHeight90/2);
-                    track90Shape.lineTo(-trackWidth90/2, -trackHeight90/2);
-                    return { geometry: new THREE.ExtrudeGeometry(track90Shape, { extrudePath: trackArc90Path3D, steps: 30, bevelEnabled: false }) };
+                    return { geometry: createArcGeometry({ 
+                        angle: Math.PI/2, 
+                        width: h, 
+                        height: w * 1.25 
+                    }) };
                 case "ball":
                     return { geometry: new THREE.SphereGeometry(2, 16, 16), pinned: true };
                 case "pyramid":
