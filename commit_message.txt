@@ -1,0 +1,21 @@
+feat(camera): Replace camera toggle with mode dropdown
+
+Replaces the simple camera toggle button with a more versatile dropdown menu, allowing users to select from multiple camera perspectives.
+
+New camera modes include:
+- Panning (the original default)
+- FPV (First-Person View)
+- Behind
+- Ride Along
+- Oncoming
+
+refactor(physics): Improve simulation stability and performance
+
+- Adjusts Cannon.js world parameters (solver iterations, tolerance, sleep settings) to reduce clipping and improve performance.
+- Tweaks contact material properties for softer, more stable collisions.
+- Correctly applies rotations to track pieces for accurate physics calculations, fixing issues with angled walls.
+
+refactor(gameplay): Enhance lead marble tracking and FPV camera
+
+- The logic for determining the lead marble now correctly calculates the marble closest to a finish line, rather than the furthest from the start. This provides a more accurate race ranking.
+- The FPV camera has been repositioned and its look-at logic adjusted for a more immersive and stable first-person experience.
