@@ -490,7 +490,13 @@
         <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
 
         <!-- Menu Buttons -->
-        <button id="camera-mode-btn-toolbar" title="Camera Mode" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📹</button>
+        <select id="camera-mode-dropdown-toolbar" title="Camera Mode" style="background: #495057; border: 1px solid #495057; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px; height: 32px;">
+            <option value="panning">📹 Panning</option>
+            <option value="fpv">👁️ FPV</option>
+            <option value="behind">⬅️ Behind</option>
+            <option value="ridealong">🎯 Ride Along</option>
+            <option value="oncoming">➡️ Oncoming</option>
+        </select>
         <button id="ball-maker-btn-toolbar" title="Ball Maker" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">⚽</button>
         <button id="ball-roster-btn-toolbar" title="Ball Roster" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">👥</button>
         <button id="open-tournament-btn-toolbar" title="Tournament" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🏁</button>
@@ -501,7 +507,13 @@
         <div style="flex: 1;"></div>
 
         <!-- Right-aligned items -->
-        <button id="camera-mode-btn-toolbar" title="Toggle Camera Mode" style="background: #495057; border: 1px solid #495057; color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">📹 Camera</button>
+        <select id="camera-mode-dropdown-toolbar-right" title="Camera Mode" style="background: #495057; border: 1px solid #495057; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+            <option value="panning">📹 Panning</option>
+            <option value="fpv">👁️ FPV</option>
+            <option value="behind">⬅️ Behind</option>
+            <option value="ridealong">🎯 Ride Along</option>
+            <option value="oncoming">➡️ Oncoming</option>
+        </select>
     </div>
 
     <!-- Left Sidebar for Object Tree -->
@@ -1316,7 +1328,7 @@
         let multiSelectGroup = null;
         let previousLeadMarble = null;
         let cameraTransitionTime = 0;
-        let transitionDuration = 1.0; // seconds
+        let transitionDuration = 0.3; // seconds - faster camera switching
         let mouseDownPosition = { x: 0, y: 0 };
         let isDragging = false;
         let dragStartTime = 0;
@@ -1400,11 +1412,15 @@
             world = new CANNON.World({ gravity: new CANNON.Vec3(0, -30, 0) });
             
             // Improve collision detection to reduce clipping
-            world.solver.iterations = 20; // Increase solver iterations for better stability
-            world.solver.tolerance = 0.001; // Tighter tolerance for more precise collisions
+            world.solver.iterations = 25; // Increased solver iterations for better stability
+            world.solver.tolerance = 0.0005; // Tighter tolerance for more precise collisions
             world.allowSleep = true; // Allow bodies to sleep for better performance
-            world.sleepSpeedLimit = 0.1; // Bodies sleep when moving slower than this
-            world.sleepTimeLimit = 1; // Time before a slow body goes to sleep
+            world.sleepSpeedLimit = 0.05; // Bodies sleep when moving slower than this (reduced)
+            world.sleepTimeLimit = 0.5; // Time before a slow body goes to sleep (reduced)
+            
+            // Add more collision margin to prevent tunneling
+            world.defaultContactMaterial.contactEquationStiffness = 1e6;
+            world.defaultContactMaterial.contactEquationRelaxation = 5;
             
             // Use SAP broadphase for better performance with many objects
             world.broadphase = new CANNON.SAPBroadphase(world);
@@ -1463,14 +1479,14 @@
             world.addContactMaterial(new CANNON.ContactMaterial(groundMaterial, marbleCannonMaterial, { 
                 friction: 0.3, 
                 restitution: 0.4,
-                contactEquationStiffness: 1e8,
-                contactEquationRelaxation: 4
+                contactEquationStiffness: 1e6, // Reduced for softer contact
+                contactEquationRelaxation: 5   // Increased for more relaxed contact
             }));
             world.addContactMaterial(new CANNON.ContactMaterial(trackCannonMaterial, marbleCannonMaterial, { 
                 friction: 0.15, 
                 restitution: 0.3,
-                contactEquationStiffness: 1e8,
-                contactEquationRelaxation: 4
+                contactEquationStiffness: 1e6, // Reduced for softer contact
+                contactEquationRelaxation: 5   // Increased for more relaxed contact
             }));
             
             // Initialize object tree
@@ -1951,6 +1967,12 @@
             const mesh = new THREE.Mesh(config.geometry, floorMat);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            
+            // Apply rotation if specified in config
+            if (config.rotation) {
+                mesh.rotation.set(config.rotation.x || 0, config.rotation.y || 0, config.rotation.z || 0);
+            }
+            
             group.add(mesh);
             
             // Add directional arrow for accelerator
@@ -2201,8 +2223,19 @@
             let shape;
             
             // Use the exact same geometry that's being rendered for collision
-            // Force update of world matrices to get accurate transforms
+            // Force update of matrices to get accurate transforms
+            mesh.updateMatrix();
+            mesh.updateMatrixWorld(true);
             piece.group.updateMatrixWorld(true);
+            
+            // Debug logging for rotated walls
+            if (['wall-45', 'wall-90'].includes(piece.type)) {
+                console.log(`Updating physics for ${piece.type}:`);
+                console.log('Mesh rotation:', mesh.rotation);
+                console.log('Mesh position:', mesh.position);
+                console.log('Group position:', piece.group.position);
+                console.log('Mesh world matrix:', mesh.matrixWorld);
+            }
             
             // Get the actual rendered geometry with all transformations applied
             const geometry = mesh.geometry.clone();
@@ -2216,6 +2249,12 @@
             const vertices = Array.from(geometry.attributes.position.array);
             const indices = geometry.index ? Array.from(geometry.index.array) : [];
             
+            // Debug logging for rotated walls
+            if (['wall-45', 'wall-90'].includes(piece.type)) {
+                console.log('First few vertices after transform:', vertices.slice(0, 15));
+                console.log('Vertices count:', vertices.length / 3);
+            }
+            
             // If no indices, create them for triangulated geometry
             if (indices.length === 0) {
                 for (let i = 0; i < vertices.length / 3; i++) {
@@ -2223,8 +2262,10 @@
                 }
             }
             
-            // Create Trimesh from the exact rendered geometry
+            // Use Trimesh for all pieces for now to debug rotation issues
             shape = new CANNON.Trimesh(vertices, indices);
+            // Add collision margin to Trimesh to prevent tunneling
+            if (shape.setMargin) shape.setMargin(0.01);
             
             // Check if this piece should be pinned (like a ball obstacle)
             const isPinned = piece.type === 'ball';
@@ -2247,10 +2288,10 @@
                 world.addContactMaterial(new CANNON.ContactMaterial(pieceCannonMaterial, marbleCannonMaterial, { 
                     friction: 0.12, 
                     restitution: bounciness,
-                    contactEquationStiffness: 1e8,
-                    contactEquationRelaxation: 4,
-                    frictionEquationStiffness: 1e7,
-                    frictionEquationRelaxation: 3
+                    contactEquationStiffness: 1e6, // Reduced from 1e8 for softer contact
+                    contactEquationRelaxation: 5,  // Increased for more relaxed contact
+                    frictionEquationStiffness: 1e5, // Reduced from 1e7 for softer friction
+                    frictionEquationRelaxation: 4   // Increased for more relaxed friction
                 }));
             }
             
@@ -2266,9 +2307,16 @@
                     
                     // Check if it's a marble that hit the finish
                     if (otherBody.userData && otherBody.userData.isMarble && !otherBody.userData.finished) {
-                        const marble = otherBody.userData;
-                        marble.finished = true;
-                        raceFinishers.push(marble);
+                        const marbleUserData = otherBody.userData;
+                        marbleUserData.finished = true;
+                        
+                        // Also find and update the marble object in the marbles array
+                        const marbleObject = marbles.find(m => m.body === otherBody);
+                        if (marbleObject) {
+                            marbleObject.finished = true;
+                        }
+                        
+                        raceFinishers.push(marbleUserData);
                         
                         // Show results immediately on first finish
                         if (raceFinishers.length === 1) {
@@ -2466,7 +2514,10 @@
                     straightShape.lineTo(w/2, h/2);
                     straightShape.lineTo(w/2, -h/2);
                     straightShape.lineTo(-w/2, -h/2);
-                    return { geometry: new THREE.ExtrudeGeometry(straightShape, {steps: 1, depth: l, bevelEnabled: false}).rotateX(Math.PI/2) };
+                    return { 
+                        geometry: new THREE.ExtrudeGeometry(straightShape, {steps: 1, depth: l, bevelEnabled: false}),
+                        rotation: { x: Math.PI/2, y: 0, z: 0 }
+                    };
                 case "ramp":
                     const curvePath = new THREE.CatmullRomCurve3([
                         new THREE.Vector3(0, 0, -l/2),
@@ -2482,26 +2533,32 @@
                     curveShape.lineTo(-w/2, -h/2);
                     return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
                 case "wall-45":
-                    return { geometry: createArcGeometry({ 
-                        angle: Math.PI/4, 
-                        width: w, 
-                        height: t 
-                    }).rotateX(Math.PI/2) };
+                    return { 
+                        geometry: createArcGeometry({ 
+                            angleY: Math.PI/4, 
+                            width: w, 
+                            height: t 
+                        }),
+                        rotation: { x: Math.PI/2, y: 0, z: 0 }
+                    };
                 case "wall-90":
-                    return { geometry: createArcGeometry({ 
-                        angle: Math.PI/2, 
-                        width: w, 
-                        height: t 
-                    }).rotateX(Math.PI/2) };
+                    return { 
+                        geometry: createArcGeometry({ 
+                            angleY: Math.PI/2, 
+                            width: w, 
+                            height: t 
+                        }),
+                        rotation: { x: Math.PI/2, y: 0, z: 0 }
+                    };
                 case "curve-45":
                     return { geometry: createArcGeometry({ 
-                        angle: Math.PI/4, 
+                        angleY: Math.PI/4, 
                         width: h, 
                         height: w * 1.25
                     }) };
                 case "curve-90":
                     return { geometry: createArcGeometry({ 
-                        angle: Math.PI/2, 
+                        angleY: Math.PI/2, 
                         width: h, 
                         height: w * 1.25 
                     }) };
@@ -3730,7 +3787,21 @@
             document.getElementById('skybox-btn-toolbar').addEventListener('click', openSkyboxSelector);
             document.getElementById('global-settings-btn-toolbar').addEventListener('click', openGlobalSettings);
             document.getElementById('ball-roster-btn-toolbar').addEventListener('click', openBallRoster);
-            document.getElementById('camera-mode-btn-toolbar').addEventListener('click', toggleCameraMode);
+            // Camera mode dropdown handlers
+            document.getElementById('camera-mode-dropdown-toolbar').addEventListener('change', (e) => {
+                cameraMode = e.target.value;
+                cameraSetActive = false;
+                cameraAngle = 0;
+                // Sync both dropdowns
+                document.getElementById('camera-mode-dropdown-toolbar-right').value = cameraMode;
+            });
+            document.getElementById('camera-mode-dropdown-toolbar-right').addEventListener('change', (e) => {
+                cameraMode = e.target.value;
+                cameraSetActive = false;
+                cameraAngle = 0;
+                // Sync both dropdowns
+                document.getElementById('camera-mode-dropdown-toolbar').value = cameraMode;
+            });
             
             // Add missing toolbar button event listeners
             document.getElementById('save-track-btn-toolbar').addEventListener('click', saveTrack);
@@ -5040,7 +5111,7 @@
             
             // Update visibility of hidden objects for edit mode
             updateHiddenObjectVisibility();
-            document.getElementById('toggle-transform-btn').textContent = '🔧 Disable Transform';
+            document.getElementById('toggle-transform-btn-toolbar').textContent = '🔧';
             
             // Re-enable all orbit controls for edit mode
             orbitControls.enabled = true;
@@ -5528,7 +5599,7 @@
             const startBtnToolbar = document.getElementById('start-race-btn-toolbar');
             const restartBtnToolbar = document.getElementById('restart-race-btn-toolbar');
             const editBtnToolbar = document.getElementById('edit-track-btn-toolbar');
-            const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #toggle-transform-btn, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #save-track-btn, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
+            const editorButtons = document.querySelectorAll('#piece-type-selector, #add-selected-piece-btn, #toggle-transform-btn-toolbar, #duplicate-piece-btn, #remove-piece-btn, #edit-material-btn, #save-track-btn, #skybox-btn, #ball-maker-btn, #open-tournament-btn');
             const editorLabels = document.querySelectorAll('label[for="add-custom-input"], label[for="load-track-input"]');
             const fileInputs = document.querySelectorAll('#add-custom-input, #load-track-input');
             const viewcube = document.getElementById('viewcube');
@@ -8564,32 +8635,56 @@
                 checkCameraZones();
                 checkBallCollisions();
 
-                // Find the furthest marble from their starting positions  
+                // Find the marble closest to finishing (nearest to any finish line)
                 let leadMarble = null;
-                let maxDistanceFromStart = -1;
+                let minDistanceToFinish = Infinity;
                 
-                const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+                const finishPieces = trackPieces.filter(p => p.type === 'end');
                 
                 marbles.forEach(marble => {
-                    if (!marble.finished) {
-                        // Calculate distance from marble's original placement position
-                        const originalSetIndex = marble.ballSetIndex;
-                        if (originalSetIndex < placementBalls.length) {
-                            const placementBall = placementBalls[originalSetIndex];
-                            const distanceFromStart = marble.mesh.position.distanceTo(placementBall.group.position);
-                            
-                            // This marble is the leader if it's traveled furthest from its start
-                            if (distanceFromStart > maxDistanceFromStart) {
-                                maxDistanceFromStart = distanceFromStart;
-                                leadMarble = marble;
+                    if (!marble.finished && finishPieces.length > 0) {
+                        // Find the closest finish line to this marble
+                        let closestFinishDistance = Infinity;
+                        finishPieces.forEach(finishPiece => {
+                            const distanceToFinish = marble.mesh.position.distanceTo(finishPiece.group.position);
+                            if (distanceToFinish < closestFinishDistance) {
+                                closestFinishDistance = distanceToFinish;
                             }
+                        });
+                        
+                        // This marble is the leader if it's closest to any finish line
+                        if (closestFinishDistance < minDistanceToFinish) {
+                            minDistanceToFinish = closestFinishDistance;
+                            leadMarble = marble;
                         }
                     }
                 });
 
-                // If no unfinished marbles, use the first marble
+                // If no lead marble found (no finish pieces or no unfinished marbles), use distance-based fallback
                 if (!leadMarble && marbles.length > 0) {
-                    leadMarble = marbles[0];
+                    const unfinishedMarbles = marbles.filter(m => !m.finished);
+                    if (unfinishedMarbles.length > 0) {
+                        // If no finish pieces, fall back to furthest from start position
+                        const placementBalls = trackPieces.filter(p => p.type === 'ball-set');
+                        if (placementBalls.length > 0) {
+                            let maxDistanceFromStart = -1;
+                            unfinishedMarbles.forEach(marble => {
+                                const originalSetIndex = marble.ballSetIndex;
+                                if (originalSetIndex < placementBalls.length) {
+                                    const placementBall = placementBalls[originalSetIndex];
+                                    const distanceFromStart = marble.mesh.position.distanceTo(placementBall.group.position);
+                                    if (distanceFromStart > maxDistanceFromStart) {
+                                        maxDistanceFromStart = distanceFromStart;
+                                        leadMarble = marble;
+                                    }
+                                }
+                            });
+                        } else {
+                            // No placement balls either, just use first unfinished marble
+                            leadMarble = unfinishedMarbles[0];
+                        }
+                    }
+                    // If all marbles are finished, don't set a lead marble (camera stops following)
                 }
 
                 // Check if lead marble changed
@@ -8630,14 +8725,29 @@
                                 break;
                                 
                             case 'fpv':
-                                // First person view - camera at marble position
+                                // First person view - camera at marble position looking towards horizon
                                 camera.position.copy(marblePosition);
-                                camera.position.y += 0.5; // Slightly above marble
+                                camera.position.y += 1.5; // Raised up 1.5 units above marble
                                 
-                                // Look in direction of movement
-                                const lookTarget = marblePosition.clone();
-                                lookTarget.add(new THREE.Vector3(marbleVelocity.x, 0, marbleVelocity.z).normalize().multiplyScalar(5));
-                                camera.lookAt(lookTarget);
+                                // Move camera back 1 unit in direction opposite to movement
+                                const velocityDirection = new THREE.Vector3(marbleVelocity.x, 0, marbleVelocity.z).normalize();
+                                if (velocityDirection.length() > 0) {
+                                    camera.position.add(velocityDirection.multiplyScalar(-1)); // Back 1 unit
+                                }
+                                
+                                // Look towards horizon (straight ahead at marble's Y level + slight upward tilt)
+                                const horizonTarget = marblePosition.clone();
+                                const forwardDirection = new THREE.Vector3(marbleVelocity.x, 0, marbleVelocity.z).normalize();
+                                if (forwardDirection.length() > 0) {
+                                    // Look far ahead towards horizon
+                                    horizonTarget.add(forwardDirection.multiplyScalar(100));
+                                } else {
+                                    // If no velocity, look forward (positive Z direction)
+                                    horizonTarget.add(new THREE.Vector3(0, 0, 100));
+                                }
+                                // Set horizon target at marble level + slight upward angle
+                                horizonTarget.y = marblePosition.y + 2; // Look slightly above marble level
+                                camera.lookAt(horizonTarget);
                                 break;
                                 
                             case 'behind':
