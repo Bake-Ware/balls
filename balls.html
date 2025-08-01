@@ -178,6 +178,16 @@
         #face-painter.show {
             transform: translateX(0);
         }
+        #edge-snap-panel {
+            position: fixed; top: 20px; right: 0; height: calc(100vh - 40px); width: 400px;
+            background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; 
+            z-index: 250; display: none; text-align: left; overflow-y: auto;
+            border-left: 3px solid #17a2b8; box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+            transform: translateX(100%); transition: transform 0.3s ease-in-out;
+        }
+        #edge-snap-panel.show {
+            transform: translateX(0);
+        }
         
         /* Save Dialog Styles */
         #save-dialog {
@@ -547,6 +557,7 @@
 
         <!-- Transform Tools -->
         <button id="toggle-transform-btn-toolbar" title="Toggle Transform Controls (W/E/R)" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🎯</button>
+        <button id="edge-snap-btn-toolbar" title="Edge Snap Tool (S)" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🔗</button>
         <button id="bend-tool-btn-toolbar" title="Bend Tool (B)" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🌀</button>
         <button id="duplicate-piece-btn-toolbar" title="Duplicate Selected" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📋</button>
         <button id="remove-piece-btn-toolbar" title="Delete Selected" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🗑️</button>
@@ -1222,6 +1233,63 @@
         </div>
     </div>
 
+    <div id="edge-snap-panel">
+        <h2 style="margin-top: 0; color: #17a2b8; text-align: center;">🔗 Edge Snap Tool</h2>
+        
+        <div style="margin-bottom: 20px; text-align: center;">
+            <div id="edge-snap-status" style="color: #17a2b8; font-size: 14px; padding: 10px; background: rgba(23, 162, 184, 0.1); border-radius: 5px;">
+                Select an object to begin edge snapping
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #ffd700; margin-bottom: 10px;">📋 Instructions</h3>
+            <ol style="color: #ccc; font-size: 13px; line-height: 1.6;">
+                <li>Select a track piece or object</li>
+                <li>Click on an edge to snap FROM (green)</li>
+                <li>Click on another edge to snap TO (red)</li>
+                <li>If preview enabled, click anywhere to confirm</li>
+                <li>Objects align automatically with smart rotation</li>
+            </ol>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #ffd700; margin-bottom: 10px;">⚙️ Snap Settings</h3>
+            
+            <div class="material-option">
+                <label for="edge-snap-tolerance">Detection Tolerance: <span id="edge-tolerance-value">0.5</span></label>
+                <input type="range" id="edge-snap-tolerance" min="0.1" max="2.0" step="0.1" value="0.5">
+                <small style="color: #888; display: block; margin-top: 5px;">How close to click to detect an edge</small>
+            </div>
+            
+            <div class="material-option">
+                <label>
+                    <input type="checkbox" id="edge-snap-preview" checked> Show preview alignment
+                </label>
+                <small style="color: #888; display: block; margin-top: 5px;">Display transparent preview before snapping</small>
+            </div>
+            
+            <div class="material-option">
+                <label>
+                    <input type="checkbox" id="edge-snap-align-rotation" checked> Align rotation
+                </label>
+                <small style="color: #888; display: block; margin-top: 5px;">Match edge orientations when snapping</small>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #ffd700; margin-bottom: 10px;">🎯 Current Selection</h3>
+            <div id="edge-snap-selection-info" style="color: #ccc; background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                No edges selected
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
+            <button id="clear-edge-selection-btn" style="padding: 10px 20px; background: #dc3545; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">🗑️ Clear Selection</button>
+            <button id="close-edge-snap-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
+        </div>
+    </div>
+
     <div id="skybox-selector">
         <h2>🌌 Skybox Selector 🌌</h2>
         
@@ -1333,6 +1401,15 @@
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
         let isRaceMode = false;
+        
+        // Edge snap system variables
+        let isEdgeSnapMode = false;
+        let selectedSourceEdge = null;
+        let selectedTargetEdge = null;
+        let edgeHighlightLines = [];
+        let edgeSnapPreview = null;
+        let hoveredEdge = null;
+        let hoverHighlightLine = null;
         let isBendMode = false;
         let raceFinishers = [];
         let raceFinished = false;
@@ -3325,9 +3402,21 @@
             if (facePaintMode && !transformControls.dragging) {
                 handleFaceHover(event);
             }
+            
+            // Handle edge hover in edge snap mode
+            if (isEdgeSnapMode && !transformControls.dragging) {
+                handleEdgeHover(event);
+            }
         }
 
         function onPointerUp(event) {
+            // Edge snap mode - handle edge selection
+            if (isEdgeSnapMode && !isDragging) {
+                handleEdgeSnapClick(event);
+                isDragging = false;
+                return;
+            }
+            
             // Face painting mode - but only for clicks, not drags
             if (facePaintMode && !isDragging) {
                 handleFacePaintClick(event);
@@ -3341,7 +3430,7 @@
                 return;
             }
             
-            if (!transformControls.enabled) return;
+            if (!transformControls.enabled && !isEdgeSnapMode) return;
             
             // Don't process selection if we were dragging (to avoid deselecting during drag operations)
             if (transformControls.dragging || isDragging) {
@@ -3519,6 +3608,9 @@
                     break;
                 case 'bend':
                     toggleBendMode();
+                    break;
+                case 'edge-snap':
+                    toggleEdgeSnapMode();
                     break;
                 case 'duplicate':
                     duplicateSelectedPiece();
@@ -4075,6 +4167,7 @@
             document.getElementById('restart-race-btn-toolbar').addEventListener('click', restartRace);
             document.getElementById('edit-track-btn-toolbar').addEventListener('click', editTrack);
             document.getElementById('toggle-transform-btn-toolbar').addEventListener('click', toggleTransformControls);
+            document.getElementById('edge-snap-btn-toolbar').addEventListener('click', toggleEdgeSnapMode);
             document.getElementById('bend-tool-btn-toolbar').addEventListener('click', toggleBendMode);
             document.getElementById('duplicate-piece-btn-toolbar').addEventListener('click', duplicateSelectedPiece);
             document.getElementById('remove-piece-btn-toolbar').addEventListener('click', removeSelectedPiece);
@@ -4290,6 +4383,24 @@
             });
             
             document.getElementById('clear-face-paint-btn').addEventListener('click', clearAllFacePaint);
+            
+            // Edge snap panel event listeners
+            document.getElementById('close-edge-snap-btn').addEventListener('click', () => {
+                toggleEdgeSnapMode(); // This will disable edge snap mode
+            });
+            
+            document.getElementById('clear-edge-selection-btn').addEventListener('click', () => {
+                clearEdgeSelection();
+                clearEdgeHighlights();
+                clearEdgeSnapPreview();
+                updateEdgeSnapStatus('Selection cleared. Click on edges to select them.');
+                showMessage('Edge selection cleared.', 'info');
+            });
+            
+            // Update tolerance value display
+            document.getElementById('edge-snap-tolerance').addEventListener('input', (e) => {
+                document.getElementById('edge-tolerance-value').textContent = e.target.value;
+            });
             
             // Update value displays for face painter sliders
             document.getElementById('face-paint-transparency').addEventListener('input', (e) => {
@@ -4613,6 +4724,47 @@
                 } else if ((e.ctrlKey || e.metaKey) && (e.shiftKey && e.key === 'Z' || e.key === 'y')) {
                     e.preventDefault();
                     performRedo();
+                }
+                
+                // Handle tool shortcuts (when not typing in input fields)
+                if (!e.target.matches('input, textarea') && !isRaceMode) {
+                    switch (e.key.toLowerCase()) {
+                        case 's':
+                            if (!e.ctrlKey && !e.metaKey) { // Avoid conflict with Ctrl+S (save)
+                                e.preventDefault();
+                                toggleEdgeSnapMode();
+                            }
+                            break;
+                        case 'w':
+                            if (transformControls.enabled) {
+                                e.preventDefault();
+                                transformControls.setMode('translate');
+                            }
+                            break;
+                        case 'e':
+                            if (transformControls.enabled) {
+                                e.preventDefault();
+                                transformControls.setMode('rotate');
+                            }
+                            break;
+                        case 'r':
+                            if (transformControls.enabled) {
+                                e.preventDefault();
+                                transformControls.setMode('scale');
+                            }
+                            break;
+                        case 'b':
+                            e.preventDefault();
+                            toggleBendMode();
+                            break;
+                        case 'delete':
+                        case 'backspace':
+                            if (transformControls.object) {
+                                e.preventDefault();
+                                removeSelectedPiece();
+                            }
+                            break;
+                    }
                 }
             });
             
@@ -5470,6 +5622,11 @@
                 updateRaceUI();
                 transformControls.detach();
                 transformControls.visible = false;
+                
+                // Disable edge snap mode during race
+                if (isEdgeSnapMode) {
+                    toggleEdgeSnapMode();
+                }
             
                 // Configure orbit controls for race mode - disable rotation but allow pan and zoom
                 orbitControls.enabled = true;
@@ -7552,6 +7709,638 @@
             }
         }
         
+        // Edge Snap System Functions
+        function toggleEdgeSnapMode() {
+            isEdgeSnapMode = !isEdgeSnapMode;
+            const btn = document.getElementById('edge-snap-btn-toolbar');
+            const panel = document.getElementById('edge-snap-panel');
+            
+            if (isEdgeSnapMode) {
+                btn.style.background = '#17a2b8';
+                panel.style.display = 'block';
+                panel.classList.add('show');
+                transformControls.enabled = false;
+                clearEdgeSelection();
+                updateEdgeSnapStatus('Select an object and click on edges to snap');
+                showMessage('Edge Snap mode enabled. Click on edges to align objects.', 'info');
+            } else {
+                btn.style.background = '#495057';
+                panel.classList.remove('show');
+                setTimeout(() => {
+                    if (!isEdgeSnapMode) panel.style.display = 'none';
+                }, 300);
+                transformControls.enabled = true;
+                clearEdgeSelection();
+                clearEdgeHighlights();
+                clearEdgeSnapPreview();
+                // Clear hover highlight
+                if (hoverHighlightLine) {
+                    scene.remove(hoverHighlightLine);
+                    hoverHighlightLine.geometry.dispose();
+                    hoverHighlightLine.material.dispose();
+                    hoverHighlightLine = null;
+                }
+                hoveredEdge = null;
+                showMessage('Edge Snap mode disabled', 'info');
+            }
+        }
+        
+        function getObjectEdges(object) {
+            const edges = [];
+            
+            // Traverse the object to find all meshes
+            object.traverse((child) => {
+                if (child.isMesh && child.geometry) {
+                    const geometry = child.geometry;
+                    const position = geometry.attributes.position;
+                    
+                    if (!position) return;
+                    
+                    // Convert geometry to world coordinates
+                    const worldMatrix = new THREE.Matrix4();
+                    child.updateMatrixWorld(true);
+                    worldMatrix.copy(child.matrixWorld);
+                    
+                    const positionArray = position.array;
+                    const edgeSet = new Set();
+                    
+                    // Handle indexed geometry
+                    if (geometry.index) {
+                        const indexArray = geometry.index.array;
+                        
+                        for (let i = 0; i < indexArray.length; i += 3) {
+                            const a = indexArray[i];
+                            const b = indexArray[i + 1];
+                            const c = indexArray[i + 2];
+                            
+                            // Add each edge of the triangle (sorted to avoid duplicates)
+                            const edge1 = [Math.min(a, b), Math.max(a, b)].join(',');
+                            const edge2 = [Math.min(b, c), Math.max(b, c)].join(',');
+                            const edge3 = [Math.min(c, a), Math.max(c, a)].join(',');
+                            
+                            edgeSet.add(edge1);
+                            edgeSet.add(edge2);
+                            edgeSet.add(edge3);
+                        }
+                        
+                        // Convert edge set to actual edge data
+                        edgeSet.forEach(edgeStr => {
+                            const [v1, v2] = edgeStr.split(',').map(Number);
+                            
+                            const start = new THREE.Vector3(
+                                positionArray[v1 * 3],
+                                positionArray[v1 * 3 + 1],
+                                positionArray[v1 * 3 + 2]
+                            );
+                            const end = new THREE.Vector3(
+                                positionArray[v2 * 3],
+                                positionArray[v2 * 3 + 1],
+                                positionArray[v2 * 3 + 2]
+                            );
+                            
+                            // Transform to world coordinates
+                            start.applyMatrix4(worldMatrix);
+                            end.applyMatrix4(worldMatrix);
+                            
+                            edges.push({
+                                start: start,
+                                end: end,
+                                object: object,
+                                mesh: child,
+                                length: start.distanceTo(end),
+                                center: start.clone().add(end).multiplyScalar(0.5),
+                                direction: end.clone().sub(start).normalize()
+                            });
+                        });
+                    } else {
+                        // Handle non-indexed geometry (treats every 3 vertices as a triangle)
+                        const vertexCount = positionArray.length / 3;
+                        
+                        for (let i = 0; i < vertexCount; i += 3) {
+                            const a = i;
+                            const b = i + 1;
+                            const c = i + 2;
+                            
+                            // Add each edge of the triangle (sorted to avoid duplicates)
+                            const edge1 = [Math.min(a, b), Math.max(a, b)].join(',');
+                            const edge2 = [Math.min(b, c), Math.max(b, c)].join(',');
+                            const edge3 = [Math.min(c, a), Math.max(c, a)].join(',');
+                            
+                            edgeSet.add(edge1);
+                            edgeSet.add(edge2);
+                            edgeSet.add(edge3);
+                        }
+                        
+                        // Convert edge set to actual edge data
+                        edgeSet.forEach(edgeStr => {
+                            const [v1, v2] = edgeStr.split(',').map(Number);
+                            
+                            const start = new THREE.Vector3(
+                                positionArray[v1 * 3],
+                                positionArray[v1 * 3 + 1],
+                                positionArray[v1 * 3 + 2]
+                            );
+                            const end = new THREE.Vector3(
+                                positionArray[v2 * 3],
+                                positionArray[v2 * 3 + 1],
+                                positionArray[v2 * 3 + 2]
+                            );
+                            
+                            // Transform to world coordinates
+                            start.applyMatrix4(worldMatrix);
+                            end.applyMatrix4(worldMatrix);
+                            
+                            edges.push({
+                                start: start,
+                                end: end,
+                                object: object,
+                                mesh: child,
+                                length: start.distanceTo(end),
+                                center: start.clone().add(end).multiplyScalar(0.5),
+                                direction: end.clone().sub(start).normalize()
+                            });
+                        });
+                    }
+                    
+                    // Enhanced edge detection for curved and complex geometries
+                    if (geometry.type === 'TubeGeometry' || geometry.type === 'ExtrudeGeometry' || 
+                        child.parent?.userData?.pieceType?.includes('curve') || 
+                        child.parent?.userData?.pieceType?.includes('pipe')) {
+                        
+                        // For curved pieces, find the connection points (start and end edges)
+                        const box = new THREE.Box3().setFromBufferAttribute(position);
+                        const size = box.getSize(new THREE.Vector3());
+                        const center = box.getCenter(new THREE.Vector3());
+                        
+                        // Analyze the geometry to find meaningful connection edges
+                        // For curves, the connection points are usually at the extremes
+                        const connectionPoints = [];
+                        
+                        // Sample vertices along the geometry to find significant connection points
+                        const sampleCount = Math.min(50, positionArray.length / 3);
+                        const step = Math.floor((positionArray.length / 3) / sampleCount);
+                        
+                        for (let i = 0; i < positionArray.length; i += step * 3) {
+                            const point = new THREE.Vector3(
+                                positionArray[i],
+                                positionArray[i + 1] || 0,
+                                positionArray[i + 2] || 0
+                            ).applyMatrix4(worldMatrix);
+                            connectionPoints.push(point);
+                        }
+                        
+                        // Find the most extreme points (likely connection points)
+                        if (connectionPoints.length >= 4) {
+                            // Sort by different axes to find extremes
+                            const sortedByX = [...connectionPoints].sort((a, b) => a.x - b.x);
+                            const sortedByY = [...connectionPoints].sort((a, b) => a.y - b.y);
+                            const sortedByZ = [...connectionPoints].sort((a, b) => a.z - b.z);
+                            
+                            // Create edges between extreme points
+                            const extremePoints = [
+                                sortedByX[0], sortedByX[sortedByX.length - 1],
+                                sortedByY[0], sortedByY[sortedByY.length - 1],
+                                sortedByZ[0], sortedByZ[sortedByZ.length - 1]
+                            ];
+                            
+                            // Remove duplicate points
+                            const uniqueExtremes = [];
+                            extremePoints.forEach(point => {
+                                if (!uniqueExtremes.some(existing => existing.distanceTo(point) < 0.1)) {
+                                    uniqueExtremes.push(point);
+                                }
+                            });
+                            
+                            // Create edges between unique extreme points
+                            for (let i = 0; i < uniqueExtremes.length; i++) {
+                                for (let j = i + 1; j < uniqueExtremes.length; j++) {
+                                    const start = uniqueExtremes[i];
+                                    const end = uniqueExtremes[j];
+                                    const distance = start.distanceTo(end);
+                                    
+                                    // Only create edges for reasonable distances (connection points)
+                                    if (distance > 1 && distance < size.length() * 1.5) {
+                                        edges.push({
+                                            start: start.clone(),
+                                            end: end.clone(),
+                                            object: object,
+                                            mesh: child,
+                                            length: distance,
+                                            center: start.clone().add(end).multiplyScalar(0.5),
+                                            direction: end.clone().sub(start).normalize(),
+                                            isConnectionEdge: true // Flag for curve connection edges
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Also add simplified bounding box edges as fallback
+                        const corners = [
+                            new THREE.Vector3(box.min.x, box.min.y, box.min.z),
+                            new THREE.Vector3(box.max.x, box.min.y, box.min.z),
+                            new THREE.Vector3(box.max.x, box.max.y, box.min.z),
+                            new THREE.Vector3(box.min.x, box.max.y, box.min.z),
+                            new THREE.Vector3(box.min.x, box.min.y, box.max.z),
+                            new THREE.Vector3(box.max.x, box.min.y, box.max.z),
+                            new THREE.Vector3(box.max.x, box.max.y, box.max.z),
+                            new THREE.Vector3(box.min.x, box.max.y, box.max.z)
+                        ];
+                        
+                        // Create only the most important bounding box edges (corners)
+                        const importantBoxEdges = [
+                            [0, 1], [2, 3], // bottom face front/back
+                            [4, 5], [6, 7], // top face front/back
+                            [0, 4], [1, 5], [2, 6], [3, 7]  // vertical edges
+                        ];
+                        
+                        importantBoxEdges.forEach(([i, j]) => {
+                            const start = corners[i].clone().applyMatrix4(worldMatrix);
+                            const end = corners[j].clone().applyMatrix4(worldMatrix);
+                            
+                            edges.push({
+                                start: start,
+                                end: end,
+                                object: object,
+                                mesh: child,
+                                length: start.distanceTo(end),
+                                center: start.clone().add(end).multiplyScalar(0.5),
+                                direction: end.clone().sub(start).normalize(),
+                                isBoundingBoxEdge: true // Flag to identify these edges
+                            });
+                        });
+                    }
+                }
+            });
+            
+            return edges;
+        }
+        
+        function findClosestEdge(point, object, tolerance = 0.5) {
+            const edges = getObjectEdges(object);
+            let closestEdge = null;
+            let minDistance = tolerance;
+            
+            edges.forEach(edge => {
+                // Calculate distance from point to line segment
+                const line = new THREE.Line3(edge.start, edge.end);
+                const closestPoint = new THREE.Vector3();
+                line.closestPointToPoint(point, true, closestPoint);
+                const distance = point.distanceTo(closestPoint);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestEdge = {
+                        ...edge,
+                        closestPoint: closestPoint,
+                        distance: distance
+                    };
+                }
+            });
+            
+            return closestEdge;
+        }
+        
+        function highlightEdge(edge, color = 0x00ffff) {
+            const geometry = new THREE.BufferGeometry().setFromPoints([edge.start, edge.end]);
+            const material = new THREE.LineBasicMaterial({ 
+                color: color, 
+                linewidth: 3,
+                transparent: true,
+                opacity: 0.8
+            });
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            edgeHighlightLines.push(line);
+            return line;
+        }
+        
+        function clearEdgeHighlights() {
+            edgeHighlightLines.forEach(line => {
+                scene.remove(line);
+                line.geometry.dispose();
+                line.material.dispose();
+            });
+            edgeHighlightLines = [];
+        }
+        
+        function clearEdgeSelection() {
+            selectedSourceEdge = null;
+            selectedTargetEdge = null;
+            updateEdgeSnapSelectionInfo();
+        }
+        
+        function clearEdgeSnapPreview() {
+            if (edgeSnapPreview) {
+                scene.remove(edgeSnapPreview);
+                edgeSnapPreview.traverse(child => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                });
+                edgeSnapPreview = null;
+            }
+        }
+        
+        function updateEdgeSnapStatus(message) {
+            document.getElementById('edge-snap-status').textContent = message;
+        }
+        
+        function updateEdgeSnapSelectionInfo() {
+            const info = document.getElementById('edge-snap-selection-info');
+            if (!selectedSourceEdge && !selectedTargetEdge) {
+                info.textContent = 'No edges selected';
+            } else if (selectedSourceEdge && !selectedTargetEdge) {
+                info.innerHTML = `Source Edge: Object "${selectedSourceEdge.object.userData.pieceType || 'Unknown'}"<br>Length: ${selectedSourceEdge.length.toFixed(2)} units<br>Click target edge to snap to...`;
+            } else if (selectedSourceEdge && selectedTargetEdge) {
+                info.innerHTML = `Source: "${selectedSourceEdge.object.userData.pieceType}" (${selectedSourceEdge.length.toFixed(2)}u)<br>Target: "${selectedTargetEdge.object.userData.pieceType}" (${selectedTargetEdge.length.toFixed(2)}u)<br>Ready to snap!`;
+            }
+        }
+        
+        function createEdgeSnapPreview(sourceObject, targetEdge) {
+            if (!document.getElementById('edge-snap-preview').checked) return;
+            
+            clearEdgeSnapPreview();
+            
+            // Clone the source object
+            edgeSnapPreview = sourceObject.clone();
+            
+            // Calculate preview position and rotation
+            const sourceEdgeCenter = selectedSourceEdge.center;
+            const targetEdgeCenter = targetEdge.center;
+            
+            // Translation: move source edge center to target edge center
+            const translation = targetEdgeCenter.clone().sub(sourceEdgeCenter);
+            edgeSnapPreview.position.copy(sourceObject.position).add(translation);
+            
+            // Apply rotation alignment if enabled
+            if (document.getElementById('edge-snap-align-rotation').checked) {
+                const sourceDirection = selectedSourceEdge.direction;
+                const targetDirection = targetEdge.direction;
+                
+                // Calculate the angle between the directions
+                const dotProduct = sourceDirection.dot(targetDirection);
+                const angle = Math.acos(Math.abs(dotProduct));
+                const angleDegrees = THREE.MathUtils.radToDeg(angle);
+                
+                // Only rotate if the angle is less than 45 degrees
+                if (angleDegrees <= 45) {
+                    const quaternion = new THREE.Quaternion();
+                    
+                    // Check direction alignment
+                    const forwardAlignment = sourceDirection.dot(targetDirection);
+                    const reverseAlignment = sourceDirection.dot(targetDirection.clone().negate());
+                    
+                    const finalTargetDirection = forwardAlignment >= reverseAlignment ? 
+                        targetDirection : targetDirection.clone().negate();
+                    
+                    quaternion.setFromUnitVectors(sourceDirection, finalTargetDirection);
+                    
+                    // Apply rotation around the target edge center
+                    const tempPos = edgeSnapPreview.position.clone().sub(targetEdgeCenter);
+                    tempPos.applyQuaternion(quaternion);
+                    edgeSnapPreview.position.copy(targetEdgeCenter).add(tempPos);
+                    edgeSnapPreview.quaternion.copy(sourceObject.quaternion);
+                    edgeSnapPreview.quaternion.multiplyQuaternions(quaternion, edgeSnapPreview.quaternion);
+                }
+            }
+            
+            // Make it semi-transparent and colored
+            edgeSnapPreview.traverse(child => {
+                if (child.material) {
+                    child.material = child.material.clone();
+                    child.material.transparent = true;
+                    child.material.opacity = 0.4;
+                    child.material.color.setHex(0x00ffff);
+                    child.material.emissive.setHex(0x001122);
+                }
+            });
+            
+            scene.add(edgeSnapPreview);
+        }
+        
+        function performEdgeSnap() {
+            if (!selectedSourceEdge || !selectedTargetEdge) return;
+            
+            const sourceObject = selectedSourceEdge.object;
+            const targetEdge = selectedTargetEdge;
+            
+            // Calculate the transformation needed
+            const sourceEdgeCenter = selectedSourceEdge.center;
+            const targetEdgeCenter = targetEdge.center;
+            
+            // Translation: move source edge center to target edge center
+            const translation = targetEdgeCenter.clone().sub(sourceEdgeCenter);
+            
+            // Apply translation
+            sourceObject.position.add(translation);
+            
+            // Apply rotation alignment if enabled
+            if (document.getElementById('edge-snap-align-rotation').checked) {
+                const sourceDirection = selectedSourceEdge.direction;
+                const targetDirection = targetEdge.direction;
+                
+                // Calculate the angle between the directions
+                const dotProduct = sourceDirection.dot(targetDirection);
+                const angle = Math.acos(Math.abs(dotProduct)); // Use abs to get smallest angle
+                const angleDegrees = THREE.MathUtils.radToDeg(angle);
+                
+                // Only rotate if the angle is less than 45 degrees (threshold for alignment)
+                if (angleDegrees <= 45) {
+                    // Calculate rotation needed to align directions
+                    const quaternion = new THREE.Quaternion();
+                    
+                    // Check if we need to reverse the target direction for better alignment
+                    const forwardAlignment = sourceDirection.dot(targetDirection);
+                    const reverseAlignment = sourceDirection.dot(targetDirection.clone().negate());
+                    
+                    const finalTargetDirection = forwardAlignment >= reverseAlignment ? 
+                        targetDirection : targetDirection.clone().negate();
+                    
+                    quaternion.setFromUnitVectors(sourceDirection, finalTargetDirection);
+                    
+                    // Apply rotation around the target edge center
+                    const tempPos = sourceObject.position.clone().sub(targetEdgeCenter);
+                    tempPos.applyQuaternion(quaternion);
+                    sourceObject.position.copy(targetEdgeCenter).add(tempPos);
+                    sourceObject.quaternion.multiplyQuaternions(quaternion, sourceObject.quaternion);
+                    
+                    showMessage(`Edge snap with ${angleDegrees.toFixed(1)}° rotation alignment`, 'success');
+                } else {
+                    showMessage(`Edge snap without rotation (${angleDegrees.toFixed(1)}° > 45° threshold)`, 'info');
+                }
+            }
+            
+            // Update physics for the moved object
+            const piece = trackPieces.find(p => p.group === sourceObject);
+            if (piece) {
+                updatePhysicsForPiece(piece);
+            }
+            
+            // Clear selection and preview
+            clearEdgeSelection();
+            clearEdgeHighlights();
+            clearEdgeSnapPreview();
+            
+            showMessage('Edge snap completed successfully!', 'success');
+            updateEdgeSnapStatus('Edge snap completed! Select new objects to continue.');
+        }
+        
+        function handleEdgeHover(event) {
+            // Calculate hover position in 3D space
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            pointer.set(x, y);
+            raycaster.setFromCamera(pointer, camera);
+            
+            // Find intersected objects
+            const intersects = raycaster.intersectObjects(trackPieces.map(p => p.group), true);
+            const validIntersects = intersects.filter(intersect => !intersect.object.userData.isPreviewBall);
+            
+            // Clear previous hover highlight
+            if (hoverHighlightLine) {
+                scene.remove(hoverHighlightLine);
+                hoverHighlightLine.geometry.dispose();
+                hoverHighlightLine.material.dispose();
+                hoverHighlightLine = null;
+            }
+            hoveredEdge = null;
+            
+            if (validIntersects.length > 0) {
+                let object = validIntersects[0].object;
+                const intersectionPoint = validIntersects[0].point;
+                
+                // Find the parent track piece object
+                while (object.parent && !object.userData.isTrackPiece) {
+                    object = object.parent;
+                }
+                
+                if (object.userData.isTrackPiece) {
+                    // Get edge detection tolerance from UI
+                    const tolerance = parseFloat(document.getElementById('edge-snap-tolerance').value);
+                    
+                    // Find the closest edge to the hover point
+                    const closestEdge = findClosestEdge(intersectionPoint, object, tolerance);
+                    
+                    if (closestEdge) {
+                        hoveredEdge = closestEdge;
+                        
+                        // Create blue hover highlight with different colors for edge types
+                        let hoverColor = 0x0066ff; // Default blue
+                        if (closestEdge.isConnectionEdge) {
+                            hoverColor = 0x00aaff; // Lighter blue for connection edges
+                        } else if (closestEdge.isBoundingBoxEdge) {
+                            hoverColor = 0x0044aa; // Darker blue for bounding box edges
+                        }
+                        
+                        const geometry = new THREE.BufferGeometry().setFromPoints([closestEdge.start, closestEdge.end]);
+                        const material = new THREE.LineBasicMaterial({ 
+                            color: hoverColor,
+                            linewidth: 2,
+                            transparent: true,
+                            opacity: 0.6
+                        });
+                        hoverHighlightLine = new THREE.Line(geometry, material);
+                        scene.add(hoverHighlightLine);
+                    }
+                }
+            }
+        }
+        
+        function handleEdgeSnapClick(event) {
+            // If both edges are selected and preview is enabled, perform snap on any click
+            if (selectedSourceEdge && selectedTargetEdge && selectedTargetEdge.readyToSnap) {
+                performEdgeSnap();
+                return;
+            }
+            
+            // Calculate click position in 3D space
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            pointer.set(x, y);
+            raycaster.setFromCamera(pointer, camera);
+            
+            // Find intersected objects
+            const intersects = raycaster.intersectObjects(trackPieces.map(p => p.group), true);
+            const validIntersects = intersects.filter(intersect => !intersect.object.userData.isPreviewBall);
+            
+            if (validIntersects.length > 0) {
+                let object = validIntersects[0].object;
+                const intersectionPoint = validIntersects[0].point;
+                
+                // Find the parent track piece object
+                while (object.parent && !object.userData.isTrackPiece) {
+                    object = object.parent;
+                }
+                
+                if (object.userData.isTrackPiece) {
+                    // Get edge detection tolerance from UI
+                    const tolerance = parseFloat(document.getElementById('edge-snap-tolerance').value);
+                    
+                    // Find the closest edge to the click point
+                    const closestEdge = findClosestEdge(intersectionPoint, object, tolerance);
+                    
+                    if (closestEdge) {
+                        if (!selectedSourceEdge) {
+                            // Select this as the source edge
+                            selectedSourceEdge = closestEdge;
+                            clearEdgeHighlights();
+                            highlightEdge(closestEdge, 0x00ff00); // Green for source
+                            updateEdgeSnapStatus('Source edge selected. Click on target edge to snap to.');
+                            updateEdgeSnapSelectionInfo();
+                            const edgeType = closestEdge.isConnectionEdge ? 'connection' : 
+                                           closestEdge.isBoundingBoxEdge ? 'boundary' : 'geometry';
+                            showMessage(`Source ${edgeType} edge selected. Click on a target edge.`, 'info');
+                        } else if (!selectedTargetEdge) {
+                            // Select this as the target edge
+                            selectedTargetEdge = closestEdge;
+                            highlightEdge(closestEdge, 0xff0000); // Red for target
+                            updateEdgeSnapStatus('Both edges selected. Ready to snap!');
+                            updateEdgeSnapSelectionInfo();
+                            
+                            // Create preview if enabled
+                            if (document.getElementById('edge-snap-preview').checked) {
+                                createEdgeSnapPreview(selectedSourceEdge.object, selectedTargetEdge);
+                                showMessage('Preview shown. Click anywhere to confirm snap, or select new edges to cancel.', 'success');
+                                // Set flag to perform snap on next click
+                                selectedTargetEdge.readyToSnap = true;
+                            } else {
+                                // No preview - perform snap immediately
+                                const targetEdgeType = closestEdge.isConnectionEdge ? 'connection' : 
+                                                     closestEdge.isBoundingBoxEdge ? 'boundary' : 'geometry';
+                                showMessage(`Target ${targetEdgeType} edge selected. Snapping...`, 'info');
+                                setTimeout(() => {
+                                    if (selectedSourceEdge && selectedTargetEdge) {
+                                        performEdgeSnap();
+                                    }
+                                }, 100);
+                            }
+                        } else {
+                            // Both edges already selected, start over with new source
+                            clearEdgeSelection();
+                            clearEdgeHighlights();
+                            clearEdgeSnapPreview();
+                            
+                            selectedSourceEdge = closestEdge;
+                            highlightEdge(closestEdge, 0x00ff00);
+                            updateEdgeSnapStatus('New source edge selected. Click on target edge.');
+                            updateEdgeSnapSelectionInfo();
+                            const newEdgeType = closestEdge.isConnectionEdge ? 'connection' : 
+                                              closestEdge.isBoundingBoxEdge ? 'boundary' : 'geometry';
+                            showMessage(`New source ${newEdgeType} edge selected. Click on target edge.`, 'info');
+                        }
+                    } else {
+                        showMessage(`No edge found within ${tolerance} units of click point.`, 'warning');
+                    }
+                } else {
+                    showMessage('Please click on a track piece or object.', 'warning');
+                }
+            } else {
+                showMessage('No object found. Click on track pieces to select edges.', 'warning');
+            }
+        }
+        
         function updateCustomCurveRealTime() {
             if (!transformControls.object) return;
             
@@ -9425,6 +10214,7 @@
         <div class="context-menu-item" data-action="properties">🎨 Object Editor</div>
         <div class="context-menu-item" data-action="paint">🖌️ Paint Mode</div>
         <div class="context-menu-item" data-action="bend">🔧 Bend Mode</div>
+        <div class="context-menu-item" data-action="edge-snap">🔗 Edge Snap</div>
         <div class="context-menu-separator"></div>
         <div class="context-menu-item" data-action="duplicate">📋 Duplicate</div>
         <div class="context-menu-item" data-action="delete">🗑️ Delete</div>

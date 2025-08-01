@@ -31,6 +31,7 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Material Editor**: Customize color, transparency, metalness, roughness, glow effects, and textures
 - **Custom Textures**: Upload your own textures with base64 encoding for portability
 - **🎯 Advanced Transform Controls**: Move, rotate, and scale pieces with W/E/R hotkeys
+- **🔗 Professional Edge Snapping**: Smart edge detection and alignment for all geometry types with S key
 - **⚡ Stepwise Manipulation**: 1-unit step movement by default, hold Shift for 0.1-unit precision
 - **⌨️ Keyboard Object Control**: Arrow keys, Space/C for precise object positioning in any transform mode
   - **Translate Mode**: ←/→ (X-axis), Space/C (Y-axis), ↑/↓ (Z-axis)
@@ -47,6 +48,35 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 
 ![Transform Controls](images/gadgets.png)
 *Advanced transform controls showing translate, rotate, and scale modes with precise object manipulation*
+
+### 🔗 Advanced Edge Snapping System
+
+![Edge Snapping Basics](images/edge_snapping.png)
+*Basic edge snapping workflow showing blue hover detection, green source selection, and cyan preview alignment*
+
+![Complex Edge Snapping](images/edge_snapping_complex.png)
+*Advanced edge snapping with curved geometry and complex track pieces showing connection point detection*
+
+![Curved Geometry Support](images/edge_snapping_curved.png)
+*Edge snapping working with curved tracks, pipes, and complex geometries with smart connection point analysis*
+
+- **🔍 Smart Edge Detection**: Automatically detects edges on all geometry types - straight, curved, pipes, and complex shapes
+- **🎯 Multiple Detection Methods**: Triangle-based edges for simple geometry, connection points for curves, bounding box edges for complex shapes
+- **🌈 Visual Edge Highlighting**: 
+  - **Blue hover**: Real-time edge detection while moving mouse
+  - **Green selection**: Source edge (snap FROM) 
+  - **Red selection**: Target edge (snap TO)
+  - **Cyan preview**: Semi-transparent preview showing final alignment
+- **⚡ Professional Precision**: Mathematical alignment with 45° rotation threshold to prevent excessive rotation
+- **🎛️ Right-Side Control Panel**: Comprehensive settings panel with tolerance adjustment, preview toggle, and rotation alignment control
+- **🖱️ Intuitive Workflow**: Hover to detect → Click source → Click target → Preview → Confirm
+- **📐 Geometry Intelligence**: 
+  - **Connection Edges**: Finds meaningful start/end points on curved tracks
+  - **Boundary Edges**: Uses bounding box analysis for complex imported geometry  
+  - **Triangle Edges**: Traditional edge detection for simple box/primitive geometry
+- **🔧 Universal Compatibility**: Works with all track pieces, obstacles, custom models, and imported OBJ files
+- **⌨️ Quick Access**: 'S' key shortcut, toolbar button (🔗), or right-click context menu
+- **🎯 Smart Rotation**: Only rotates when alignment angle is ≤45° to prevent unwanted flipping
 
 ### 🖌️ Surface Painting System
 - **🎨 Face-Level Painting**: Click individual faces on any 3D object to paint them with custom colors
@@ -342,6 +372,7 @@ balls/
 - **Double-Click**: Rename pieces in Object Tree
 - **Ctrl+Drag**: Duplicate and move copies of selected pieces
 - **Transform Modes**: W (Move), E (Rotate), R (Scale) or use toolbar 🎯 button
+- **S Key**: Toggle Edge Snap Tool for precise alignment or use toolbar 🔗 button  
 - **B Key**: Toggle Bend Tool mode for geometric deformation
 - **Del**: Delete selected pieces or use toolbar 🗑️ button
 
@@ -356,6 +387,21 @@ balls/
 - **Middle Mouse**: Pan camera
 - **Scroll**: Zoom camera
 - **Tooltips**: Hover over toolbar buttons for descriptions
+
+### Edge Snapping Mode
+- **🔗 Edge Snap Button**: Activate edge snapping mode (S key) or use toolbar/context menu
+- **Blue Hover Highlighting**: Move mouse over objects to see edge detection in real-time
+- **Two-Click Workflow**: 
+  1. **Click source edge** (highlighted in green) - the edge you want to move FROM
+  2. **Click target edge** (highlighted in red) - the edge you want to snap TO
+- **Preview Confirmation**: Semi-transparent cyan preview shows final alignment (if enabled)
+- **Click to Confirm**: Click anywhere to confirm the snap, or select new edges to cancel
+- **⚙️ Panel Controls**:
+  - **Detection Tolerance**: Adjust how close you need to click to detect edges (0.1-2.0 units)
+  - **Show Preview**: Toggle preview mode on/off for immediate vs. confirmed snapping
+  - **Align Rotation**: Enable/disable automatic rotation alignment (45° threshold)
+- **🎯 Smart Detection**: Automatically finds the best edges for different geometry types
+- **🔄 Easy Reset**: Clear Selection button to start over, Close to exit edge snap mode
 
 ### Surface Painting Mode
 - **🖌️ Face Paint Button**: Activate face painting mode (select object first)
@@ -388,6 +434,19 @@ balls/
 3. Add Pipe pieces for the loop
 4. Use material editor to make pipes transparent
 5. Add End platform after loop
+
+### Creating Perfectly Aligned Track Sections with Edge Snapping
+1. Enable Edge Snap mode (S key or 🔗 toolbar button)
+2. Place your first track piece where you want it
+3. Add a second piece nearby (don't worry about exact positioning)
+4. Hover over the first piece's edge where you want to connect - you'll see blue highlighting
+5. Click the connection edge (it turns green) - this is your source edge
+6. Hover over the second piece's edge that should connect - blue highlighting appears
+7. Click the target edge (it turns red) - this creates the connection
+8. If preview is enabled, you'll see a cyan preview of the final position
+9. Click anywhere to confirm the snap - pieces align perfectly!
+10. Repeat for complex track layouts with curves, pipes, and mixed geometry types
+11. Perfect for creating smooth flowing tracks where marbles won't get stuck
 
 ### Creating Custom Surface Designs with Face Painting
 1. Select any track piece or obstacle you want to customize
