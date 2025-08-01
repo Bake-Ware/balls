@@ -12,7 +12,9 @@
       "mcp__serena__initial_instructions",
       "mcp__serena__search_for_pattern",
       "mcp__serena__activate_project",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__replace_regex"
     ],
     "deny": []
   }

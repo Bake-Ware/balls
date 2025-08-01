@@ -29,11 +29,16 @@
         .sidebar-tab.active {
             background: #007bff !important;
         }
+        #add-pieces-content{
+            top: 0px;
+            position: relative;
+            bottom: 30px;
+        }
         #ui-container {
             position: absolute; top: 70px; right: 10px; z-index: 100;
             background: rgba(0, 0, 0, 0.7); padding: 10px; border-radius: 8px;
             color: white; display: flex; flex-direction: column; max-width: 250px;
-            max-height: calc(100vh - 80px);
+            max-height: calc(100vh - 120px);
             transition: all 0.3s ease;
         }
         #ui-container.collapsed {
@@ -95,7 +100,7 @@
         }
         .ui-title { font-weight: bold; margin-bottom: 10px; text-align: center; border-bottom: 1px solid #555; padding-bottom: 5px;}
         button, label {
-            display: block; margin-top: 8px; padding: 8px; background: #4a4a4a;
+            display: block; padding: 5px; background: #4a4a4a;
             border: 1px solid #666; color: white; cursor: pointer; border-radius: 4px; text-align: center;
         }
         button:hover, label:hover { background: #5a5a5a; }
@@ -161,7 +166,7 @@
         .roster-ball-name { flex-grow: 1; font-size: 14px; }
         .roster-stats { font-size: 12px; color: #ccc; margin-left: 10px; }
         #material-editor {
-            position: fixed; top: 0; right: 0; height: 100vh; width: 450px;
+            position: fixed; top: 20px; right: 0; height: calc(100vh - 40px); width: 450px;
             background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; 
             z-index: 200; display: none; text-align: left; overflow-y: auto;
             border-left: 3px solid #ffd700; box-shadow: -5px 0 15px rgba(0,0,0,0.3);
@@ -199,7 +204,7 @@
         #message-notification {
             position: fixed; top: 20px; right: 20px; z-index: 400;
             padding: 15px 20px; border-radius: 5px; color: white; font-weight: bold;
-            transform: translateX(100%); transition: transform 0.3s ease-in-out;
+            transform: translateX(160%); transition: transform 0.3s ease-in-out;
             max-width: 300px; word-wrap: break-word;
         }
         #message-notification.show { transform: translateX(0); }
@@ -225,11 +230,12 @@
         /* ViewCube styles */
         #viewcube {
             position: absolute; top: 20px; right: 20px; z-index: 150;
-            width: 100px; height: 100px; perspective: 200px; user-select: none;
+            width: 140px; height: 140px; perspective: 200px; user-select: none;
         }
         .viewcube-container {
-            width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
-            transform: rotateX(-20deg) rotateY(45deg); transition: transform 0.3s ease;
+            width: 100px; height: 100px; position: absolute; top: 20px; left: 20px; 
+            transform-style: preserve-3d; transform: rotateX(-20deg) rotateY(45deg); 
+            transition: transform 0.3s ease;
         }
         .viewcube-face {
             position: absolute; width: 100px; height: 100px; border: 2px solid #666;
@@ -246,6 +252,23 @@
         .viewcube-left { transform: rotateY(-90deg) translateZ(50px); }
         .viewcube-top { transform: rotateX(90deg) translateZ(50px); }
         .viewcube-bottom { transform: rotateX(-90deg) translateZ(50px); }
+        
+        /* ViewCube rotation arrows */
+        .viewcube-arrow {
+            position: absolute; width: 20px; height: 20px; border-radius: 50%;
+            background: rgba(60, 60, 60, 0.8); color: white; display: flex;
+            align-items: center; justify-content: center; font-size: 14px;
+            cursor: pointer; transition: all 0.2s ease; font-weight: bold;
+        }
+        .viewcube-arrow:hover {
+            background: rgba(100, 100, 100, 0.9); transform: scale(1.1);
+        }
+        .viewcube-arrow-up { top: 0; left: 60px; }
+        .viewcube-arrow-down { bottom: 0; left: 60px; }
+        .viewcube-arrow-left { top: 60px; left: 0; }
+        .viewcube-arrow-right { top: 60px; right: 0; }
+        .viewcube-arrow-roll-left { top: 10px; left: 10px; }
+        .viewcube-arrow-roll-right { top: 10px; right: 10px; }
         .skybox-option.selected { background: #007bff; }
         .skybox-preview { width: 100px; height: 60px; border: 2px solid #666; margin: 5px auto; background-size: cover; border-radius: 3px; }
         .skybox-name { font-size: 12px; margin-top: 5px; }
@@ -466,7 +489,7 @@
         <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
 
         <!-- Race Controls -->
-        <button id="start-race-btn-toolbar" title="Start Race" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🏁</button>
+        <button id="start-race-btn-toolbar" title="Start Race" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">▶</button>
         <button id="restart-race-btn-toolbar" title="Restart Race" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: none; align-items: center; justify-content: center;">🔄</button>
         <button id="edit-track-btn-toolbar" title="Edit Track" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: none; align-items: center; justify-content: center;">✏️</button>
 
@@ -483,7 +506,7 @@
         <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
 
         <!-- Additional Tools -->
-        <button id="edit-material-btn-toolbar" title="Material Editor" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🎨</button>
+        <button id="edit-material-btn-toolbar" title="Object Editor" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🧊</button>
         <button id="face-paint-btn-toolbar" title="Face Paint" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🖌️</button>
 
         <!-- Separator -->
@@ -506,18 +529,10 @@
         <!-- Spacer to push right-aligned items -->
         <div style="flex: 1;"></div>
 
-        <!-- Right-aligned items -->
-        <select id="camera-mode-dropdown-toolbar-right" title="Camera Mode" style="background: #495057; border: 1px solid #495057; color: white; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-            <option value="panning">📹 Panning</option>
-            <option value="fpv">👁️ FPV</option>
-            <option value="behind">⬅️ Behind</option>
-            <option value="ridealong">🎯 Ride Along</option>
-            <option value="oncoming">➡️ Oncoming</option>
-        </select>
     </div>
 
     <!-- Left Sidebar for Object Tree -->
-    <div id="left-sidebar" style="position: fixed; top: 50px; left: 0; width: 280px; height: calc(100vh - 50px); background: rgba(0, 0, 0, 0.9); color: white; padding: 15px; z-index: 140; overflow-y: auto; border-right: 1px solid #444; transition: transform 0.3s ease;">
+    <div id="left-sidebar" style="position: fixed; top: 50px; left: 0; bottom: 0px; width: 280px; background: rgba(0, 0, 0, 0.9); color: white; padding: 15px; z-index: 140; overflow-y: auto; border-right: 1px solid #444; transition: transform 0.3s ease; padding-bottom: 30px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <div class="ui-title">📋 Scene Panel</div>
             <button id="collapse-sidebar-btn" title="Collapse Sidebar" style="background: #495057; border: 1px solid #495057; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">◀</button>
@@ -525,17 +540,17 @@
         
         <!-- Tab Navigation -->
         <div style="display: flex; margin-bottom: 15px; border-bottom: 1px solid #444;">
-            <button id="object-tree-tab" class="sidebar-tab active" style="flex: 1; padding: 8px 12px; background: #007bff; border: none; color: white; cursor: pointer; font-size: 12px;">Objects</button>
-            <button id="add-pieces-tab" class="sidebar-tab" style="flex: 1; padding: 8px 12px; background: #495057; border: none; color: white; cursor: pointer; font-size: 12px;">Add Pieces</button>
+            <button id="add-pieces-tab" class="sidebar-tab active" style="flex: 1; padding: 8px 12px; background: #007bff; border: none; color: white; cursor: pointer; font-size: 12px; border-radius: 4px 4px 0 0;">Add Pieces</button>
+            <button id="object-tree-tab" class="sidebar-tab" style="flex: 1; padding: 8px 12px; background: #495057; border: none; color: white; cursor: pointer; font-size: 12px; border-radius: 4px 4px 0 0;">Objects</button>
         </div>
         
         <!-- Object Tree Tab Content -->
-        <div id="object-tree-content" class="tab-content">
+        <div id="object-tree-content" class="tab-content" style="display: none;">
             <div id="object-list"></div>
         </div>
         
         <!-- Add Pieces Tab Content -->
-        <div id="add-pieces-content" class="tab-content" style="display: none;">
+        <div id="add-pieces-content" class="tab-content">
             <div id="piece-selector-tree"></div>
         </div>
     </div>
@@ -565,7 +580,7 @@
             <input type="color" id="background-color" value="#202020" style="width: 100%; height: 30px; padding: 0; border-radius: 4px; margin-top: 5px;">
         </div>
         
-        <div style="text-align: center; margin-top: 30px;">
+        <div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
             <button id="close-global-settings-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
@@ -574,8 +589,8 @@
         <h2>🎵 Spotify Embed 🎵</h2>
         <p>Paste a Spotify URL (track, playlist, album, etc.) below:</p>
         <input type="text" id="spotify-url" placeholder="https://open.spotify.com/..." style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #666; background: #2a2a2a; color: white;">
-        <button id="embed-spotify-btn" style="margin-top: 10px; padding: 10px 20px; background: #1DB954; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Embed</button>
-        <button id="close-spotify-btn" style="margin-top: 10px; margin-left: 10px; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
+        <button id="embed-spotify-btn" style="padding: 10px 20px; background: #1DB954; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Embed</button>
+        <button id="close-spotify-btn" style="margin-left: 10px; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         <div id="spotify-embed-container" style="margin-top: 20px;"></div>
     </div>
 
@@ -584,7 +599,7 @@
     <div id="race-results">
         <h2>🏁 Race Results 🏁</h2>
         <div class="podium" id="podium-results"></div>
-        <button id="close-results-btn" style="margin-top: 20px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Close</button>
+        <button id="close-results-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Close</button>
     </div>
 
     <div id="ball-maker">
@@ -664,7 +679,7 @@
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 20px;">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
             <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Done</button>
         </div>
     </div>
@@ -690,7 +705,7 @@
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 20px;">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
             <button id="close-roster-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Done</button>
         </div>
     </div>
@@ -712,7 +727,7 @@
         <div class="roster-section">
             <h3>Tournament Roster</h3>
             <div id="tournament-roster-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #444; padding: 5px;">No balls in tournament.</div>
-            <button id="start-tournament-race-btn" style="margin-top: 10px; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">🏁 Start Tournament Race</button>
+            <button id="start-tournament-race-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">🏁 Start Tournament Race</button>
         </div>
 
         <div class="roster-section">
@@ -720,7 +735,7 @@
             <div id="tournament-results-display" style="max-height: 200px; overflow-y: auto; border: 1px solid #444; padding: 5px;">No results yet.</div>
         </div>
 
-        <div style="text-align: center; margin-top: 20px;">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
             <button id="close-tournament-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
@@ -780,6 +795,12 @@
         <div class="material-option">
             <label>
                 <input type="checkbox" id="piece-hidden"> Hidden (invisible in editor)
+            </label>
+        </div>
+        
+        <div class="material-option">
+            <label>
+                <input type="checkbox" id="piece-collision-enabled" checked> Enable Collision
             </label>
         </div>
         
@@ -1075,57 +1096,14 @@
             </div>
         </div>
         
-        <!-- Bend Tool Settings Section -->
-        <div class="material-option" id="bend-tool-settings" style="display: none;">
-            <label>🌀 Bend Tool Settings</label>
-            <hr style="border-color: #444; margin: 10px 0;">
-            
-            <div class="material-option">
-                <label for="bend-axis">Bend Axis:</label>
-                <select id="bend-axis" style="width: 100%; padding: 5px; background: #444; color: white; border: 1px solid #666; border-radius: 3px;">
-                    <option value="x">X-Axis (Left/Right)</option>
-                    <option value="y">Y-Axis (Up/Down)</option>
-                    <option value="z">Z-Axis (Forward/Back)</option>
-                </select>
-            </div>
-            
-            <div class="material-option">
-                <label for="bend-angle">Bend Angle: <span id="bend-angle-value">0</span>°</label>
-                <input type="range" id="bend-angle" min="-180" max="180" step="5" value="0">
-            </div>
-            
-            <div class="material-option">
-                <label for="bend-center">Bend Center: <span id="bend-center-value">0.5</span></label>
-                <input type="range" id="bend-center" min="0" max="1" step="0.1" value="0.5">
-                <div style="font-size: 11px; color: #aaa;">0 = start, 0.5 = middle, 1 = end</div>
-            </div>
-            
-            <div class="material-option">
-                <label for="bend-falloff">Bend Falloff: <span id="bend-falloff-value">1.0</span></label>
-                <input type="range" id="bend-falloff" min="0.1" max="2.0" step="0.1" value="1.0">
-                <div style="font-size: 11px; color: #aaa;">How gradually the bend fades</div>
-            </div>
-            
-            <div class="material-option">
-                <button id="apply-bend-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer; margin-right: 10px;">🌀 Apply Bend</button>
-                <button id="reset-bend-btn" style="padding: 8px 16px; background: #6c757d; border: none; color: white; border-radius: 4px; cursor: pointer;">↩️ Reset</button>
-            </div>
-            
-            <div class="material-option">
-                <small style="color: #888;">
-                    Select an object and adjust bend settings above, then click Apply Bend.
-                    The bend will deform the geometry permanently.
-                </small>
-            </div>
-        </div>
         
-        <div style="text-align: center; margin-top: 20px;">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
             <button id="apply-material-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
             <button id="close-material-editor-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
-    <div id="face-painter" style="position: fixed; top: 0; right: 0; height: 100vh; width: 450px; background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; z-index: 300; display: none; text-align: left; overflow-y: auto; border-left: 3px solid #ffd700; box-shadow: -5px 0 15px rgba(0,0,0,0.3); transform: translateX(100%); transition: transform 0.3s ease-in-out;">
+    <div id="face-painter" style="position: fixed; top: 20px; right: 0; height: calc(100vh - 40px); width: 450px; background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; z-index: 300; display: none; text-align: left; overflow-y: auto; border-left: 3px solid #ffd700; box-shadow: -5px 0 15px rgba(0,0,0,0.3); transform: translateX(100%); transition: transform 0.3s ease-in-out;">
         <h2 style="margin-top: 0; color: #ffd700; text-align: center;">🖌️ Face Painter</h2>
         
         <div style="margin-bottom: 15px; text-align: center;">
@@ -1189,7 +1167,7 @@
             <input type="file" id="face-texture-upload" accept="image/*" style="display: none; margin-top: 10px;">
         </div>
         
-        <div style="text-align: center; margin-top: 20px;">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
             <button id="clear-face-paint-btn" style="padding: 10px 20px; background: #dc3545; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">🗑️ Clear All</button>
             <button id="close-face-painter-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
@@ -1267,7 +1245,7 @@
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 20px;">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
             <button id="apply-skybox-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
             <button id="close-skybox-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
@@ -1430,10 +1408,14 @@
             scene.add(new THREE.GridHelper(200, 20));
             
             setupEventListeners();
-            addPiece("start", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+            addPiece("straight", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+            addPiece("ball-set", { position: new THREE.Vector3(0, 2, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
             
             // Initialize object tree
             updateObjectTree();
+            
+            // Initialize piece selector tree since Add Pieces tab is default active
+            createPieceSelectorTree();
             
             animate();
         }
@@ -1919,7 +1901,7 @@
             
             // Different colors for different piece types
             let color = 0x888888; // Default neutral gray
-            if (type === 'start') color = 0x4CAF50; // Bright green for start
+            if (type === 'straight') color = 0x4CAF50; // Bright green for straight
             if (type === 'end') color = 0xF44336; // Red for end/finish line
             if (type === 'ball') color = 0x2196F3; // Blue for pinned balls
             if (type === 'pyramid') color = 0xFF9800; // Orange for pyramid
@@ -2214,8 +2196,13 @@
                 return;
             }
             
-            // Lights and particle generators don't need collision bodies
-            if (piece.lightType || ['spot-light', 'point-light', 'strobe-light', 'directional-light', 'particle-generator'].includes(piece.type)) {
+            // Lights, particle generators, and camera sets don't need collision bodies
+            if (piece.lightType || piece.isCameraSet || ['spot-light', 'point-light', 'strobe-light', 'directional-light', 'particle-generator', 'camera-set'].includes(piece.type)) {
+                return;
+            }
+            
+            // Check if collision is disabled for this piece
+            if (piece.collisionEnabled === false) {
                 return;
             }
             
@@ -2345,7 +2332,10 @@
                 radiusY = 16,                // Arc radius in Y axis
                 radiusZ = 16,                // Arc radius in Z axis
                 segments = null,             // Number of segments (auto-calculated if null)
-                clockwise = false            // Arc direction
+                clockwise = false,           // Arc direction
+                isPipe = false,              // Whether to create pipe geometry
+                pipeRadius = 1.5,            // Outer radius for pipe
+                pipeInnerRadius = 1.0        // Inner radius for pipe
             } = options;
             
             // Calculate segments if not provided (use the largest angle)
@@ -2385,20 +2375,39 @@
             // Create the parametric curve
             const path3D = new CustomArcCurve(radiusX, radiusY, radiusZ, angleX, angleY, angleZ, clockwise);
             
-            // Create the cross-section shape (width = horizontal, height = vertical)
-            const shape = new THREE.Shape();
-            shape.moveTo(-width/2, -height/2);
-            shape.lineTo(-width/2, height/2);
-            shape.lineTo(width/2, height/2);
-            shape.lineTo(width/2, -height/2);
-            shape.lineTo(-width/2, -height/2);
+            let geometry;
             
-            // Create extruded geometry
-            const geometry = new THREE.ExtrudeGeometry(shape, { 
-                extrudePath: path3D, 
-                steps: arcSegments, 
-                bevelEnabled: false 
-            });
+            if (isPipe) {
+                // Create pipe geometry with hollow interior
+                const outerShape = new THREE.Shape();
+                const innerShape = new THREE.Path();
+                
+                // Outer circle
+                outerShape.absarc(0, 0, pipeRadius, 0, Math.PI * 2, false);
+                // Inner circle (hole)
+                innerShape.absarc(0, 0, pipeInnerRadius, 0, Math.PI * 2, true);
+                outerShape.holes.push(innerShape);
+                
+                geometry = new THREE.ExtrudeGeometry(outerShape, { 
+                    extrudePath: path3D, 
+                    steps: arcSegments, 
+                    bevelEnabled: false 
+                });
+            } else {
+                // Create the cross-section shape (width = horizontal, height = vertical)
+                const shape = new THREE.Shape();
+                shape.moveTo(-width/2, -height/2);
+                shape.lineTo(-width/2, height/2);
+                shape.lineTo(width/2, height/2);
+                shape.lineTo(width/2, -height/2);
+                shape.lineTo(-width/2, -height/2);
+                
+                geometry = new THREE.ExtrudeGeometry(shape, { 
+                    extrudePath: path3D, 
+                    steps: arcSegments, 
+                    bevelEnabled: false 
+                });
+            }
             
             return geometry;
         }
@@ -2503,21 +2512,20 @@
         function getPieceConfig(type) {
             const w = 8, l = 10, h = 1.5, t = 0.5;
             switch(type) {
-                case "start":
+                case "straight":
                     return { geometry: new THREE.BoxGeometry(w + 4, h, l)};
+                case "triangle":
+                    const triangleShape = new THREE.Shape();
+                    triangleShape.moveTo(0, (w + 4)/2);
+                    triangleShape.lineTo(-(w + 4)/2, -(w + 4)/2);
+                    triangleShape.lineTo((w + 4)/2, -(w + 4)/2);
+                    triangleShape.lineTo(0, (w + 4)/2);
+                    return { 
+                        geometry: new THREE.ExtrudeGeometry(triangleShape, {steps: 1, depth: h, bevelEnabled: false}),
+                        rotation: { x: -Math.PI/2, y: 0, z: 0 }
+                    };
                 case "end":
                     return { geometry: new THREE.BoxGeometry(w + 4, h, l)};
-                case "straight":
-                    const straightShape = new THREE.Shape();
-                    straightShape.moveTo(-w/2, -h/2);
-                    straightShape.lineTo(-w/2, h/2);
-                    straightShape.lineTo(w/2, h/2);
-                    straightShape.lineTo(w/2, -h/2);
-                    straightShape.lineTo(-w/2, -h/2);
-                    return { 
-                        geometry: new THREE.ExtrudeGeometry(straightShape, {steps: 1, depth: l, bevelEnabled: false}),
-                        rotation: { x: Math.PI/2, y: 0, z: 0 }
-                    };
                 case "ramp":
                     const curvePath = new THREE.CatmullRomCurve3([
                         new THREE.Vector3(0, 0, -l/2),
@@ -2545,6 +2553,15 @@
                     return { 
                         geometry: createArcGeometry({ 
                             angleY: Math.PI/2, 
+                            width: w, 
+                            height: t 
+                        }),
+                        rotation: { x: Math.PI/2, y: 0, z: 0 }
+                    };
+                case "wall-180":
+                    return { 
+                        geometry: createArcGeometry({ 
+                            angleY: Math.PI, 
                             width: w, 
                             height: t 
                         }),
@@ -2596,19 +2613,19 @@
                     const pipeGeometry = new THREE.BufferGeometry();
                     
                     // Calculate total vertices and indices
-                    let totalVertices = 0;
-                    let totalIndices = 0;
+                    let pipeTotalVertices = 0;
+                    let pipeTotalIndices = 0;
                     
                     geometries.forEach(geom => {
-                        totalVertices += geom.attributes.position.count;
-                        totalIndices += geom.index ? geom.index.count : geom.attributes.position.count;
+                        pipeTotalVertices += geom.attributes.position.count;
+                        pipeTotalIndices += geom.index ? geom.index.count : geom.attributes.position.count;
                     });
                     
                     // Create combined arrays
-                    const positions = new Float32Array(totalVertices * 3);
-                    const normals = new Float32Array(totalVertices * 3);
-                    const uvs = new Float32Array(totalVertices * 2);
-                    const indices = new Uint32Array(totalIndices);
+                    const positions = new Float32Array(pipeTotalVertices * 3);
+                    const normals = new Float32Array(pipeTotalVertices * 3);
+                    const uvs = new Float32Array(pipeTotalVertices * 2);
+                    const indices = new Uint32Array(pipeTotalIndices);
                     
                     let vertexOffset = 0;
                     let indexOffset = 0;
@@ -2650,124 +2667,30 @@
                     
                     return { geometry: pipeGeometry };
                 case "arch":
-                    // Create a squared arch with custom geometry
-                    const archRadius = 8;
-                    const squareSize = 2; // Size of the square cross-section
-                    const segments = 32; // Number of segments along the arch
+                    // Use the better curve-180 geometry (improved version)
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI, angleZ: 0,
+                        radiusX: 6, radiusY: 6, radiusZ: 6,
+                        segments: 16, clockwise: false
+                    }) };
+                case "cube":
+                    return { geometry: new THREE.BoxGeometry(4, 4, 4) };
+                case "prism":
+                    return { geometry: new THREE.CylinderGeometry(3, 3, 6, 6) };
                     
-                    // Create custom geometry for squared arch
-                    const archGeometry = new THREE.BufferGeometry();
-                    
-                    // Arrays to store geometry data
-                    const archVertices = [];
-                    const archIndices = [];
-                    const archNormals = [];
-                    const archUvs = [];
-                    
-                    // Create vertices for the arch path (half circle)
-                    for (let i = 0; i <= segments; i++) {
-                        const angle = (i / segments) * Math.PI; // 0 to PI for half circle
-                        const x = Math.cos(angle) * archRadius;
-                        const y = Math.sin(angle) * archRadius;
-                        const z = 0;
-                        
-                        // Create square cross-section at this point
-                        const halfSize = squareSize / 2;
-                        
-                        // Calculate tangent for proper orientation
-                        const tangentX = -Math.sin(angle);
-                        const tangentY = Math.cos(angle);
-                        
-                        // Calculate normal perpendicular to the arch
-                        const normalX = Math.cos(angle);
-                        const normalY = Math.sin(angle);
-                        
-                        // Create 4 vertices for square cross-section
-                        const squareVerts = [
-                            [-halfSize, -halfSize], [halfSize, -halfSize],
-                            [halfSize, halfSize], [-halfSize, halfSize]
-                        ];
-                        
-                        for (let j = 0; j < 4; j++) {
-                            const localX = squareVerts[j][0];
-                            const localZ = squareVerts[j][1];
-                            
-                            // Position vertex
-                            archVertices.push(x + localX * normalX, y + localX * normalY, z + localZ);
-                            
-                            // Normal (pointing outward from square face)
-                            if (j < 2) archNormals.push(-normalY, normalX, 0); // Bottom face
-                            else archNormals.push(normalY, -normalX, 0); // Top face
-                            
-                            // UV coordinates
-                            archUvs.push(i / segments, j / 3);
-                        }
-                    }
-                    
-                    // Create indices for the arch surface
-                    for (let i = 0; i < segments; i++) {
-                        const base = i * 4;
-                        const next = (i + 1) * 4;
-                        
-                        // Create quads for each face of the square tube
-                        for (let face = 0; face < 4; face++) {
-                            const v1 = base + face;
-                            const v2 = base + ((face + 1) % 4);
-                            const v3 = next + face;
-                            const v4 = next + ((face + 1) % 4);
-                            
-                            // Two triangles per quad (reversed winding for correct normals)
-                            archIndices.push(v1, v3, v2);
-                            archIndices.push(v2, v3, v4);
-                        }
-                    }
-                    
-                    // Add square caps at the feet of the arch (bottom ends)
-                    const leftFootBase = archVertices.length / 3;
-                    const rightFootBase = leftFootBase + 4;
-                    
-                    // Left foot cap (at angle 0, bottom of arch)
-                    const leftX = archRadius;
-                    const leftY = 0;
-                    const halfSize = squareSize / 2;
-                    archVertices.push(
-                        leftX - halfSize, leftY, -halfSize,  // bottom-left
-                        leftX + halfSize, leftY, -halfSize,  // bottom-right  
-                        leftX + halfSize, leftY, halfSize,   // top-right
-                        leftX - halfSize, leftY, halfSize    // top-left
-                    );
-                    for (let i = 0; i < 4; i++) {
-                        archNormals.push(0, -1, 0); // Normal pointing down
-                        archUvs.push(i % 2, Math.floor(i / 2));
-                    }
-                    
-                    // Right foot cap (at angle PI, bottom of arch)
-                    const rightX = -archRadius;
-                    const rightY = 0;
-                    archVertices.push(
-                        rightX + halfSize, rightY, -halfSize,  // bottom-left
-                        rightX - halfSize, rightY, -halfSize,  // bottom-right
-                        rightX - halfSize, rightY, halfSize,   // top-right  
-                        rightX + halfSize, rightY, halfSize    // top-left
-                    );
-                    for (let i = 0; i < 4; i++) {
-                        archNormals.push(0, -1, 0); // Normal pointing down
-                        archUvs.push(i % 2, Math.floor(i / 2));
-                    }
-                    
-                    // Add cap indices (correct winding for downward-facing normals)
-                    archIndices.push(leftFootBase, leftFootBase + 1, leftFootBase + 2);
-                    archIndices.push(leftFootBase, leftFootBase + 2, leftFootBase + 3);
-                    archIndices.push(rightFootBase, rightFootBase + 2, rightFootBase + 1);
-                    archIndices.push(rightFootBase, rightFootBase + 3, rightFootBase + 2);
-                    
-                    // Set geometry attributes
-                    archGeometry.setAttribute('position', new THREE.Float32BufferAttribute(archVertices, 3));
-                    archGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(archNormals, 3));
-                    archGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(archUvs, 2));
-                    archGeometry.setIndex(archIndices);
-                    
-                    return { geometry: archGeometry };
+                // Physics Affectors - Invisible/transparent zones that affect marble physics
+                case "water":
+                    return { 
+                        geometry: new THREE.BoxGeometry(8, 4, 8),
+                        isAffector: true,
+                        affectorType: 'water'
+                    };
+                case "zero-g":
+                    return { 
+                        geometry: new THREE.SphereGeometry(5, 16, 12),
+                        isAffector: true,
+                        affectorType: 'zero-g'
+                    };
                 case "cube":
                     return { geometry: new THREE.BoxGeometry(4, 4, 4) };
                 case "prism":
@@ -2855,6 +2778,362 @@
                         isBallSet: true,
                         isPlacementBall: true
                     };
+                case "wall":
+                    return { geometry: new THREE.BoxGeometry(w + 4, 6, 1)};
+                case "curve-180":
+                    return { geometry: createArcGeometry({ 
+                        angleY: Math.PI, 
+                        width: h, 
+                        height: w * 1.25 
+                    }) };
+                case "pipe-elbow-45":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI/4, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 8, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
+                case "pipe-elbow-90":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI/2, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 12, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
+                case "pipe-elbow-180":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 16, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
+                case "bowl":
+                    // Create bowl with inner and outer surfaces
+                    const outerBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+                    const innerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+                    
+                    // Flip inner bowl normals and face winding order
+                    const innerNormals = innerBowl.attributes.normal;
+                    for (let i = 0; i < innerNormals.count; i++) {
+                        innerNormals.setX(i, -innerNormals.getX(i));
+                        innerNormals.setY(i, -innerNormals.getY(i));
+                        innerNormals.setZ(i, -innerNormals.getZ(i));
+                    }
+                    
+                    // Flip face winding order for inner bowl
+                    if (innerBowl.index) {
+                        const indices = innerBowl.index.array;
+                        for (let i = 0; i < indices.length; i += 3) {
+                            // Swap second and third vertices to flip triangle winding
+                            const temp = indices[i + 1];
+                            indices[i + 1] = indices[i + 2];
+                            indices[i + 2] = temp;
+                        }
+                        innerBowl.index.needsUpdate = true;
+                    }
+                    
+                    // Create rim (ring between inner and outer) - using pipe cap style
+                    const rimGeometry = new THREE.RingGeometry(2.5, 3, 16);
+                    rimGeometry.rotateX(-Math.PI/2); // Orient horizontally
+                    
+                    // Ensure proper face winding for rim visibility
+                    if (rimGeometry.index) {
+                        const indices = rimGeometry.index.array;
+                        for (let i = 0; i < indices.length; i += 3) {
+                            // Swap second and third vertices to flip triangle winding if needed
+                            const temp = indices[i + 1];
+                            indices[i + 1] = indices[i + 2];
+                            indices[i + 2] = temp;
+                        }
+                        rimGeometry.index.needsUpdate = true;
+                    }
+                    
+                    // Merge all bowl geometries
+                    const bowlGeometries = [outerBowl, innerBowl, rimGeometry];
+                    const bowlMergedGeometry = new THREE.BufferGeometry();
+                    
+                    // Calculate total vertices and indices for bowl
+                    let bowlTotalVertices = 0;
+                    let bowlTotalIndices = 0;
+                    bowlGeometries.forEach(geo => {
+                        bowlTotalVertices += geo.attributes.position.count;
+                        if (geo.index) bowlTotalIndices += geo.index.count;
+                    });
+                    
+                    // Create new attributes for bowl
+                    const bowlPositions = new Float32Array(bowlTotalVertices * 3);
+                    const bowlNormals = new Float32Array(bowlTotalVertices * 3);
+                    const bowlUvs = new Float32Array(bowlTotalVertices * 2);
+                    const bowlIndices = new Uint32Array(bowlTotalIndices);
+                    
+                    let bowlPosOffset = 0;
+                    let bowlNormalOffset = 0;
+                    let bowlUvOffset = 0;
+                    let bowlIndexOffset = 0;
+                    let bowlVertexOffset = 0;
+                    
+                    bowlGeometries.forEach(geo => {
+                        // Copy positions
+                        bowlPositions.set(geo.attributes.position.array, bowlPosOffset);
+                        bowlPosOffset += geo.attributes.position.array.length;
+                        
+                        // Copy normals
+                        if (geo.attributes.normal) {
+                            bowlNormals.set(geo.attributes.normal.array, bowlNormalOffset);
+                        }
+                        bowlNormalOffset += geo.attributes.position.count * 3;
+                        
+                        // Copy UVs
+                        if (geo.attributes.uv) {
+                            bowlUvs.set(geo.attributes.uv.array, bowlUvOffset);
+                        }
+                        bowlUvOffset += geo.attributes.position.count * 2;
+                        
+                        // Copy indices with vertex offset
+                        if (geo.index) {
+                            const geoIndices = geo.index.array;
+                            for (let i = 0; i < geoIndices.length; i++) {
+                                bowlIndices[bowlIndexOffset + i] = geoIndices[i] + bowlVertexOffset;
+                            }
+                            bowlIndexOffset += geoIndices.length;
+                        }
+                        
+                        bowlVertexOffset += geo.attributes.position.count;
+                    });
+                    
+                    bowlMergedGeometry.setAttribute('position', new THREE.BufferAttribute(bowlPositions, 3));
+                    bowlMergedGeometry.setAttribute('normal', new THREE.BufferAttribute(bowlNormals, 3));
+                    bowlMergedGeometry.setAttribute('uv', new THREE.BufferAttribute(bowlUvs, 2));
+                    bowlMergedGeometry.setIndex(new THREE.BufferAttribute(bowlIndices, 1));
+                    
+                    return { geometry: bowlMergedGeometry };
+                case "basin":
+                    // Create basin like a sink - bowl with drain hole at the bottom center
+                    const basinOuterBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+                    
+                    // Create inner bowl with drain hole - use ring instead of full sphere
+                    const basinInnerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+                    
+                    // Remove center bottom vertices to create drain hole in inner bowl
+                    const innerPositions = basinInnerBowl.attributes.position.array;
+                    const innerNormals = basinInnerBowl.attributes.normal.array;
+                    const innerIndices = basinInnerBowl.index.array;
+                    
+                    // Find vertices near the bottom center (drain area) and mark for removal
+                    const drainRadius = 0.6; // Size of drain hole
+                    const verticesToKeep = [];
+                    const newIndexMap = new Map();
+                    
+                    for (let i = 0; i < innerPositions.length; i += 3) {
+                        const x = innerPositions[i];
+                        const y = innerPositions[i + 1];
+                        const z = innerPositions[i + 2];
+                        
+                        // Check if vertex is in drain area (bottom center)
+                        const distanceFromCenter = Math.sqrt(x * x + z * z);
+                        const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
+                        
+                        if (!isInDrainArea) {
+                            newIndexMap.set(i / 3, verticesToKeep.length);
+                            verticesToKeep.push(x, y, z);
+                        }
+                    }
+                    
+                    // Rebuild inner bowl geometry without drain area vertices
+                    const newInnerPositions = new Float32Array(verticesToKeep);
+                    const newInnerNormals = new Float32Array(verticesToKeep.length);
+                    const newInnerIndices = [];
+                    
+                    // Copy normals for kept vertices and flip them
+                    let normalIndex = 0;
+                    for (let i = 0; i < innerPositions.length; i += 3) {
+                        const x = innerPositions[i];
+                        const y = innerPositions[i + 1];
+                        const z = innerPositions[i + 2];
+                        const distanceFromCenter = Math.sqrt(x * x + z * z);
+                        const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
+                        
+                        if (!isInDrainArea) {
+                            // Flip normals for inner surface
+                            newInnerNormals[normalIndex] = -innerNormals[i];
+                            newInnerNormals[normalIndex + 1] = -innerNormals[i + 1];
+                            newInnerNormals[normalIndex + 2] = -innerNormals[i + 2];
+                            normalIndex += 3;
+                        }
+                    }
+                    
+                    // Rebuild indices, skipping triangles that reference removed vertices
+                    for (let i = 0; i < innerIndices.length; i += 3) {
+                        const v1 = innerIndices[i];
+                        const v2 = innerIndices[i + 1];
+                        const v3 = innerIndices[i + 2];
+                        
+                        if (newIndexMap.has(v1) && newIndexMap.has(v2) && newIndexMap.has(v3)) {
+                            // Flip triangle winding for inner surface
+                            newInnerIndices.push(newIndexMap.get(v1));
+                            newInnerIndices.push(newIndexMap.get(v3)); // Swapped
+                            newInnerIndices.push(newIndexMap.get(v2)); // Swapped
+                        }
+                    }
+                    
+                    // Create modified inner bowl geometry
+                    const modifiedInnerBowl = new THREE.BufferGeometry();
+                    modifiedInnerBowl.setAttribute('position', new THREE.BufferAttribute(newInnerPositions, 3));
+                    modifiedInnerBowl.setAttribute('normal', new THREE.BufferAttribute(newInnerNormals, 3));
+                    modifiedInnerBowl.setIndex(new THREE.BufferAttribute(new Uint32Array(newInnerIndices), 1));
+                    
+                    // Create rim (solid ring from inner edge to outer edge)
+                    const basinRimGeometry = new THREE.RingGeometry(2.5, 3, 16);
+                    basinRimGeometry.rotateX(-Math.PI/2); // Orient horizontally
+                    
+                    // Flip rim face winding
+                    if (basinRimGeometry.index) {
+                        const indices = basinRimGeometry.index.array;
+                        for (let i = 0; i < indices.length; i += 3) {
+                            const temp = indices[i + 1];
+                            indices[i + 1] = indices[i + 2];
+                            indices[i + 2] = temp;
+                        }
+                        basinRimGeometry.index.needsUpdate = true;
+                    }
+                    
+                    // Merge all basin geometries
+                    const basinGeometries = [basinOuterBowl, modifiedInnerBowl, basinRimGeometry];
+                    const basinMergedGeometry = new THREE.BufferGeometry();
+                    
+                    let basinTotalVertices = 0;
+                    let basinTotalIndices = 0;
+                    
+                    basinGeometries.forEach(geo => {
+                        basinTotalVertices += geo.attributes.position.count;
+                        basinTotalIndices += geo.index ? geo.index.count : 0;
+                    });
+                    
+                    const basinPositions = new Float32Array(basinTotalVertices * 3);
+                    const basinNormals = new Float32Array(basinTotalVertices * 3);
+                    const basinUvs = new Float32Array(basinTotalVertices * 2);
+                    const basinIndices = new Uint32Array(basinTotalIndices);
+                    
+                    let basinVertexOffset = 0;
+                    let basinIndexOffset = 0;
+                    
+                    basinGeometries.forEach(geo => {
+                        const positions = geo.attributes.position.array;
+                        const normals = geo.attributes.normal.array;
+                        const uvs = geo.attributes.uv ? geo.attributes.uv.array : new Float32Array(positions.length / 3 * 2);
+                        
+                        basinPositions.set(positions, basinVertexOffset * 3);
+                        basinNormals.set(normals, basinVertexOffset * 3);
+                        basinUvs.set(uvs, basinVertexOffset * 2);
+                        
+                        if (geo.index) {
+                            const indices = geo.index.array;
+                            for (let i = 0; i < indices.length; i++) {
+                                basinIndices[basinIndexOffset + i] = indices[i] + basinVertexOffset;
+                            }
+                            basinIndexOffset += indices.length;
+                        }
+                        
+                        basinVertexOffset += geo.attributes.position.count;
+                    });
+                    
+                    basinMergedGeometry.setAttribute('position', new THREE.BufferAttribute(basinPositions, 3));
+                    basinMergedGeometry.setAttribute('normal', new THREE.BufferAttribute(basinNormals, 3));
+                    basinMergedGeometry.setAttribute('uv', new THREE.BufferAttribute(basinUvs, 2));
+                    basinMergedGeometry.setIndex(new THREE.BufferAttribute(basinIndices, 1));
+                    
+                    return { geometry: basinMergedGeometry };
+                case "half-sphere":
+                    // Create half sphere with flat bottom face
+                    const halfSphereGeometry = new THREE.SphereGeometry(2, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+                    const bottomFaceGeometry = new THREE.CircleGeometry(2, 16);
+                    bottomFaceGeometry.rotateX(-Math.PI/2);
+                    
+                    // Flip bottom face to ensure correct orientation (face upward)
+                    if (bottomFaceGeometry.index) {
+                        const indices = bottomFaceGeometry.index.array;
+                        for (let i = 0; i < indices.length; i += 3) {
+                            // Swap second and third vertices to flip triangle winding
+                            const temp = indices[i + 1];
+                            indices[i + 1] = indices[i + 2];
+                            indices[i + 2] = temp;
+                        }
+                        bottomFaceGeometry.index.needsUpdate = true;
+                    }
+                    
+                    // Merge geometries
+                    const halfSphereGeometries = [halfSphereGeometry, bottomFaceGeometry];
+                    const mergedGeometry = new THREE.BufferGeometry();
+                    
+                    // Calculate total vertices and indices
+                    let halfSphereTotalVertices = 0;
+                    let halfSphereTotalIndices = 0;
+                    halfSphereGeometries.forEach(geo => {
+                        halfSphereTotalVertices += geo.attributes.position.count;
+                        if (geo.index) halfSphereTotalIndices += geo.index.count;
+                    });
+                    
+                    // Create new attributes
+                    const halfSpherePositions = new Float32Array(halfSphereTotalVertices * 3);
+                    const halfSphereNormals = new Float32Array(halfSphereTotalVertices * 3);
+                    const halfSphereUvs = new Float32Array(halfSphereTotalVertices * 2);
+                    const halfSphereIndices = new Uint32Array(halfSphereTotalIndices);
+                    
+                    let halfSpherePosOffset = 0;
+                    let halfSphereNormalOffset = 0;
+                    let halfSphereUvOffset = 0;
+                    let halfSphereIndexOffset = 0;
+                    let halfSphereVertexOffset = 0;
+                    
+                    halfSphereGeometries.forEach(geo => {
+                        // Copy positions
+                        halfSpherePositions.set(geo.attributes.position.array, halfSpherePosOffset);
+                        halfSpherePosOffset += geo.attributes.position.array.length;
+                        
+                        // Copy normals
+                        if (geo.attributes.normal) {
+                            halfSphereNormals.set(geo.attributes.normal.array, halfSphereNormalOffset);
+                        }
+                        halfSphereNormalOffset += geo.attributes.position.count * 3;
+                        
+                        // Copy UVs
+                        if (geo.attributes.uv) {
+                            halfSphereUvs.set(geo.attributes.uv.array, halfSphereUvOffset);
+                        }
+                        halfSphereUvOffset += geo.attributes.position.count * 2;
+                        
+                        // Copy indices with vertex offset
+                        if (geo.index) {
+                            const geoIndices = geo.index.array;
+                            for (let i = 0; i < geoIndices.length; i++) {
+                                halfSphereIndices[halfSphereIndexOffset + i] = geoIndices[i] + halfSphereVertexOffset;
+                            }
+                            halfSphereIndexOffset += geoIndices.length;
+                        }
+                        
+                        halfSphereVertexOffset += geo.attributes.position.count;
+                    });
+                    
+                    mergedGeometry.setAttribute('position', new THREE.BufferAttribute(halfSpherePositions, 3));
+                    mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(halfSphereNormals, 3));
+                    mergedGeometry.setAttribute('uv', new THREE.BufferAttribute(halfSphereUvs, 2));
+                    mergedGeometry.setIndex(new THREE.BufferAttribute(halfSphereIndices, 1));
+                    
+                    return { geometry: mergedGeometry };
+                case "wedge":
+                    const wedgeShape = new THREE.Shape();
+                    wedgeShape.moveTo(-2, 0);
+                    wedgeShape.lineTo(2, 0);
+                    wedgeShape.lineTo(0, 2);
+                    wedgeShape.lineTo(-2, 0);
+                    return { 
+                        geometry: new THREE.ExtrudeGeometry(wedgeShape, {steps: 1, depth: 4, bevelEnabled: false}),
+                        rotation: { x: 0, y: 0, z: 0 }
+                    };
+                case "torus":
+                    return { geometry: new THREE.TorusGeometry(2, 0.8, 8, 16)};
+                case "cone":
+                    return { geometry: new THREE.ConeGeometry(2, 4, 16)};
             }
             return null;
         }
@@ -3710,6 +3989,55 @@
             
             container.style.transform = `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
         }
+        
+        function performCameraRotation(action) {
+            const rotationAmount = Math.PI / 8; // 22.5 degrees
+            
+            // Get current camera position relative to target
+            const direction = new THREE.Vector3().subVectors(camera.position, orbitControls.target);
+            
+            // Convert to spherical coordinates for easier manipulation
+            const spherical = new THREE.Spherical().setFromVector3(direction);
+            
+            switch (action) {
+                case 'rotate-left':
+                    spherical.theta -= rotationAmount;
+                    break;
+                case 'rotate-right':
+                    spherical.theta += rotationAmount;
+                    break;
+                case 'tilt-up':
+                    spherical.phi = Math.max(0.1, spherical.phi - rotationAmount);
+                    break;
+                case 'tilt-down':
+                    spherical.phi = Math.min(Math.PI - 0.1, spherical.phi + rotationAmount);
+                    break;
+                case 'roll-left':
+                    // Roll by rotating the camera's up vector
+                    camera.rotateZ(rotationAmount);
+                    camera.updateProjectionMatrix();
+                    return; // Early return for roll operations
+                case 'roll-right':
+                    camera.rotateZ(-rotationAmount);
+                    camera.updateProjectionMatrix();
+                    return; // Early return for roll operations
+            }
+            
+            // Convert back to Cartesian coordinates and position camera
+            const newDirection = new THREE.Vector3().setFromSpherical(spherical);
+            const newPosition = orbitControls.target.clone().add(newDirection);
+            
+            // Smoothly animate camera to new position using existing transition system
+            cameraTransition = {
+                active: true,
+                startTime: performance.now(),
+                duration: 0.5, // 0.5 second transition
+                startCameraPosition: camera.position.clone(),
+                targetCameraPosition: newPosition,
+                startTarget: orbitControls.target.clone(),
+                targetTarget: orbitControls.target.clone()
+            };
+        }
 
         function updateMultiSelectGroup() {
             destroyMultiSelectGroup();
@@ -3792,15 +4120,6 @@
                 cameraMode = e.target.value;
                 cameraSetActive = false;
                 cameraAngle = 0;
-                // Sync both dropdowns
-                document.getElementById('camera-mode-dropdown-toolbar-right').value = cameraMode;
-            });
-            document.getElementById('camera-mode-dropdown-toolbar-right').addEventListener('change', (e) => {
-                cameraMode = e.target.value;
-                cameraSetActive = false;
-                cameraAngle = 0;
-                // Sync both dropdowns
-                document.getElementById('camera-mode-dropdown-toolbar').value = cameraMode;
             });
             
             // Add missing toolbar button event listeners
@@ -4065,6 +4384,19 @@
                 showMessage(e.target.checked ? 'Object hidden' : 'Object shown', 'info');
             });
             
+            // Collision state toggle
+            document.getElementById('piece-collision-enabled').addEventListener('change', (e) => {
+                if (!transformControls.object) return;
+                const piece = trackPieces.find(p => p.group === transformControls.object);
+                if (!piece) return;
+                
+                // Set collision flag and update physics bodies
+                piece.collisionEnabled = e.target.checked;
+                updatePhysicsForPiece(piece);
+                
+                showMessage(e.target.checked ? 'Collision enabled' : 'Collision disabled', 'info');
+            });
+            
             // Camera settings event listeners
             document.getElementById('capture-camera-position').addEventListener('click', () => {
                 if (!transformControls.object) return;
@@ -4194,6 +4526,13 @@
             document.getElementById('bend-falloff').addEventListener('input', updateBendValueDisplays);
             document.getElementById('apply-bend-btn').addEventListener('click', applyBendToSelected);
             document.getElementById('reset-bend-btn').addEventListener('click', resetBendSettings);
+            document.getElementById('close-bend-dialog-btn').addEventListener('click', () => {
+                hideBendToolDialog();
+                isBendMode = false;
+                const btn = document.getElementById('bend-tool-btn-toolbar');
+                btn.style.background = '#495057';
+                btn.title = 'Bend Tool (B)';
+            });
             
             // Rotation settings toggle
             document.getElementById('piece-rotation-enabled').addEventListener('change', (e) => {
@@ -4422,6 +4761,14 @@
                     setOrthographicView(view);
                 });
             });
+            
+            // ViewCube rotation arrow event listeners
+            document.querySelectorAll('.viewcube-arrow').forEach(arrow => {
+                arrow.addEventListener('click', (e) => {
+                    const action = e.target.dataset.action;
+                    performCameraRotation(action);
+                });
+            });
         }
         
         function saveTrack() {
@@ -4619,6 +4966,8 @@
         
         function performSave() {
             const filename = document.getElementById('save-filename').value.trim();
+            const overwriteChecked = document.getElementById('overwrite-existing').checked;
+            
             if (!filename) {
                 showMessage('Please enter a filename', 'error');
                 return;
@@ -4681,7 +5030,15 @@
                 pieceNames: pieceNamesArray
             };
             
-            const finalFilename = filename.endsWith('.json') ? filename : filename + '.json';
+            let finalFilename = filename.endsWith('.json') ? filename : filename + '.json';
+            
+            // If overwrite is not checked, add timestamp to make filename unique
+            if (!overwriteChecked) {
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+                const baseName = finalFilename.replace('.json', '');
+                finalFilename = `${baseName}-${timestamp}.json`;
+            }
+            
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([JSON.stringify(trackData, null, 2)], {type: 'application/json'}));
             a.download = finalFilename;
@@ -4689,7 +5046,10 @@
             URL.revokeObjectURL(a.href);
             
             document.getElementById('save-dialog').style.display = 'none';
-            showMessage(`Track saved as "${finalFilename}"`, 'success');
+            const message = overwriteChecked ? 
+                `Track saved as "${finalFilename}" (overwrite enabled)` : 
+                `Track saved as "${finalFilename}" (unique filename)`;
+            showMessage(message, 'success');
         }
         
         function showMessage(text, type = 'info') {
@@ -4700,6 +5060,14 @@
             // Auto-hide after 3 seconds
             setTimeout(() => {
                 notification.classList.remove('show');
+                // Destroy and recreate the notification element after hide animation
+                setTimeout(() => {
+                    const parent = notification.parentNode;
+                    const newNotification = notification.cloneNode(false);
+                    parent.removeChild(notification);
+                    parent.appendChild(newNotification);
+                    newNotification.id = 'message-notification';
+                }, 300); // Wait for hide animation to complete
             }, 3000);
         }
 
@@ -5703,15 +6071,21 @@
                 'Track Pieces': {
                     icon: '🛤️',
                     pieces: {
-                        'start': { icon: '🏁', name: 'Start Platform' },
-                        'straight': { icon: '➡️', name: 'Straight' },
+                        'straight': { icon: '🟩', name: 'Straight' },
+                        'triangle': { icon: '🔺', name: 'Triangle' },
                         'ramp': { icon: '📐', name: 'Ramp' },
+                        'wall': { icon: '🧱', name: 'Wall' },
                         'wall-45': { icon: '↗️', name: 'Wall 45°' },
                         'wall-90': { icon: '↪️', name: 'Wall 90°' },
+                        'wall-180': { icon: '🔄', name: 'Wall 180°' },
                         'curve-45': { icon: '🌗', name: 'Curve 45°' },
                         'curve-90': { icon: '🌓', name: 'Curve 90°' },
+                        'curve-180': { icon: '🌕', name: 'Curve 180°' },
                         'end': { icon: '🎯', name: 'End Platform' },
                         'pipe': { icon: '🚇', name: 'Pipe' },
+                        'pipe-elbow-45': { icon: '↗️', name: 'Pipe Elbow 45°' },
+                        'pipe-elbow-90': { icon: '↪️', name: 'Pipe Elbow 90°' },
+                        'pipe-elbow-180': { icon: '🔄', name: 'Pipe Elbow 180°' },
                         'arch': { icon: '🌈', name: 'Arch' }
                     }
                 },
@@ -5719,6 +6093,12 @@
                     icon: '🚧',
                     pieces: {
                         'ball': { icon: '⚽', name: 'Sphere' },
+                        'bowl': { icon: '🥣', name: 'Bowl' },
+                        'basin': { icon: '🚿', name: 'Basin' },
+                        'half-sphere': { icon: '🌗', name: 'Half-Sphere' },
+                        'wedge': { icon: '📐', name: 'Wedge' },
+                        'torus': { icon: '🍩', name: 'Torus' },
+                        'cone': { icon: '🔺', name: 'Cone' },
                         'pyramid': { icon: '🔺', name: 'Pyramid' },
                         'cylinder': { icon: '🥫', name: 'Cylinder' },
                         'cube': { icon: '🧊', name: 'Cube' },
@@ -6525,6 +6905,9 @@
             
             // Load hidden state
             document.getElementById('piece-hidden').checked = piece.hidden || false;
+            
+            // Load collision state (default to true for backward compatibility)
+            document.getElementById('piece-collision-enabled').checked = piece.collisionEnabled !== false;
             document.getElementById('piece-rotation-speed').value = rotSettings.speed;
             document.getElementById('piece-rotation-axis').value = rotSettings.axis;
             
@@ -6716,14 +7099,6 @@
                 customCurveSettings.style.display = 'none';
             }
             
-            // Show/hide bend tool settings based on bend mode
-            const bendToolSettings = document.getElementById('bend-tool-settings');
-            if (isBendMode) {
-                bendToolSettings.style.display = 'block';
-                updateBendValueDisplays(); // Ensure displays are current
-            } else {
-                bendToolSettings.style.display = 'none';
-            }
             
             // Show/hide settings based on enabled states
             document.getElementById('rotation-settings').style.display = rotSettings.enabled ? 'block' : 'none';
@@ -6911,6 +7286,9 @@
             // Update hidden state
             piece.hidden = document.getElementById('piece-hidden').checked;
             
+            // Update collision state
+            piece.collisionEnabled = document.getElementById('piece-collision-enabled').checked;
+            
             // Update ball set mass if applicable
             if (piece.type === 'ball-set') {
                 piece.ballMass = parseFloat(document.getElementById('ball-set-mass').value);
@@ -7004,31 +7382,28 @@
             if (isBendMode) {
                 btn.style.background = '#28a745'; // Green when active
                 btn.title = 'Bend Tool Active (B) - Click to Disable';
-                showMessage('Bend Mode: Select objects and use Material Editor to adjust bend settings', 'info');
+                showMessage('Bend Mode: Use the Bend Tool dialog to adjust settings', 'info');
                 
-                // Show bend settings if material editor is open
-                const editor = document.getElementById('material-editor');
-                if (editor.style.display === 'block') {
-                    showBendSettings();
-                }
+                // Show bend tool dialog
+                showBendToolDialog();
             } else {
                 btn.style.background = '#495057'; // Default gray
                 btn.title = 'Bend Tool (B)';
-                hideBendSettings();
+                hideBendToolDialog();
             }
         }
         
-        function showBendSettings() {
-            const bendSettings = document.getElementById('bend-tool-settings');
-            if (bendSettings) {
-                bendSettings.style.display = 'block';
+        function showBendToolDialog() {
+            const dialog = document.getElementById('bend-tool-dialog');
+            if (dialog) {
+                dialog.style.display = 'block';
             }
         }
         
-        function hideBendSettings() {
-            const bendSettings = document.getElementById('bend-tool-settings');
-            if (bendSettings) {
-                bendSettings.style.display = 'none';
+        function hideBendToolDialog() {
+            const dialog = document.getElementById('bend-tool-dialog');
+            if (dialog) {
+                dialog.style.display = 'none';
             }
         }
         
@@ -8829,9 +9204,57 @@
                 .json extension will be added automatically
             </div>
         </div>
+        <div style="margin: 15px 0; text-align: left;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="overwrite-existing" style="margin: 0;">
+                <span>Overwrite existing file (if exists)</span>
+            </label>
+        </div>
         <div class="button-group">
             <button class="save-confirm" id="save-confirm-btn">💾 Save</button>
             <button class="save-cancel" id="save-cancel-btn">❌ Cancel</button>
+        </div>
+    </div>
+
+    <!-- Bend Tool Dialog -->
+    <div id="bend-tool-dialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2a2a2a; border: 2px solid #444; border-radius: 8px; padding: 20px; z-index: 10001; max-width: 400px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="color: #ffd700; margin-top: 0;">🌀 Bend Tool</h3>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="bend-axis" style="color: #ccc; font-size: 14px;">Bend Axis:</label>
+            <select id="bend-axis" style="width: 100%; padding: 8px; background: #343a40; color: white; border: 1px solid #495057; border-radius: 4px; margin-top: 5px;">
+                <option value="x">X-axis (Pitch)</option>
+                <option value="y" selected>Y-axis (Yaw)</option>
+                <option value="z">Z-axis (Roll)</option>
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="bend-angle" style="color: #ccc; font-size: 14px;">Bend Angle: <span id="bend-angle-value" style="color: #ffd700;">45</span>°</label>
+            <input type="range" id="bend-angle" min="-180" max="180" step="5" value="45" style="width: 100%; margin-top: 5px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="bend-center" style="color: #ccc; font-size: 14px;">Bend Center: <span id="bend-center-value" style="color: #ffd700;">0.5</span></label>
+            <input type="range" id="bend-center" min="0" max="1" step="0.1" value="0.5" style="width: 100%; margin-top: 5px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="bend-falloff" style="color: #ccc; font-size: 14px;">Bend Falloff: <span id="bend-falloff-value" style="color: #ffd700;">0.8</span></label>
+            <input type="range" id="bend-falloff" min="0.1" max="2" step="0.1" value="0.8" style="width: 100%; margin-top: 5px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <small style="color: #888;">
+                Select an object and adjust bend settings above, then click Apply Bend.
+                The bend will deform the geometry permanently.
+            </small>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="apply-bend-btn" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">✅ Apply Bend</button>
+            <button id="reset-bend-btn" style="padding: 8px 16px; background: #6c757d; border: none; color: white; border-radius: 4px; cursor: pointer;">↩️ Reset</button>
+            <button id="close-bend-dialog-btn" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -8908,6 +9331,11 @@
             <div class="viewcube-face viewcube-top" data-view="top">TOP</div>
             <div class="viewcube-face viewcube-bottom" data-view="bottom">BOTTOM</div>
         </div>
+        <!-- Rotation arrows around the ViewCube -->
+        <div class="viewcube-arrow viewcube-arrow-up" data-action="tilt-up" title="Tilt Up">↑</div>
+        <div class="viewcube-arrow viewcube-arrow-down" data-action="tilt-down" title="Tilt Down">↓</div>
+        <div class="viewcube-arrow viewcube-arrow-left" data-action="rotate-left" title="Rotate Left">←</div>
+        <div class="viewcube-arrow viewcube-arrow-right" data-action="rotate-right" title="Rotate Right">→</div>
     </div>
 
     <div id="message-notification"></div>
