@@ -214,7 +214,7 @@
         #message-notification {
             position: fixed; top: 20px; right: 20px; z-index: 400;
             padding: 15px 20px; border-radius: 5px; color: white; font-weight: bold;
-            transform: translateX(160%); transition: transform 0.3s ease-in-out;
+            transform: translateX(200%); transition: transform 0.3s ease-in-out;
             max-width: 300px; word-wrap: break-word;
         }
         #message-notification.show { transform: translateX(0); }
@@ -541,6 +541,7 @@
     <div id="top-toolbar" style="position: fixed; top: 0; left: 0; right: 0; height: 50px; background: rgba(0, 0, 0, 0.9); color: white; display: flex; align-items: center; gap: 10px; padding: 0 15px; z-index: 150; border-bottom: 1px solid #444;">
 
         <!-- File Operations -->
+        <button id="new-track-btn-toolbar" title="New Track" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📄</button>
         <button id="save-track-btn-toolbar" title="Save Track" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">💾</button>
         <button id="load-track-btn-toolbar" title="Load Track" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">📂</button>
 
@@ -707,9 +708,9 @@
         
         <div class="ball-preview" id="ball-preview"></div>
         
-        <div style="text-align: center; margin: 20px 0;">
-            <button id="add-ball-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">➕ Add Ball</button>
-            <button id="close-ball-maker-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
+        <div style="display: flex; gap: 10px; margin: 20px 0;">
+            <button id="add-ball-btn" style="flex: 1; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">➕ Add Ball</button>
+            <button id="close-ball-maker-btn" style="flex: 1; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
         
         <div style="border-top: 1px solid #444; padding-top: 20px; margin-top: 20px;">
@@ -1157,9 +1158,9 @@
         </div>
         
         
-        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
-            <button id="apply-material-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
-            <button id="close-material-editor-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
+        <div style="display: flex; gap: 10px; margin-top: 20px; margin-bottom: 30px;">
+            <button id="apply-material-btn" style="flex: 1; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Apply</button>
+            <button id="close-material-editor-btn" style="flex: 1; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -1227,9 +1228,9 @@
             <input type="file" id="face-texture-upload" accept="image/*" style="display: none; margin-top: 10px;">
         </div>
         
-        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
-            <button id="clear-face-paint-btn" style="padding: 10px 20px; background: #dc3545; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">🗑️ Clear All</button>
-            <button id="close-face-painter-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
+        <div style="display: flex; gap: 10px; margin-top: 20px; margin-bottom: 30px;">
+            <button id="clear-face-paint-btn" style="flex: 1; padding: 10px 20px; background: #dc3545; border: none; color: white; border-radius: 5px; cursor: pointer;">🗑️ Clear All</button>
+            <button id="close-face-painter-btn" style="flex: 1; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -1362,9 +1363,9 @@
             </div>
         </div>
         
-        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
-            <button id="apply-skybox-btn" style="padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; margin-right: 10px;">✅ Apply</button>
-            <button id="close-skybox-btn" style="padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
+        <div style="display: flex; gap: 10px; margin-top: 20px; margin-bottom: 30px;">
+            <button id="apply-skybox-btn" style="flex: 1; padding: 10px 20px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer;">✅ Apply</button>
+            <button id="close-skybox-btn" style="flex: 1; padding: 10px 20px; background: #6c757d; border: none; color: white; border-radius: 5px; cursor: pointer;">❌ Close</button>
         </div>
     </div>
 
@@ -1539,14 +1540,31 @@
             scene.add(new THREE.GridHelper(200, 20));
             
             setupEventListeners();
-            addPiece("straight", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
-            addPiece("ball-set", { position: new THREE.Vector3(0, 2, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
             
-            // Initialize object tree
+            // Initialize object tree and piece selector
             updateObjectTree();
-            
-            // Initialize piece selector tree since Add Pieces tab is default active
             createPieceSelectorTree();
+            
+            // Auto-load saved track from localStorage, or create default if none exists
+            setTimeout(() => {
+                try {
+                    const savedData = localStorage.getItem('marbleRaceAutoSave');
+                    if (savedData) {
+                        loadFromLocalStorage();
+                    } else {
+                        // Only add default pieces if no saved data exists
+                        addPiece("straight", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+                        addPiece("ball-set", { position: new THREE.Vector3(0, 2, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+                        updateObjectTree();
+                    }
+                } catch (error) {
+                    console.warn('Failed to auto-load on init:', error);
+                    // Fallback to default pieces if auto-load fails
+                    addPiece("straight", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+                    addPiece("ball-set", { position: new THREE.Vector3(0, 2, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+                    updateObjectTree();
+                }
+            }, 500);
             
             animate();
         }
@@ -2311,6 +2329,10 @@
             }
             
             updateObjectTree();
+            
+            // Auto-save after adding piece
+            setTimeout(autoSaveToLocalStorage, 100);
+            
             return newPiece;
         }
         
@@ -3351,6 +3373,9 @@
                 selectedPieces = [];
                 updateSelectionUI();
                 updateObjectTree();
+                
+                // Auto-save after removing pieces
+                setTimeout(autoSaveToLocalStorage, 100);
             } else if (transformControls.object) {
                 const piece = trackPieces.find(p => p.group === transformControls.object);
                 if (piece) {
@@ -3360,6 +3385,9 @@
                     piece.physicsBodies.forEach(b => world.removeBody(b));
                     trackPieces = trackPieces.filter(p => p !== piece);
                     updateObjectTree();
+                    
+                    // Auto-save after removing piece
+                    setTimeout(autoSaveToLocalStorage, 100);
                 }
             }
         }
@@ -3810,12 +3838,19 @@
             const selectedScale = document.getElementById('selected-scale');
             const selectedDimensions = document.getElementById('selected-dimensions');
             
+            // Clean up selectedPieces array - remove any undefined or invalid pieces
+            selectedPieces = selectedPieces.filter(piece => piece && piece.group && trackPieces.includes(piece));
+            
             if (selectedCount) {
                 selectedCount.textContent = `Selected: ${selectedPieces.length} piece${selectedPieces.length === 1 ? '' : 's'}`;
             }
             
             if (selectedPieces.length === 1) {
                 const piece = selectedPieces[0];
+                if (!piece || !piece.group) {
+                    console.warn('Invalid piece in selection');
+                    return;
+                }
                 const pos = piece.group.position;
                 const rot = piece.group.rotation;
                 const scale = piece.group.scale;
@@ -3837,7 +3872,9 @@
                 
                 // Calculate and display actual dimensions
                 if (selectedDimensions) {
-                    const baseDims = getBaseDimensions(piece.userData.pieceType);
+                    // Use piece.type instead of piece.userData.pieceType
+                    const pieceType = piece.type || piece.userData?.type || 'unknown';
+                    const baseDims = getBaseDimensions(pieceType);
                     const actualWidth = (baseDims[0] * scale.x).toFixed(1);
                     const actualHeight = (baseDims[1] * scale.y).toFixed(1);
                     const actualDepth = (baseDims[2] * scale.z).toFixed(1);
@@ -4184,6 +4221,7 @@
             });
             
             // Add missing toolbar button event listeners
+            document.getElementById('new-track-btn-toolbar').addEventListener('click', newTrack);
             document.getElementById('save-track-btn-toolbar').addEventListener('click', saveTrack);
             document.getElementById('load-track-btn-toolbar').addEventListener('click', () => {
                 document.getElementById('load-track-input').click();
@@ -4831,6 +4869,10 @@
             transformControls.addEventListener('change', () => {
                 // Only update UI, don't interfere with selection logic
                 requestAnimationFrame(updateSelectionUI);
+                
+                // Auto-save on transform changes (debounced)
+                clearTimeout(window.transformAutoSaveTimeout);
+                window.transformAutoSaveTimeout = setTimeout(autoSaveToLocalStorage, 500);
             });
             transformControls.addEventListener('mouseUp', () => { 
                 if(transformControls.object && transformControls.object !== multiSelectGroup) {
@@ -4852,6 +4894,11 @@
                 }
             });
             window.addEventListener('keydown', (e) => {
+                // Skip all hotkeys when typing in input fields
+                if (e.target.matches('input, textarea, [contenteditable]')) {
+                    return;
+                }
+                
                 // Handle Delete key to remove selected pieces
                 if (e.key === 'Delete' && !isRaceMode && (selectedPieces.length > 0 || transformControls.object)) {
                     e.preventDefault();
@@ -5195,62 +5242,8 @@
                 return;
             }
             
-            // Create piece names array for saving
-            const pieceNamesArray = [];
-            trackPieces.forEach((piece, index) => {
-                if (pieceNames.has(piece)) {
-                    pieceNamesArray.push({ index, name: pieceNames.get(piece) });
-                }
-            });
-            
-            const trackData = {
-                pieces: trackPieces.map(p => ({
-                    type: p.type,
-                    position: p.group.position.toArray(),
-                    quaternion: p.group.quaternion.toArray(),
-                    scale: p.group.scale.toArray(),
-                    materialData: p.materialData,
-                    faceMaterials: p.group.children[0]?.userData?.faceMaterials ? 
-                        Array.from(p.group.children[0].userData.faceMaterials.entries()) : null,
-                    rotationSettings: p.rotationSettings,
-                    raycastMirror: p.raycastMirror,
-                    hidden: p.hidden,
-                    ballMass: p.ballMass,
-                    isAffector: p.isAffector,
-                    affectorType: p.affectorType,
-                    affectorSettings: p.affectorSettings ? {
-                        ...p.affectorSettings,
-                        // Convert Vector3 direction to array for JSON serialization
-                        direction: p.affectorSettings.direction ? p.affectorSettings.direction.toArray() : [0, 0, 1]
-                    } : null,
-                    pathingSettings: p.pathingSettings ? {
-                        ...p.pathingSettings,
-                        // Convert Vector3 and Quaternion objects to arrays for JSON serialization
-                        points: p.pathingSettings.points ? p.pathingSettings.points.map(point => ({
-                            ...point,
-                            position: point.position.toArray(),
-                            quaternion: point.quaternion.toArray(),
-                            scale: point.scale.toArray()
-                        })) : []
-                    } : null,
-                    isLight: p.isLight,
-                    lightType: p.lightType,
-                    lightSettings: p.lightSettings,
-                    isParticleGen: p.isParticleGen,
-                    particleSettings: p.particleSettings,
-                    isCameraSet: p.isCameraSet,
-                    cameraSettings: p.cameraSettings,
-                    isBallSet: p.isBallSet,
-                    isPlacementBall: p.isPlacementBall
-                })),
-                customBalls: customBalls,
-                raceRoster: raceRoster,
-                skyboxData: currentSkyboxData,
-                backgroundColor: document.getElementById('background-color').value,
-                groundProjection: document.getElementById('ground-projection-toggle').checked,
-                spotifyUrl: document.getElementById('spotify-url').value,
-                pieceNames: pieceNamesArray
-            };
+            // Use cached track data (auto-save ensures it's up-to-date)
+            const trackData = createTrackDataObject();
             
             let finalFilename = filename.endsWith('.json') ? filename : filename + '.json';
             
@@ -5285,12 +5278,125 @@
                 // Destroy and recreate the notification element after hide animation
                 setTimeout(() => {
                     const parent = notification.parentNode;
-                    const newNotification = notification.cloneNode(false);
-                    parent.removeChild(notification);
-                    parent.appendChild(newNotification);
-                    newNotification.id = 'message-notification';
+                    if (parent) {
+                        const newNotification = notification.cloneNode(false);
+                        parent.removeChild(notification);
+                        parent.appendChild(newNotification);
+                        newNotification.id = 'message-notification';
+                    }
                 }, 300); // Wait for hide animation to complete
             }, 3000);
+        }
+
+        // Auto-save functionality
+        function autoSaveToLocalStorage() {
+            try {
+                const trackData = createTrackDataObject();
+                localStorage.setItem('marbleRaceAutoSave', JSON.stringify(trackData));
+                console.log('Auto-saved track data');
+            } catch (error) {
+                console.warn('Auto-save failed:', error);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('marbleRaceAutoSave');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    console.log('Loading auto-saved data:', data);
+                    loadTrackData(data);
+                    showMessage('Auto-saved track loaded', 'success');
+                    return true;
+                } else {
+                    console.log('No auto-saved data found');
+                    return false;
+                }
+            } catch (error) {
+                console.warn('Auto-load failed:', error);
+                return false;
+            }
+        }
+
+        function createTrackDataObject() {
+            // Create piece names array for saving
+            const pieceNamesArray = [];
+            trackPieces.forEach((piece, index) => {
+                if (pieceNames.has(piece)) {
+                    pieceNamesArray.push({ index, name: pieceNames.get(piece) });
+                }
+            });
+
+            return {
+                pieces: trackPieces.map(p => ({
+                    type: p.type,
+                    position: p.group.position.toArray(),
+                    quaternion: p.group.quaternion.toArray(),
+                    scale: p.group.scale.toArray(),
+                    materialData: p.materialData,
+                    faceMaterials: p.group.children[0]?.userData?.faceMaterials ? 
+                        Array.from(p.group.children[0].userData.faceMaterials.entries()) : null,
+                    paintedFaces: p.group.children[0]?.userData?.paintedFaces ? 
+                        Array.from(p.group.children[0].userData.paintedFaces.entries()) : null,
+                    rotationSettings: p.rotationSettings,
+                    raycastMirror: p.raycastMirror,
+                    hidden: p.hidden,
+                    ballMass: p.ballMass,
+                    isAffector: p.isAffector,
+                    affectorType: p.affectorType,
+                    affectorSettings: p.affectorSettings ? {
+                        ...p.affectorSettings,
+                        direction: p.affectorSettings.direction ? p.affectorSettings.direction.toArray() : [0, 0, 1]
+                    } : null,
+                    pathingSettings: p.pathingSettings ? {
+                        ...p.pathingSettings,
+                        points: p.pathingSettings.points ? p.pathingSettings.points.map(point => ({
+                            ...point,
+                            position: point.position.toArray(),
+                            quaternion: point.quaternion.toArray(),
+                            scale: point.scale.toArray()
+                        })) : []
+                    } : null,
+                    isLight: p.isLight,
+                    lightType: p.lightType,
+                    lightSettings: p.lightSettings,
+                    isParticleGen: p.isParticleGen,
+                    particleSettings: p.particleSettings,
+                    isCameraSet: p.isCameraSet,
+                    cameraSettings: p.cameraSettings,
+                    isBallSet: p.isBallSet,
+                    isPlacementBall: p.isPlacementBall,
+                    bendData: p.bendData || null
+                })),
+                customBalls: customBalls,
+                raceRoster: raceRoster,
+                skyboxData: currentSkyboxData,
+                backgroundColor: document.getElementById('background-color').value,
+                groundProjection: document.getElementById('ground-projection-toggle').checked,
+                spotifyUrl: document.getElementById('spotify-url').value,
+                pieceNames: pieceNamesArray,
+                // Camera position and target
+                cameraPosition: camera.position.toArray(),
+                cameraTarget: orbitControls.target.toArray()
+            };
+        }
+
+        function newTrack() {
+            if (confirm('Start a new track? This will clear all current work.')) {
+                resetToDefaults();
+                
+                // Clear localStorage auto-save
+                localStorage.removeItem('marbleRaceAutoSave');
+                
+                // Add default pieces (same as init)
+                addPiece("straight", { position: new THREE.Vector3(0, 0.1, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+                addPiece("ball-set", { position: new THREE.Vector3(0, 2, 10), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1,1,1) });
+                
+                showMessage('New track created', 'success');
+                
+                // Auto-save the new empty state
+                setTimeout(autoSaveToLocalStorage, 100);
+            }
         }
 
         function resetToDefaults() {
@@ -5334,9 +5440,14 @@
             currentSkyboxData = null;
             scene.background = new THREE.Color(0x87CEEB);
             
+            // Reset background color input
+            document.getElementById('background-color').value = '#87CEEB';
+            
             // Reset camera mode
             cameraMode = 'panning';
             
+            // Update object tree
+            updateObjectTree();
         }
         
         function loadTrack(event) {
@@ -5344,15 +5455,21 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = e => {
-                // Reset everything to defaults before loading
-                resetToDefaults();
-                
-                transformControls.detach();
-                
                 const data = JSON.parse(e.target.result);
+                loadTrackData(data);
+                showMessage('Track loaded successfully', 'success');
+            };
+            reader.readAsText(file);
+        }
+
+        function loadTrackData(data) {
+            // Reset everything to defaults before loading
+            resetToDefaults();
+            
+            transformControls.detach();
                 
-                // Handle both old format (array) and new format (object with pieces and customBalls)
-                if (Array.isArray(data)) {
+            // Handle both old format (array) and new format (object with pieces and customBalls)
+            if (Array.isArray(data)) {
                     // Old format - just track pieces
                     data.forEach(d => {
                         const transform = {
@@ -5380,11 +5497,19 @@
                             }
                             
                             // Restore face materials if they exist
-                            if (d.faceMaterials) {
+                            if (d.faceMaterials || d.paintedFaces) {
                                 const mesh = piece.group.children[0];
                                 if (mesh && mesh.isMesh) {
-                                    mesh.userData.faceMaterials = new Map(d.faceMaterials);
-                                    restoreFaceMaterials(mesh);
+                                    if (d.faceMaterials) {
+                                        mesh.userData.faceMaterials = new Map(d.faceMaterials);
+                                    }
+                                    if (d.paintedFaces) {
+                                        mesh.userData.paintedFaces = new Map(d.paintedFaces);
+                                    }
+                                    // Restore face materials if we have face painting data
+                                    if (d.faceMaterials && d.paintedFaces) {
+                                        restoreFaceMaterials(mesh);
+                                    }
                                 }
                             }
                             
@@ -5510,6 +5635,23 @@
                                 piece.isPlacementBall = d.isPlacementBall;
                             }
                             
+                            // Restore bend data and reapply bends
+                            if (d.bendData && d.bendData.length > 0) {
+                                piece.bendData = d.bendData;
+                                const mesh = piece.group.children[0];
+                                if (mesh && mesh.isMesh) {
+                                    // Reapply all bends in sequence
+                                    let geometry = mesh.geometry.clone();
+                                    d.bendData.forEach(bendParams => {
+                                        applyBendToGeometry(geometry, bendParams.axis, bendParams.angle, bendParams.center, bendParams.falloff);
+                                    });
+                                    mesh.geometry.dispose();
+                                    mesh.geometry = geometry;
+                                    // Update physics after bending
+                                    updatePhysicsForPiece(piece);
+                                }
+                            }
+                            
                             // Apply material with raycast mirror settings
                             const mesh = piece.group.children[0];
                             if (mesh && mesh.isMesh) {
@@ -5533,20 +5675,29 @@
                         // Preserve ground projection state if it was saved with the track
                         const useGroundProjection = data.groundProjection || false;
                         if (useGroundProjection) {
-                            document.getElementById('ground-projection-toggle').checked = true;
+                            const groundToggle = document.getElementById('ground-projection-toggle');
+                            if (groundToggle) {
+                                groundToggle.checked = true;
+                            }
                         }
                         loadSkybox(data.skyboxData, useGroundProjection);
                     }
 
                     // Load background color if saved
                     if (data.backgroundColor) {
-                        document.getElementById('background-color').value = data.backgroundColor;
-                        updateBackgroundColor();
+                        const bgColorInput = document.getElementById('background-color');
+                        if (bgColorInput) {
+                            bgColorInput.value = data.backgroundColor;
+                            updateBackgroundColor();
+                        }
                     }
 
                     if (data.spotifyUrl) {
-                        document.getElementById('spotify-url').value = data.spotifyUrl;
-                        embedSpotify();
+                        const spotifyInput = document.getElementById('spotify-url');
+                        if (spotifyInput) {
+                            spotifyInput.value = data.spotifyUrl;
+                            embedSpotify();
+                        }
                     }
                     
                     // Load piece names
@@ -5559,11 +5710,27 @@
                         });
                     }
                     
-                    // Update visibility of all hidden objects after loading
-                    updateHiddenObjectVisibility();
+                    // Load camera position if saved
+                    if (data.cameraPosition && data.cameraTarget) {
+                        camera.position.fromArray(data.cameraPosition);
+                        orbitControls.target.fromArray(data.cameraTarget);
+                        orbitControls.update();
+                    }
+                    
+                // Update visibility of all hidden objects after loading
+                updateHiddenObjectVisibility();
+            }
+            
+            // Update object tree and refresh preview balls after loading  
+            updateObjectTree();
+            
+            // Update preview balls for all ball sets
+            const ballSets = trackPieces.filter(p => p.type === 'ball-set');
+            ballSets.forEach(ballSet => {
+                if (ballSet.group) {
+                    addPreviewBallsToSet(ballSet.group);
                 }
-            };
-            reader.readAsText(file);
+            });
         }
 
         function loadCustomObject(event) {
@@ -6684,6 +6851,9 @@
             customBalls.push(ballConfig);
             updateCustomBallsList();
             
+            // Auto-save after adding custom ball
+            setTimeout(autoSaveToLocalStorage, 100);
+            
             // Reset form
             document.getElementById('ball-name').value = 'Custom Ball';
             document.getElementById('ball-color').value = '#ff0000';
@@ -7044,11 +7214,17 @@
                 raceRoster.push(randomBall);
             }
             updateRosterDisplay();
+            
+            // Auto-save after adding random balls
+            setTimeout(autoSaveToLocalStorage, 100);
         }
 
         function clearRoster() {
             raceRoster = [];
             updateRosterDisplay();
+            
+            // Auto-save after clearing roster
+            setTimeout(autoSaveToLocalStorage, 100);
         }
 
         function addCustomToRoster() {
@@ -7057,6 +7233,9 @@
                 raceRoster.push(copy);
             });
             updateRosterDisplay();
+            
+            // Auto-save after adding custom balls to roster
+            setTimeout(autoSaveToLocalStorage, 100);
         }
 
         function updateRosterDisplay() {
@@ -7660,9 +7839,9 @@
                 return;
             }
             
-            const piece = trackPieces.find(p => p.group === transformControls.object);
-            if (!piece) {
-                showMessage('Selected object is not a track piece', 'error');
+            const piece = trackPieces.find(p => p && p.group === transformControls.object);
+            if (!piece || !piece.group || !piece.group.children[0]) {
+                showMessage('Selected object is not a valid track piece', 'error');
                 return;
             }
             
@@ -7690,6 +7869,17 @@
                 
                 // Apply bend
                 applyBendToGeometry(newGeometry, axis, angle, center, falloff);
+                
+                // Store bend parameters on the piece for saving/loading
+                if (!piece.bendData) {
+                    piece.bendData = [];
+                }
+                piece.bendData.push({
+                    axis: axis,
+                    angle: angle,
+                    center: center,
+                    falloff: falloff
+                });
                 
                 // Replace the geometry
                 mesh.geometry.dispose();
@@ -7863,9 +8053,9 @@
                     }
                     
                     // Enhanced edge detection for curved and complex geometries
+                    const pieceType = child.parent?.userData?.type || child.parent?.userData?.pieceType || '';
                     if (geometry.type === 'TubeGeometry' || geometry.type === 'ExtrudeGeometry' || 
-                        child.parent?.userData?.pieceType?.includes('curve') || 
-                        child.parent?.userData?.pieceType?.includes('pipe')) {
+                        pieceType.includes('curve') || pieceType.includes('pipe')) {
                         
                         // For curved pieces, find the connection points (start and end edges)
                         const box = new THREE.Box3().setFromBufferAttribute(position);
@@ -8050,9 +8240,9 @@
             if (!selectedSourceEdge && !selectedTargetEdge) {
                 info.textContent = 'No edges selected';
             } else if (selectedSourceEdge && !selectedTargetEdge) {
-                info.innerHTML = `Source Edge: Object "${selectedSourceEdge.object.userData.pieceType || 'Unknown'}"<br>Length: ${selectedSourceEdge.length.toFixed(2)} units<br>Click target edge to snap to...`;
+                info.innerHTML = `Source Edge: Object "${selectedSourceEdge.object.userData?.type || selectedSourceEdge.object.userData?.pieceType || 'Unknown'}"<br>Length: ${selectedSourceEdge.length.toFixed(2)} units<br>Click target edge to snap to...`;
             } else if (selectedSourceEdge && selectedTargetEdge) {
-                info.innerHTML = `Source: "${selectedSourceEdge.object.userData.pieceType}" (${selectedSourceEdge.length.toFixed(2)}u)<br>Target: "${selectedTargetEdge.object.userData.pieceType}" (${selectedTargetEdge.length.toFixed(2)}u)<br>Ready to snap!`;
+                info.innerHTML = `Source: "${selectedSourceEdge.object.userData?.type || selectedSourceEdge.object.userData?.pieceType || 'Unknown'}" (${selectedSourceEdge.length.toFixed(2)}u)<br>Target: "${selectedTargetEdge.object.userData?.type || selectedTargetEdge.object.userData?.pieceType || 'Unknown'}" (${selectedTargetEdge.length.toFixed(2)}u)<br>Ready to snap!`;
             }
         }
         
@@ -8827,7 +9017,7 @@
                     if (paintMode === 'single') {
                         // Single triangle painting
                         paintFace(mesh, faceIndex);
-                        showMessage(`Painted face ${faceIndex} on ${mesh.parent.userData.pieceType || 'object'}`, 'success');
+                        showMessage(`Painted face ${faceIndex} on ${mesh.parent.userData?.type || mesh.parent.userData?.pieceType || 'object'}`, 'success');
                     } else if (paintMode === 'angle') {
                         // Angle-based painting
                         const angleThreshold = parseFloat(document.getElementById('face-paint-angle-threshold').value);
@@ -8837,7 +9027,7 @@
                             paintFace(mesh, fIndex);
                         });
                         
-                        showMessage(`Cascade painted ${facesToPaint.length} adjacent faces within ${angleThreshold}° angle on ${mesh.parent.userData.pieceType || 'object'}`, 'success');
+                        showMessage(`Cascade painted ${facesToPaint.length} adjacent faces within ${angleThreshold}° angle on ${mesh.parent.userData?.type || mesh.parent.userData?.pieceType || 'object'}`, 'success');
                     }
                 } else {
                     showMessage('Could not determine face to paint', 'error');
