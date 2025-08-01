@@ -2509,6 +2509,216 @@
             return geometry;
         }
         
+        function mergeGeometries(geometries) {
+            const mergedGeometry = new THREE.BufferGeometry();
+            
+            let totalVertices = 0;
+            let totalIndices = 0;
+            
+            geometries.forEach(geo => {
+                totalVertices += geo.attributes.position.count;
+                totalIndices += geo.index ? geo.index.count : geo.attributes.position.count;
+            });
+            
+            const positions = new Float32Array(totalVertices * 3);
+            const normals = new Float32Array(totalVertices * 3);
+            const uvs = new Float32Array(totalVertices * 2);
+            const indices = new Uint32Array(totalIndices);
+            
+            let vertexOffset = 0;
+            let indexOffset = 0;
+            let currentVertexCount = 0;
+            
+            geometries.forEach(geo => {
+                const posArray = geo.attributes.position.array;
+                const normArray = geo.attributes.normal.array;
+                const uvArray = geo.attributes.uv ? geo.attributes.uv.array : new Float32Array(posArray.length / 3 * 2);
+                
+                positions.set(posArray, vertexOffset);
+                normals.set(normArray, vertexOffset);
+                uvs.set(uvArray, vertexOffset * 2 / 3);
+                
+                if (geo.index) {
+                    const indexArray = geo.index.array;
+                    for (let i = 0; i < indexArray.length; i++) {
+                        indices[indexOffset + i] = indexArray[i] + currentVertexCount;
+                    }
+                    indexOffset += indexArray.length;
+                } else {
+                    for (let i = 0; i < geo.attributes.position.count; i++) {
+                        indices[indexOffset + i] = currentVertexCount + i;
+                    }
+                    indexOffset += geo.attributes.position.count;
+                }
+                
+                vertexOffset += posArray.length;
+                currentVertexCount += geo.attributes.position.count;
+            });
+            
+            mergedGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+            mergedGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            mergedGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
+            
+            return mergedGeometry;
+        }
+
+        function createPipeGeometry() {
+            const outerRadius = 1.5;
+            const innerRadius = 1.0;
+            const height = 8;
+            const radialSegments = 16;
+            
+            const outerWall = new THREE.CylinderGeometry(outerRadius, outerRadius, height, radialSegments, 1, true);
+            
+            const innerWall = new THREE.CylinderGeometry(innerRadius, innerRadius, height, radialSegments, 1, true);
+            innerWall.scale(-1, 1, 1);
+            
+            const topCap = new THREE.RingGeometry(innerRadius, outerRadius, radialSegments);
+            topCap.rotateX(-Math.PI/2);
+            topCap.translate(0, height/2, 0);
+            
+            const bottomCap = new THREE.RingGeometry(innerRadius, outerRadius, radialSegments);
+            bottomCap.rotateX(Math.PI/2);
+            bottomCap.translate(0, -height/2, 0);
+            
+            return mergeGeometries([outerWall, innerWall, topCap, bottomCap]);
+        }
+
+        function createBowlGeometry() {
+            const outerBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+            const innerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+            
+            const innerNormals = innerBowl.attributes.normal;
+            for (let i = 0; i < innerNormals.count; i++) {
+                innerNormals.setX(i, -innerNormals.getX(i));
+                innerNormals.setY(i, -innerNormals.getY(i));
+                innerNormals.setZ(i, -innerNormals.getZ(i));
+            }
+            
+            if (innerBowl.index) {
+                const indices = innerBowl.index.array;
+                for (let i = 0; i < indices.length; i += 3) {
+                    const temp = indices[i + 1];
+                    indices[i + 1] = indices[i + 2];
+                    indices[i + 2] = temp;
+                }
+                innerBowl.index.needsUpdate = true;
+            }
+            
+            const rimGeometry = new THREE.RingGeometry(2.5, 3, 16);
+            rimGeometry.rotateX(-Math.PI/2);
+            
+            if (rimGeometry.index) {
+                const indices = rimGeometry.index.array;
+                for (let i = 0; i < indices.length; i += 3) {
+                    const temp = indices[i + 1];
+                    indices[i + 1] = indices[i + 2];
+                    indices[i + 2] = temp;
+                }
+                rimGeometry.index.needsUpdate = true;
+            }
+            
+            return mergeGeometries([outerBowl, innerBowl, rimGeometry]);
+        }
+
+        function createBasinGeometry() {
+            const basinOuterBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+            const basinInnerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+            
+            const innerPositions = basinInnerBowl.attributes.position.array;
+            const innerNormals = basinInnerBowl.attributes.normal.array;
+            const innerIndices = basinInnerBowl.index.array;
+            
+            const drainRadius = 0.6;
+            const verticesToKeep = [];
+            const newIndexMap = new Map();
+            
+            for (let i = 0; i < innerPositions.length; i += 3) {
+                const x = innerPositions[i];
+                const y = innerPositions[i + 1];
+                const z = innerPositions[i + 2];
+                
+                const distanceFromCenter = Math.sqrt(x * x + z * z);
+                const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
+                
+                if (!isInDrainArea) {
+                    newIndexMap.set(i / 3, verticesToKeep.length);
+                    verticesToKeep.push(x, y, z);
+                }
+            }
+            
+            const newInnerPositions = new Float32Array(verticesToKeep);
+            const newInnerNormals = new Float32Array(verticesToKeep.length);
+            const newInnerIndices = [];
+            
+            let normalIndex = 0;
+            for (let i = 0; i < innerPositions.length; i += 3) {
+                const x = innerPositions[i];
+                const y = innerPositions[i + 1];
+                const z = innerPositions[i + 2];
+                const distanceFromCenter = Math.sqrt(x * x + z * z);
+                const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
+                
+                if (!isInDrainArea) {
+                    newInnerNormals[normalIndex] = -innerNormals[i];
+                    newInnerNormals[normalIndex + 1] = -innerNormals[i + 1];
+                    newInnerNormals[normalIndex + 2] = -innerNormals[i + 2];
+                    normalIndex += 3;
+                }
+            }
+            
+            for (let i = 0; i < innerIndices.length; i += 3) {
+                const v1 = innerIndices[i];
+                const v2 = innerIndices[i + 1];
+                const v3 = innerIndices[i + 2];
+                
+                if (newIndexMap.has(v1) && newIndexMap.has(v2) && newIndexMap.has(v3)) {
+                    newInnerIndices.push(newIndexMap.get(v1));
+                    newInnerIndices.push(newIndexMap.get(v3));
+                    newInnerIndices.push(newIndexMap.get(v2));
+                }
+            }
+            
+            const modifiedInnerBowl = new THREE.BufferGeometry();
+            modifiedInnerBowl.setAttribute('position', new THREE.BufferAttribute(newInnerPositions, 3));
+            modifiedInnerBowl.setAttribute('normal', new THREE.BufferAttribute(newInnerNormals, 3));
+            modifiedInnerBowl.setIndex(new THREE.BufferAttribute(new Uint32Array(newInnerIndices), 1));
+            
+            const basinRimGeometry = new THREE.RingGeometry(2.5, 3, 16);
+            basinRimGeometry.rotateX(-Math.PI/2);
+            
+            if (basinRimGeometry.index) {
+                const indices = basinRimGeometry.index.array;
+                for (let i = 0; i < indices.length; i += 3) {
+                    const temp = indices[i + 1];
+                    indices[i + 1] = indices[i + 2];
+                    indices[i + 2] = temp;
+                }
+                basinRimGeometry.index.needsUpdate = true;
+            }
+            
+            return mergeGeometries([basinOuterBowl, modifiedInnerBowl, basinRimGeometry]);
+        }
+
+        function createHalfSphereGeometry() {
+            const halfSphereGeometry = new THREE.SphereGeometry(2, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+            const bottomFaceGeometry = new THREE.CircleGeometry(2, 16);
+            bottomFaceGeometry.rotateX(-Math.PI/2);
+            
+            if (bottomFaceGeometry.index) {
+                const indices = bottomFaceGeometry.index.array;
+                for (let i = 0; i < indices.length; i += 3) {
+                    const temp = indices[i + 1];
+                    indices[i + 1] = indices[i + 2];
+                    indices[i + 2] = temp;
+                }
+                bottomFaceGeometry.index.needsUpdate = true;
+            }
+            
+            return mergeGeometries([halfSphereGeometry, bottomFaceGeometry]);
+        }
+
         function getPieceConfig(type) {
             const w = 8, l = 10, h = 1.5, t = 0.5;
             switch(type) {
@@ -2540,6 +2750,8 @@
                     curveShape.lineTo(w/2, -h/2);
                     curveShape.lineTo(-w/2, -h/2);
                     return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
+                case "wall":
+                    return { geometry: new THREE.BoxGeometry(w + 4, 6, 1)};
                 case "wall-45":
                     return { 
                         geometry: createArcGeometry({ 
@@ -2579,6 +2791,12 @@
                         width: h, 
                         height: w * 1.25 
                     }) };
+                case "curve-180":
+                    return { geometry: createArcGeometry({ 
+                        angleY: Math.PI, 
+                        width: h, 
+                        height: w * 1.25 
+                    }) };
                 case "ball":
                     return { geometry: new THREE.SphereGeometry(2, 16, 16), pinned: true };
                 case "pyramid":
@@ -2586,86 +2804,28 @@
                 case "cylinder":
                     return { geometry: new THREE.CylinderGeometry(2, 2, 6, 16) };
                 case "pipe":
-                    // Create a truly hollow pipe using RingGeometry for caps and CylinderGeometry for walls
-                    const outerRadius = 1.5;
-                    const innerRadius = 1.0;
-                    const height = 8;
-                    const radialSegments = 16;
-                    
-                    // Create the outer wall
-                    const outerWall = new THREE.CylinderGeometry(outerRadius, outerRadius, height, radialSegments, 1, true);
-                    
-                    // Create the inner wall (inverted normals)
-                    const innerWall = new THREE.CylinderGeometry(innerRadius, innerRadius, height, radialSegments, 1, true);
-                    innerWall.scale(-1, 1, 1); // Flip normals to face outward
-                    
-                    // Create end caps (rings) - properly oriented
-                    const topCap = new THREE.RingGeometry(innerRadius, outerRadius, radialSegments);
-                    topCap.rotateX(-Math.PI/2); // Rotate first
-                    topCap.translate(0, height/2, 0); // Then translate
-                    
-                    const bottomCap = new THREE.RingGeometry(innerRadius, outerRadius, radialSegments);
-                    bottomCap.rotateX(Math.PI/2); // Rotate first
-                    bottomCap.translate(0, -height/2, 0); // Then translate
-                    
-                    // Merge all geometries
-                    const geometries = [outerWall, innerWall, topCap, bottomCap];
-                    const pipeGeometry = new THREE.BufferGeometry();
-                    
-                    // Calculate total vertices and indices
-                    let pipeTotalVertices = 0;
-                    let pipeTotalIndices = 0;
-                    
-                    geometries.forEach(geom => {
-                        pipeTotalVertices += geom.attributes.position.count;
-                        pipeTotalIndices += geom.index ? geom.index.count : geom.attributes.position.count;
-                    });
-                    
-                    // Create combined arrays
-                    const positions = new Float32Array(pipeTotalVertices * 3);
-                    const normals = new Float32Array(pipeTotalVertices * 3);
-                    const uvs = new Float32Array(pipeTotalVertices * 2);
-                    const indices = new Uint32Array(pipeTotalIndices);
-                    
-                    let vertexOffset = 0;
-                    let indexOffset = 0;
-                    let currentVertexCount = 0;
-                    
-                    // Merge each geometry
-                    geometries.forEach(geom => {
-                        const posArray = geom.attributes.position.array;
-                        const normArray = geom.attributes.normal.array;
-                        const uvArray = geom.attributes.uv.array;
-                        
-                        positions.set(posArray, vertexOffset);
-                        normals.set(normArray, vertexOffset);
-                        uvs.set(uvArray, vertexOffset * 2 / 3);
-                        
-                        // Handle indices
-                        if (geom.index) {
-                            const indexArray = geom.index.array;
-                            for (let i = 0; i < indexArray.length; i++) {
-                                indices[indexOffset + i] = indexArray[i] + currentVertexCount;
-                            }
-                            indexOffset += indexArray.length;
-                        } else {
-                            // Create indices for non-indexed geometry
-                            for (let i = 0; i < geom.attributes.position.count; i++) {
-                                indices[indexOffset + i] = currentVertexCount + i;
-                            }
-                            indexOffset += geom.attributes.position.count;
-                        }
-                        
-                        vertexOffset += posArray.length;
-                        currentVertexCount += geom.attributes.position.count;
-                    });
-                    
-                    pipeGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                    pipeGeometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
-                    pipeGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-                    pipeGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
-                    
-                    return { geometry: pipeGeometry };
+                    return { geometry: createPipeGeometry() };
+                case "pipe-elbow-45":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI/4, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 8, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
+                case "pipe-elbow-90":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI/2, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 12, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
+                case "pipe-elbow-180":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 16, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
                 case "arch":
                     // Use the better curve-180 geometry (improved version)
                     return { geometry: createArcGeometry({
@@ -2673,24 +2833,6 @@
                         radiusX: 6, radiusY: 6, radiusZ: 6,
                         segments: 16, clockwise: false
                     }) };
-                case "cube":
-                    return { geometry: new THREE.BoxGeometry(4, 4, 4) };
-                case "prism":
-                    return { geometry: new THREE.CylinderGeometry(3, 3, 6, 6) };
-                    
-                // Physics Affectors - Invisible/transparent zones that affect marble physics
-                case "water":
-                    return { 
-                        geometry: new THREE.BoxGeometry(8, 4, 8),
-                        isAffector: true,
-                        affectorType: 'water'
-                    };
-                case "zero-g":
-                    return { 
-                        geometry: new THREE.SphereGeometry(5, 16, 12),
-                        isAffector: true,
-                        affectorType: 'zero-g'
-                    };
                 case "cube":
                     return { geometry: new THREE.BoxGeometry(4, 4, 4) };
                 case "prism":
@@ -2778,348 +2920,13 @@
                         isBallSet: true,
                         isPlacementBall: true
                     };
-                case "wall":
-                    return { geometry: new THREE.BoxGeometry(w + 4, 6, 1)};
-                case "curve-180":
-                    return { geometry: createArcGeometry({ 
-                        angleY: Math.PI, 
-                        width: h, 
-                        height: w * 1.25 
-                    }) };
-                case "pipe-elbow-45":
-                    return { geometry: createArcGeometry({
-                        angleX: 0, angleY: Math.PI/4, angleZ: 0,
-                        radiusX: 4, radiusY: 4, radiusZ: 4,
-                        segments: 8, clockwise: false,
-                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
-                    }) };
-                case "pipe-elbow-90":
-                    return { geometry: createArcGeometry({
-                        angleX: 0, angleY: Math.PI/2, angleZ: 0,
-                        radiusX: 4, radiusY: 4, radiusZ: 4,
-                        segments: 12, clockwise: false,
-                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
-                    }) };
-                case "pipe-elbow-180":
-                    return { geometry: createArcGeometry({
-                        angleX: 0, angleY: Math.PI, angleZ: 0,
-                        radiusX: 4, radiusY: 4, radiusZ: 4,
-                        segments: 16, clockwise: false,
-                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
-                    }) };
+
                 case "bowl":
-                    // Create bowl with inner and outer surfaces
-                    const outerBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-                    const innerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-                    
-                    // Flip inner bowl normals and face winding order
-                    const innerNormals = innerBowl.attributes.normal;
-                    for (let i = 0; i < innerNormals.count; i++) {
-                        innerNormals.setX(i, -innerNormals.getX(i));
-                        innerNormals.setY(i, -innerNormals.getY(i));
-                        innerNormals.setZ(i, -innerNormals.getZ(i));
-                    }
-                    
-                    // Flip face winding order for inner bowl
-                    if (innerBowl.index) {
-                        const indices = innerBowl.index.array;
-                        for (let i = 0; i < indices.length; i += 3) {
-                            // Swap second and third vertices to flip triangle winding
-                            const temp = indices[i + 1];
-                            indices[i + 1] = indices[i + 2];
-                            indices[i + 2] = temp;
-                        }
-                        innerBowl.index.needsUpdate = true;
-                    }
-                    
-                    // Create rim (ring between inner and outer) - using pipe cap style
-                    const rimGeometry = new THREE.RingGeometry(2.5, 3, 16);
-                    rimGeometry.rotateX(-Math.PI/2); // Orient horizontally
-                    
-                    // Ensure proper face winding for rim visibility
-                    if (rimGeometry.index) {
-                        const indices = rimGeometry.index.array;
-                        for (let i = 0; i < indices.length; i += 3) {
-                            // Swap second and third vertices to flip triangle winding if needed
-                            const temp = indices[i + 1];
-                            indices[i + 1] = indices[i + 2];
-                            indices[i + 2] = temp;
-                        }
-                        rimGeometry.index.needsUpdate = true;
-                    }
-                    
-                    // Merge all bowl geometries
-                    const bowlGeometries = [outerBowl, innerBowl, rimGeometry];
-                    const bowlMergedGeometry = new THREE.BufferGeometry();
-                    
-                    // Calculate total vertices and indices for bowl
-                    let bowlTotalVertices = 0;
-                    let bowlTotalIndices = 0;
-                    bowlGeometries.forEach(geo => {
-                        bowlTotalVertices += geo.attributes.position.count;
-                        if (geo.index) bowlTotalIndices += geo.index.count;
-                    });
-                    
-                    // Create new attributes for bowl
-                    const bowlPositions = new Float32Array(bowlTotalVertices * 3);
-                    const bowlNormals = new Float32Array(bowlTotalVertices * 3);
-                    const bowlUvs = new Float32Array(bowlTotalVertices * 2);
-                    const bowlIndices = new Uint32Array(bowlTotalIndices);
-                    
-                    let bowlPosOffset = 0;
-                    let bowlNormalOffset = 0;
-                    let bowlUvOffset = 0;
-                    let bowlIndexOffset = 0;
-                    let bowlVertexOffset = 0;
-                    
-                    bowlGeometries.forEach(geo => {
-                        // Copy positions
-                        bowlPositions.set(geo.attributes.position.array, bowlPosOffset);
-                        bowlPosOffset += geo.attributes.position.array.length;
-                        
-                        // Copy normals
-                        if (geo.attributes.normal) {
-                            bowlNormals.set(geo.attributes.normal.array, bowlNormalOffset);
-                        }
-                        bowlNormalOffset += geo.attributes.position.count * 3;
-                        
-                        // Copy UVs
-                        if (geo.attributes.uv) {
-                            bowlUvs.set(geo.attributes.uv.array, bowlUvOffset);
-                        }
-                        bowlUvOffset += geo.attributes.position.count * 2;
-                        
-                        // Copy indices with vertex offset
-                        if (geo.index) {
-                            const geoIndices = geo.index.array;
-                            for (let i = 0; i < geoIndices.length; i++) {
-                                bowlIndices[bowlIndexOffset + i] = geoIndices[i] + bowlVertexOffset;
-                            }
-                            bowlIndexOffset += geoIndices.length;
-                        }
-                        
-                        bowlVertexOffset += geo.attributes.position.count;
-                    });
-                    
-                    bowlMergedGeometry.setAttribute('position', new THREE.BufferAttribute(bowlPositions, 3));
-                    bowlMergedGeometry.setAttribute('normal', new THREE.BufferAttribute(bowlNormals, 3));
-                    bowlMergedGeometry.setAttribute('uv', new THREE.BufferAttribute(bowlUvs, 2));
-                    bowlMergedGeometry.setIndex(new THREE.BufferAttribute(bowlIndices, 1));
-                    
-                    return { geometry: bowlMergedGeometry };
+                    return { geometry: createBowlGeometry() };
                 case "basin":
-                    // Create basin like a sink - bowl with drain hole at the bottom center
-                    const basinOuterBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-                    
-                    // Create inner bowl with drain hole - use ring instead of full sphere
-                    const basinInnerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-                    
-                    // Remove center bottom vertices to create drain hole in inner bowl
-                    const innerPositions = basinInnerBowl.attributes.position.array;
-                    const innerNormals = basinInnerBowl.attributes.normal.array;
-                    const innerIndices = basinInnerBowl.index.array;
-                    
-                    // Find vertices near the bottom center (drain area) and mark for removal
-                    const drainRadius = 0.6; // Size of drain hole
-                    const verticesToKeep = [];
-                    const newIndexMap = new Map();
-                    
-                    for (let i = 0; i < innerPositions.length; i += 3) {
-                        const x = innerPositions[i];
-                        const y = innerPositions[i + 1];
-                        const z = innerPositions[i + 2];
-                        
-                        // Check if vertex is in drain area (bottom center)
-                        const distanceFromCenter = Math.sqrt(x * x + z * z);
-                        const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
-                        
-                        if (!isInDrainArea) {
-                            newIndexMap.set(i / 3, verticesToKeep.length);
-                            verticesToKeep.push(x, y, z);
-                        }
-                    }
-                    
-                    // Rebuild inner bowl geometry without drain area vertices
-                    const newInnerPositions = new Float32Array(verticesToKeep);
-                    const newInnerNormals = new Float32Array(verticesToKeep.length);
-                    const newInnerIndices = [];
-                    
-                    // Copy normals for kept vertices and flip them
-                    let normalIndex = 0;
-                    for (let i = 0; i < innerPositions.length; i += 3) {
-                        const x = innerPositions[i];
-                        const y = innerPositions[i + 1];
-                        const z = innerPositions[i + 2];
-                        const distanceFromCenter = Math.sqrt(x * x + z * z);
-                        const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
-                        
-                        if (!isInDrainArea) {
-                            // Flip normals for inner surface
-                            newInnerNormals[normalIndex] = -innerNormals[i];
-                            newInnerNormals[normalIndex + 1] = -innerNormals[i + 1];
-                            newInnerNormals[normalIndex + 2] = -innerNormals[i + 2];
-                            normalIndex += 3;
-                        }
-                    }
-                    
-                    // Rebuild indices, skipping triangles that reference removed vertices
-                    for (let i = 0; i < innerIndices.length; i += 3) {
-                        const v1 = innerIndices[i];
-                        const v2 = innerIndices[i + 1];
-                        const v3 = innerIndices[i + 2];
-                        
-                        if (newIndexMap.has(v1) && newIndexMap.has(v2) && newIndexMap.has(v3)) {
-                            // Flip triangle winding for inner surface
-                            newInnerIndices.push(newIndexMap.get(v1));
-                            newInnerIndices.push(newIndexMap.get(v3)); // Swapped
-                            newInnerIndices.push(newIndexMap.get(v2)); // Swapped
-                        }
-                    }
-                    
-                    // Create modified inner bowl geometry
-                    const modifiedInnerBowl = new THREE.BufferGeometry();
-                    modifiedInnerBowl.setAttribute('position', new THREE.BufferAttribute(newInnerPositions, 3));
-                    modifiedInnerBowl.setAttribute('normal', new THREE.BufferAttribute(newInnerNormals, 3));
-                    modifiedInnerBowl.setIndex(new THREE.BufferAttribute(new Uint32Array(newInnerIndices), 1));
-                    
-                    // Create rim (solid ring from inner edge to outer edge)
-                    const basinRimGeometry = new THREE.RingGeometry(2.5, 3, 16);
-                    basinRimGeometry.rotateX(-Math.PI/2); // Orient horizontally
-                    
-                    // Flip rim face winding
-                    if (basinRimGeometry.index) {
-                        const indices = basinRimGeometry.index.array;
-                        for (let i = 0; i < indices.length; i += 3) {
-                            const temp = indices[i + 1];
-                            indices[i + 1] = indices[i + 2];
-                            indices[i + 2] = temp;
-                        }
-                        basinRimGeometry.index.needsUpdate = true;
-                    }
-                    
-                    // Merge all basin geometries
-                    const basinGeometries = [basinOuterBowl, modifiedInnerBowl, basinRimGeometry];
-                    const basinMergedGeometry = new THREE.BufferGeometry();
-                    
-                    let basinTotalVertices = 0;
-                    let basinTotalIndices = 0;
-                    
-                    basinGeometries.forEach(geo => {
-                        basinTotalVertices += geo.attributes.position.count;
-                        basinTotalIndices += geo.index ? geo.index.count : 0;
-                    });
-                    
-                    const basinPositions = new Float32Array(basinTotalVertices * 3);
-                    const basinNormals = new Float32Array(basinTotalVertices * 3);
-                    const basinUvs = new Float32Array(basinTotalVertices * 2);
-                    const basinIndices = new Uint32Array(basinTotalIndices);
-                    
-                    let basinVertexOffset = 0;
-                    let basinIndexOffset = 0;
-                    
-                    basinGeometries.forEach(geo => {
-                        const positions = geo.attributes.position.array;
-                        const normals = geo.attributes.normal.array;
-                        const uvs = geo.attributes.uv ? geo.attributes.uv.array : new Float32Array(positions.length / 3 * 2);
-                        
-                        basinPositions.set(positions, basinVertexOffset * 3);
-                        basinNormals.set(normals, basinVertexOffset * 3);
-                        basinUvs.set(uvs, basinVertexOffset * 2);
-                        
-                        if (geo.index) {
-                            const indices = geo.index.array;
-                            for (let i = 0; i < indices.length; i++) {
-                                basinIndices[basinIndexOffset + i] = indices[i] + basinVertexOffset;
-                            }
-                            basinIndexOffset += indices.length;
-                        }
-                        
-                        basinVertexOffset += geo.attributes.position.count;
-                    });
-                    
-                    basinMergedGeometry.setAttribute('position', new THREE.BufferAttribute(basinPositions, 3));
-                    basinMergedGeometry.setAttribute('normal', new THREE.BufferAttribute(basinNormals, 3));
-                    basinMergedGeometry.setAttribute('uv', new THREE.BufferAttribute(basinUvs, 2));
-                    basinMergedGeometry.setIndex(new THREE.BufferAttribute(basinIndices, 1));
-                    
-                    return { geometry: basinMergedGeometry };
+                    return { geometry: createBasinGeometry() };
                 case "half-sphere":
-                    // Create half sphere with flat bottom face
-                    const halfSphereGeometry = new THREE.SphereGeometry(2, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-                    const bottomFaceGeometry = new THREE.CircleGeometry(2, 16);
-                    bottomFaceGeometry.rotateX(-Math.PI/2);
-                    
-                    // Flip bottom face to ensure correct orientation (face upward)
-                    if (bottomFaceGeometry.index) {
-                        const indices = bottomFaceGeometry.index.array;
-                        for (let i = 0; i < indices.length; i += 3) {
-                            // Swap second and third vertices to flip triangle winding
-                            const temp = indices[i + 1];
-                            indices[i + 1] = indices[i + 2];
-                            indices[i + 2] = temp;
-                        }
-                        bottomFaceGeometry.index.needsUpdate = true;
-                    }
-                    
-                    // Merge geometries
-                    const halfSphereGeometries = [halfSphereGeometry, bottomFaceGeometry];
-                    const mergedGeometry = new THREE.BufferGeometry();
-                    
-                    // Calculate total vertices and indices
-                    let halfSphereTotalVertices = 0;
-                    let halfSphereTotalIndices = 0;
-                    halfSphereGeometries.forEach(geo => {
-                        halfSphereTotalVertices += geo.attributes.position.count;
-                        if (geo.index) halfSphereTotalIndices += geo.index.count;
-                    });
-                    
-                    // Create new attributes
-                    const halfSpherePositions = new Float32Array(halfSphereTotalVertices * 3);
-                    const halfSphereNormals = new Float32Array(halfSphereTotalVertices * 3);
-                    const halfSphereUvs = new Float32Array(halfSphereTotalVertices * 2);
-                    const halfSphereIndices = new Uint32Array(halfSphereTotalIndices);
-                    
-                    let halfSpherePosOffset = 0;
-                    let halfSphereNormalOffset = 0;
-                    let halfSphereUvOffset = 0;
-                    let halfSphereIndexOffset = 0;
-                    let halfSphereVertexOffset = 0;
-                    
-                    halfSphereGeometries.forEach(geo => {
-                        // Copy positions
-                        halfSpherePositions.set(geo.attributes.position.array, halfSpherePosOffset);
-                        halfSpherePosOffset += geo.attributes.position.array.length;
-                        
-                        // Copy normals
-                        if (geo.attributes.normal) {
-                            halfSphereNormals.set(geo.attributes.normal.array, halfSphereNormalOffset);
-                        }
-                        halfSphereNormalOffset += geo.attributes.position.count * 3;
-                        
-                        // Copy UVs
-                        if (geo.attributes.uv) {
-                            halfSphereUvs.set(geo.attributes.uv.array, halfSphereUvOffset);
-                        }
-                        halfSphereUvOffset += geo.attributes.position.count * 2;
-                        
-                        // Copy indices with vertex offset
-                        if (geo.index) {
-                            const geoIndices = geo.index.array;
-                            for (let i = 0; i < geoIndices.length; i++) {
-                                halfSphereIndices[halfSphereIndexOffset + i] = geoIndices[i] + halfSphereVertexOffset;
-                            }
-                            halfSphereIndexOffset += geoIndices.length;
-                        }
-                        
-                        halfSphereVertexOffset += geo.attributes.position.count;
-                    });
-                    
-                    mergedGeometry.setAttribute('position', new THREE.BufferAttribute(halfSpherePositions, 3));
-                    mergedGeometry.setAttribute('normal', new THREE.BufferAttribute(halfSphereNormals, 3));
-                    mergedGeometry.setAttribute('uv', new THREE.BufferAttribute(halfSphereUvs, 2));
-                    mergedGeometry.setIndex(new THREE.BufferAttribute(halfSphereIndices, 1));
-                    
-                    return { geometry: mergedGeometry };
+                    return { geometry: createHalfSphereGeometry() };
                 case "wedge":
                     const wedgeShape = new THREE.Shape();
                     wedgeShape.moveTo(-2, 0);
