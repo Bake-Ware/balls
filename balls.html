@@ -4539,7 +4539,7 @@
                             if (currentMode === 'translate') {
                                 transformControls.object.position.x -= stepSize;
                             } else if (currentMode === 'rotate') {
-                                transformControls.object.rotation.x -= rotationStep;
+                                transformControls.object.rotation.y -= rotationStep; // Yaw left
                             } else if (currentMode === 'scale') {
                                 transformControls.object.scale.x = Math.max(0.1, transformControls.object.scale.x - scaleStep);
                             }
@@ -4550,18 +4550,18 @@
                             if (currentMode === 'translate') {
                                 transformControls.object.position.x += stepSize;
                             } else if (currentMode === 'rotate') {
-                                transformControls.object.rotation.x += rotationStep;
+                                transformControls.object.rotation.y += rotationStep; // Yaw right
                             } else if (currentMode === 'scale') {
                                 transformControls.object.scale.x += scaleStep;
                             }
                             changed = true;
                             break;
-                        case ' ': // Space key - now Y axis
+                        case ' ': // Space key - Y axis
                             e.preventDefault();
                             if (currentMode === 'translate') {
                                 transformControls.object.position.y += stepSize;
                             } else if (currentMode === 'rotate') {
-                                transformControls.object.rotation.y += rotationStep;
+                                transformControls.object.rotation.z += rotationStep; // Roll clockwise
                             } else if (currentMode === 'scale') {
                                 transformControls.object.scale.y += scaleStep;
                             }
@@ -4573,7 +4573,7 @@
                             if (currentMode === 'translate') {
                                 transformControls.object.position.y -= stepSize;
                             } else if (currentMode === 'rotate') {
-                                transformControls.object.rotation.y -= rotationStep;
+                                transformControls.object.rotation.z -= rotationStep; // Roll counter-clockwise
                             } else if (currentMode === 'scale') {
                                 transformControls.object.scale.y = Math.max(0.1, transformControls.object.scale.y - scaleStep);
                             }
@@ -4584,7 +4584,7 @@
                             if (currentMode === 'translate') {
                                 transformControls.object.position.z += stepSize;
                             } else if (currentMode === 'rotate') {
-                                transformControls.object.rotation.z += rotationStep;
+                                transformControls.object.rotation.x -= rotationStep; // Pitch up
                             } else if (currentMode === 'scale') {
                                 transformControls.object.scale.z += scaleStep;
                             }
@@ -4595,7 +4595,7 @@
                             if (currentMode === 'translate') {
                                 transformControls.object.position.z -= stepSize;
                             } else if (currentMode === 'rotate') {
-                                transformControls.object.rotation.z -= rotationStep;
+                                transformControls.object.rotation.x += rotationStep; // Pitch down
                             } else if (currentMode === 'scale') {
                                 transformControls.object.scale.z = Math.max(0.1, transformControls.object.scale.z - scaleStep);
                             }
