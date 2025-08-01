@@ -1385,6 +1385,11 @@
             transformControls.enabled = true;
             transformControls.visible = true;
             
+            // Set stepwise manipulation as default (shift for fine movement)
+            transformControls.translationSnap = 1;
+            transformControls.rotationSnap = THREE.MathUtils.degToRad(15);
+            transformControls.scaleSnap = 0.1;
+            
             scene.add(transformControls);
 
             world = new CANNON.World({ gravity: new CANNON.Vec3(0, -30, 0) });
@@ -2622,85 +2627,6 @@
             return mergeGeometries([outerBowl, innerBowl, rimGeometry]);
         }
 
-        function createBasinGeometry() {
-            const basinOuterBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-            const basinInnerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-            
-            const innerPositions = basinInnerBowl.attributes.position.array;
-            const innerNormals = basinInnerBowl.attributes.normal.array;
-            const innerIndices = basinInnerBowl.index.array;
-            
-            const drainRadius = 0.6;
-            const verticesToKeep = [];
-            const newIndexMap = new Map();
-            
-            for (let i = 0; i < innerPositions.length; i += 3) {
-                const x = innerPositions[i];
-                const y = innerPositions[i + 1];
-                const z = innerPositions[i + 2];
-                
-                const distanceFromCenter = Math.sqrt(x * x + z * z);
-                const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
-                
-                if (!isInDrainArea) {
-                    newIndexMap.set(i / 3, verticesToKeep.length);
-                    verticesToKeep.push(x, y, z);
-                }
-            }
-            
-            const newInnerPositions = new Float32Array(verticesToKeep);
-            const newInnerNormals = new Float32Array(verticesToKeep.length);
-            const newInnerIndices = [];
-            
-            let normalIndex = 0;
-            for (let i = 0; i < innerPositions.length; i += 3) {
-                const x = innerPositions[i];
-                const y = innerPositions[i + 1];
-                const z = innerPositions[i + 2];
-                const distanceFromCenter = Math.sqrt(x * x + z * z);
-                const isInDrainArea = y < 0.3 && distanceFromCenter < drainRadius;
-                
-                if (!isInDrainArea) {
-                    newInnerNormals[normalIndex] = -innerNormals[i];
-                    newInnerNormals[normalIndex + 1] = -innerNormals[i + 1];
-                    newInnerNormals[normalIndex + 2] = -innerNormals[i + 2];
-                    normalIndex += 3;
-                }
-            }
-            
-            for (let i = 0; i < innerIndices.length; i += 3) {
-                const v1 = innerIndices[i];
-                const v2 = innerIndices[i + 1];
-                const v3 = innerIndices[i + 2];
-                
-                if (newIndexMap.has(v1) && newIndexMap.has(v2) && newIndexMap.has(v3)) {
-                    newInnerIndices.push(newIndexMap.get(v1));
-                    newInnerIndices.push(newIndexMap.get(v3));
-                    newInnerIndices.push(newIndexMap.get(v2));
-                }
-            }
-            
-            const modifiedInnerBowl = new THREE.BufferGeometry();
-            modifiedInnerBowl.setAttribute('position', new THREE.BufferAttribute(newInnerPositions, 3));
-            modifiedInnerBowl.setAttribute('normal', new THREE.BufferAttribute(newInnerNormals, 3));
-            modifiedInnerBowl.setIndex(new THREE.BufferAttribute(new Uint32Array(newInnerIndices), 1));
-            
-            const basinRimGeometry = new THREE.RingGeometry(2.5, 3, 16);
-            basinRimGeometry.rotateX(-Math.PI/2);
-            
-            if (basinRimGeometry.index) {
-                const indices = basinRimGeometry.index.array;
-                for (let i = 0; i < indices.length; i += 3) {
-                    const temp = indices[i + 1];
-                    indices[i + 1] = indices[i + 2];
-                    indices[i + 2] = temp;
-                }
-                basinRimGeometry.index.needsUpdate = true;
-            }
-            
-            return mergeGeometries([basinOuterBowl, modifiedInnerBowl, basinRimGeometry]);
-        }
-
         function createHalfSphereGeometry() {
             const halfSphereGeometry = new THREE.SphereGeometry(2, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
             const bottomFaceGeometry = new THREE.CircleGeometry(2, 16);
@@ -2923,8 +2849,6 @@
 
                 case "bowl":
                     return { geometry: createBowlGeometry() };
-                case "basin":
-                    return { geometry: createBasinGeometry() };
                 case "half-sphere":
                     return { geometry: createHalfSphereGeometry() };
                 case "wedge":
@@ -3369,7 +3293,12 @@
             }
             
             if (!transformControls.enabled) return;
-            if (transformControls.dragging || isDragging) return;
+            
+            // Don't process selection if we were dragging (to avoid deselecting during drag operations)
+            if (transformControls.dragging || isDragging) {
+                isDragging = false; // Reset drag state
+                return;
+            }
             
             // Only handle selection if this was a click (not a drag)
             // Adjust coordinates for the new layout (toolbar + sidebar offset)
@@ -3407,16 +3336,20 @@
                         updateCameraTargetForMultiSelect();
                         updateSelectionUI();
                     } else {
-                        // Single select mode
-                        clearAllSelections();
-                        selectedPieces = [piece];
-                        highlightPiece(piece, false);
-                        transformControls.attach(object);
-                        updateCameraTarget(piece);
-                        updateSelectionUI();
+                        // Single select mode - only change selection if clicking on a different object
+                        const currentPiece = transformControls.object ? trackPieces.find(p => p.group === transformControls.object) : null;
+                        if (currentPiece !== piece) {
+                            clearAllSelections();
+                            selectedPieces = [piece];
+                            highlightPiece(piece, false);
+                            transformControls.attach(object);
+                            updateCameraTarget(piece);
+                            updateSelectionUI();
+                        }
                     }
                 }
             } else {
+                // Only deselect on click in empty space (not during drag operations)
                 if (!event.ctrlKey && !event.metaKey) {
                     clearAllSelections();
                     transformControls.detach();
@@ -3561,11 +3494,49 @@
             }
         }
 
+        function getBaseDimensions(pieceType) {
+            // Return base dimensions [width, height, depth] for each piece type
+            const w = 8, l = 10, h = 1.5, t = 0.5;
+            
+            switch(pieceType) {
+                case "straight": return [w, h, l];
+                case "start": return [w + 2, h, l];
+                case "end": return [w + 2, h, l];
+                case "curve-45": case "curve-90": case "curve-180": return [w*2, h, w*2];
+                case "wall": return [w + 4, 6, 1];
+                case "wall-45": case "wall-90": case "wall-180": return [w*2, 6, w*2];
+                case "ramp": return [w, 4, l];
+                case "pipe": return [3, 3, l];
+                case "pipe-elbow-45": case "pipe-elbow-90": case "pipe-elbow-180": return [8, 8, 8];
+                case "arch": return [16, 16, 16];
+                case "ball": return [3, 3, 3];
+                case "bowl": return [6, 3, 6];
+                case "half-sphere": return [4, 2, 4];
+                case "wedge": return [4, 2, 4];
+                case "torus": return [4.8, 1.6, 4.8];
+                case "cone": return [4, 4, 4];
+                case "pyramid": return [4, 4, 4];
+                case "cylinder": return [4, 6, 4];
+                case "cube": return [4, 4, 4];
+                case "prism": return [6, 6, 6];
+                case "triangle": return [6, h, l];
+                case "water": case "zero-g": case "moon-g": case "acceler": case "brakes": case "ice": return [6, 0.2, 6];
+                case "spot-light": case "point-light": case "strobe-light": return [1, 2, 1];
+                case "directional-light": return [0.6, 2, 0.6];
+                case "particle-gen": return [1, 1, 1];
+                case "camera-set": return [4, 6, 4];
+                case "ball-set": return [0.8, 0.8, 0.8];
+                case "custom": return [2, 2, 2]; // Default for custom pieces
+                default: return [2, 2, 2];
+            }
+        }
+
         function updateSelectionUI() {
             const selectedCount = document.getElementById('selected-count');
             const selectedCoordinates = document.getElementById('selected-coordinates');
             const selectedRotation = document.getElementById('selected-rotation');
             const selectedScale = document.getElementById('selected-scale');
+            const selectedDimensions = document.getElementById('selected-dimensions');
             
             if (selectedCount) {
                 selectedCount.textContent = `Selected: ${selectedPieces.length} piece${selectedPieces.length === 1 ? '' : 's'}`;
@@ -3590,6 +3561,15 @@
                 }
                 if (selectedScale) {
                     selectedScale.textContent = `Scale: x:${scale.x.toFixed(2)}, y:${scale.y.toFixed(2)}, z:${scale.z.toFixed(2)}`;
+                }
+                
+                // Calculate and display actual dimensions
+                if (selectedDimensions) {
+                    const baseDims = getBaseDimensions(piece.userData.pieceType);
+                    const actualWidth = (baseDims[0] * scale.x).toFixed(1);
+                    const actualHeight = (baseDims[1] * scale.y).toFixed(1);
+                    const actualDepth = (baseDims[2] * scale.z).toFixed(1);
+                    selectedDimensions.textContent = `Dimensions: ${actualWidth} × ${actualHeight} × ${actualDepth} units`;
                 }
             } else if (selectedPieces.length > 1) {
                 // Calculate center and average values for multiple selection
@@ -3629,6 +3609,7 @@
                 if (selectedCoordinates) selectedCoordinates.textContent = 'Position: --';
                 if (selectedRotation) selectedRotation.textContent = 'Rotation: --';
                 if (selectedScale) selectedScale.textContent = 'Scale: --';
+                if (selectedDimensions) selectedDimensions.textContent = 'Dimensions: --';
             }
         }
 
@@ -4544,20 +4525,108 @@
                     }
                 }
                 
-                // Handle shift key for snapping
-                if (e.key === 'Shift') {
-                    transformControls.translationSnap = 1;
-                    transformControls.rotationSnap = THREE.MathUtils.degToRad(15);
-                    transformControls.scaleSnap = 0.1;
+                // Handle object manipulation hotkeys (require selected object)
+                if (transformControls.enabled && transformControls.object && !isRaceMode) {
+                    const currentMode = transformControls.getMode();
+                    let stepSize = e.shiftKey ? 0.1 : 1; // Fine movement with shift, step movement otherwise
+                    let rotationStep = e.shiftKey ? Math.PI / 180 : Math.PI / 12; // 1° or 15° steps
+                    let scaleStep = e.shiftKey ? 0.01 : 0.1; // Fine or coarse scaling
+                    let changed = false;
+                    
+                    switch (e.key) {
+                        case 'ArrowLeft':
+                            e.preventDefault();
+                            if (currentMode === 'translate') {
+                                transformControls.object.position.x -= stepSize;
+                            } else if (currentMode === 'rotate') {
+                                transformControls.object.rotation.x -= rotationStep;
+                            } else if (currentMode === 'scale') {
+                                transformControls.object.scale.x = Math.max(0.1, transformControls.object.scale.x - scaleStep);
+                            }
+                            changed = true;
+                            break;
+                        case 'ArrowRight':
+                            e.preventDefault();
+                            if (currentMode === 'translate') {
+                                transformControls.object.position.x += stepSize;
+                            } else if (currentMode === 'rotate') {
+                                transformControls.object.rotation.x += rotationStep;
+                            } else if (currentMode === 'scale') {
+                                transformControls.object.scale.x += scaleStep;
+                            }
+                            changed = true;
+                            break;
+                        case ' ': // Space key - now Y axis
+                            e.preventDefault();
+                            if (currentMode === 'translate') {
+                                transformControls.object.position.y += stepSize;
+                            } else if (currentMode === 'rotate') {
+                                transformControls.object.rotation.y += rotationStep;
+                            } else if (currentMode === 'scale') {
+                                transformControls.object.scale.y += scaleStep;
+                            }
+                            changed = true;
+                            break;
+                        case 'c':
+                        case 'C':
+                            e.preventDefault();
+                            if (currentMode === 'translate') {
+                                transformControls.object.position.y -= stepSize;
+                            } else if (currentMode === 'rotate') {
+                                transformControls.object.rotation.y -= rotationStep;
+                            } else if (currentMode === 'scale') {
+                                transformControls.object.scale.y = Math.max(0.1, transformControls.object.scale.y - scaleStep);
+                            }
+                            changed = true;
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            if (currentMode === 'translate') {
+                                transformControls.object.position.z += stepSize;
+                            } else if (currentMode === 'rotate') {
+                                transformControls.object.rotation.z += rotationStep;
+                            } else if (currentMode === 'scale') {
+                                transformControls.object.scale.z += scaleStep;
+                            }
+                            changed = true;
+                            break;
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            if (currentMode === 'translate') {
+                                transformControls.object.position.z -= stepSize;
+                            } else if (currentMode === 'rotate') {
+                                transformControls.object.rotation.z -= rotationStep;
+                            } else if (currentMode === 'scale') {
+                                transformControls.object.scale.z = Math.max(0.1, transformControls.object.scale.z - scaleStep);
+                            }
+                            changed = true;
+                            break;
+                    }
+                    
+                    if (changed) {
+                        // Update physics for the moved piece
+                        const piece = trackPieces.find(p => p.group === transformControls.object);
+                        if (piece) {
+                            updatePhysicsForPiece(piece);
+                            updateSelectionUI(); // Update the position/rotation/scale display
+                        }
+                    }
                 }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                // Disable snapping when shift is released
+                
+                // Handle shift key for fine movement (disable snapping)
                 if (e.key === 'Shift') {
                     transformControls.translationSnap = null;
                     transformControls.rotationSnap = null;
                     transformControls.scaleSnap = null;
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                // Re-enable snapping when shift is released
+                if (e.key === 'Shift') {
+                    transformControls.translationSnap = 1;
+                    transformControls.rotationSnap = THREE.MathUtils.degToRad(15);
+                    transformControls.scaleSnap = 0.1;
                 }
             });
             
@@ -5901,7 +5970,6 @@
                     pieces: {
                         'ball': { icon: '⚽', name: 'Sphere' },
                         'bowl': { icon: '🥣', name: 'Bowl' },
-                        'basin': { icon: '🚿', name: 'Basin' },
                         'half-sphere': { icon: '🌗', name: 'Half-Sphere' },
                         'wedge': { icon: '📐', name: 'Wedge' },
                         'torus': { icon: '🍩', name: 'Torus' },
@@ -9178,7 +9246,8 @@
         <div id="selected-count" style="margin-bottom: 5px; font-weight: bold;">Selected: 0 pieces</div>
         <div id="selected-coordinates" style="color: #ccc; margin-bottom: 3px;">Position: --</div>
         <div id="selected-rotation" style="color: #ccc; margin-bottom: 3px;">Rotation: --</div>
-        <div id="selected-scale" style="color: #ccc;">Scale: --</div>
+        <div id="selected-scale" style="color: #ccc; margin-bottom: 3px;">Scale: --</div>
+        <div id="selected-dimensions" style="color: #88ff88; font-weight: bold;">Dimensions: --</div>
     </div>
 
 </body>
