@@ -8,6 +8,9 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 
 ## 🎮 Features
 
+![Interface Overview](images/add_objects.png)
+*Modern interface showing hierarchical object tree, toolbar, and 3D workspace with various track pieces and obstacles*
+
 ### 🏗️ Advanced Track Editor
 - **🎛️ Modern Toolbar Interface**: Streamlined top toolbar with icon-based buttons and tooltips
 - **📋 Tabbed Sidebar**: Left sidebar with "Objects" and "Add Pieces" tabs for better organization
@@ -20,14 +23,30 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **📋 Three-Level Object Tree**: Hierarchical organization (Main Type → Specific Type → Instances) with collapsible categories
 - **🔀 Collapsible Sidebar**: Toggle sidebar visibility to maximize workspace with smooth animations
 - **Multi-Selection**: Ctrl+click to select multiple pieces and transform them together
+
+![Multi-Selection](images/multiselect.png)
+*Multi-selection system showing multiple objects selected with grouped transform controls*
 - **🔄 Smart Duplication**: Duplicate button + Ctrl+drag to copy while moving
 - **📦 Blueprint Export**: Export selected pieces as merged OBJ files for sharing track sections
 - **Material Editor**: Customize color, transparency, metalness, roughness, glow effects, and textures
 - **Custom Textures**: Upload your own textures with base64 encoding for portability
-- **Transform Controls**: Move, rotate, and scale pieces with W/E/R hotkeys
-- **Snap to Grid**: Hold Shift while transforming for precise alignment
-- **ViewCube Navigation**: 3D orientation cube for quick orthographic view switching (Front, Back, Left, Right, Top, Bottom)
+- **🎯 Advanced Transform Controls**: Move, rotate, and scale pieces with W/E/R hotkeys
+- **⚡ Stepwise Manipulation**: 1-unit step movement by default, hold Shift for 0.1-unit precision
+- **⌨️ Keyboard Object Control**: Arrow keys, Space/C for precise object positioning in any transform mode
+  - **Translate Mode**: ←/→ (X-axis), Space/C (Y-axis), ↑/↓ (Z-axis)
+  - **Rotate Mode**: ←/→ (Yaw), Space/C (Roll), ↑/↓ (Pitch) 
+  - **Scale Mode**: ←/→ (Width), Space/C (Height), ↑/↓ (Depth)
+- **🖱️ Right-Click Context Menu**: Professional context menu with transform modes, properties, duplicate, delete, undo/redo
+
+![Right-Click Menu](images/right_click.png)
+*Professional right-click context menu with transform modes, object properties, and editing options*
+- **📊 Real-Time Dimensions Display**: Live dimensions readout showing actual object size in units
+- **🎯 Smart Object Selection**: Improved selection behavior - no accidental deselection during drag operations
+- **ViewCube Navigation**: 3D orientation cube with rotation arrows for quick orthographic view switching
 - **Real-time Orientation**: ViewCube reflects current camera position with smooth transitions
+
+![Transform Controls](images/gadgets.png)
+*Advanced transform controls showing translate, rotate, and scale modes with precise object manipulation*
 
 ### 🖌️ Surface Painting System
 - **🎨 Face-Level Painting**: Click individual faces on any 3D object to paint them with custom colors
@@ -43,12 +62,18 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Procedural Textures**: Apply polka dots, stripes, marble patterns, or upload custom textures to individual faces
 - **🧽 Selective Clearing**: Clear all face paint from selected objects or start fresh anytime
 - **Material Preservation**: Original object materials are preserved and can be restored
+
+![Face Painting](images/paint.png)
+*Surface painting system showing individual face painting with custom colors and materials on a curved track piece*
 - **Multi-Object Support**: Paint faces across different object types (track pieces, obstacles, custom models)
 - **🎭 Creative Customization**: Create unique artistic designs, racing stripes, team colors, or decorative patterns
 - **Precision Control**: Crosshair cursor for accurate face selection and painting
 - **Undo Functionality**: Clear all paint button to reset objects to original appearance
 
 ### ⚽ Ball Maker & Advanced Placement System
+
+![Ball Maker](images/ball_maker.png)
+*Ball Maker interface showing complete marble customization with color, materials, glow effects, and texture options*
 - **Complete Customization**: Color, metalness, roughness, glow intensity, glow color
 - **Procedural Textures**: Polka dots, stripes, marble patterns
 - **Ball Roster**: Manage race participants with visual previews
@@ -82,6 +107,9 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Smart Reset**: Camera set control automatically resets when users manually change camera modes
 
 ### 📋 Advanced Object Management System
+
+![Object Tree](images/object_tree.png)
+*Hierarchical object management system showing three-level organization with expandable categories and instance management*
 - **📁 Three-Level Hierarchy**: Main Type → Specific Type → Individual Instances
   - **Track Pieces**: Start, straight, curve, end, pipe, half-pipe, quarter-bowl, ball-set
   - **Obstacles**: Ball, pyramid, cylinder, cube, prism
@@ -120,6 +148,18 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Speed Control**: Adjustable playback speed for perfect timing
 - **Multi-point Paths**: Create complex movement sequences with multiple keyframes
 
+### 🔧 Advanced Bend Tool System
+
+![Bend Tool](images/bend_tool.png)
+*Advanced bend tool system showing right-side panel interface for geometric deformation of track pieces*
+- **🌀 Geometric Deformation**: Bend track pieces and objects with precise mathematical control
+- **🎛️ Right-Side Panel**: Professional slide-out panel design matching other tool interfaces
+- **📐 Multi-Axis Bending**: Bend along X, Y, or Z axes with real-time preview
+- **🎯 Adjustable Parameters**: Bend angle, center point, and falloff control for perfect curves
+- **⚡ Live Updates**: Real-time physics and visual updates during bend operations
+- **🔄 Reset Functionality**: Instantly restore original geometry when needed
+- **⌨️ Quick Access**: B key shortcut or right-click context menu activation
+
 ### 🌌 Environment & Lighting System
 - **Skybox Selector**: Procedural skyboxes (Sunset, Ocean, Space, Dawn)
 - **Custom Upload**: Upload 360° panoramic images
@@ -132,6 +172,9 @@ A complete 3D marble race game and track editor built with Three.js and Cannon.j
 - **Save Integration**: Skyboxes, lighting, and particle settings saved with track files
 
 ### 🏆 Tournament & Race Features
+
+![Tournament Mode](images/tournament.png)
+*Tournament mode interface showing multi-track management, marble roster, and competitive scoring system*
 - **Tournament Mode**: Multi-track tournaments with automatic progression
 - **Individual Track Loading**: Build tournaments by loading tracks one at a time
 - **Comprehensive Scoring**: 3 points for 1st, 2 points for 2nd, 1 point for 3rd
@@ -294,13 +337,22 @@ balls/
 - **Left Sidebar Tabs**: Switch between "Objects" tree and "Add Pieces" selector
 - **Sidebar Toggle**: Click ◀/▶ button to collapse/expand sidebar
 - **Mouse**: Click to select pieces (3D view or Object Tree)
+- **Right-Click**: Context menu with transform modes, properties, duplicate, delete, undo/redo
 - **Ctrl+Click**: Multi-select pieces (3D view or Object Tree)
 - **Double-Click**: Rename pieces in Object Tree
 - **Ctrl+Drag**: Duplicate and move copies of selected pieces
-- **Shift+Drag**: Grid-snapped movement for precise alignment
-- **W/E/R**: Switch transform modes (translate/rotate/scale) or use toolbar 🎯 button
+- **Transform Modes**: W (Move), E (Rotate), R (Scale) or use toolbar 🎯 button
+- **B Key**: Toggle Bend Tool mode for geometric deformation
 - **Del**: Delete selected pieces or use toolbar 🗑️ button
-- **Mouse Drag**: Transform selected pieces
+
+#### ⌨️ **Keyboard Object Manipulation** (requires selected object):
+- **Default Movement**: 1-unit steps (hold Shift for 0.1-unit precision)
+- **Translate Mode**: ←/→ (X-axis), Space/C (Y-axis), ↑/↓ (Z-axis)
+- **Rotate Mode**: ←/→ (Yaw), Space/C (Roll), ↑/↓ (Pitch) with 15°/1° steps
+- **Scale Mode**: ←/→ (Width), Space/C (Height), ↑/↓ (Depth) with 0.1/0.01 steps
+
+#### 🖱️ **Mouse Controls**:
+- **Mouse Drag**: Transform selected pieces (with smart selection - no accidental deselection)
 - **Middle Mouse**: Pan camera
 - **Scroll**: Zoom camera
 - **Tooltips**: Hover over toolbar buttons for descriptions
