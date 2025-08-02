@@ -2719,7 +2719,7 @@
         function createPipeGeometry() {
             const outerRadius = 1.5;
             const innerRadius = 1.0;
-            const height = 8;
+            const height = 10;
             const radialSegments = 16;
             
             const outerWall = new THREE.CylinderGeometry(outerRadius, outerRadius, height, radialSegments, 1, true);
@@ -2739,8 +2739,8 @@
         }
 
         function createBowlGeometry() {
-            const outerBowl = new THREE.SphereGeometry(3, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-            const innerBowl = new THREE.SphereGeometry(2.5, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
+            const outerBowl = new THREE.SphereGeometry(3, 20, 10, 0, Math.PI * 2, 0, Math.PI/2);
+            const innerBowl = new THREE.SphereGeometry(2.5, 20, 10, 0, Math.PI * 2, 0, Math.PI/2);
             
             const innerNormals = innerBowl.attributes.normal;
             for (let i = 0; i < innerNormals.count; i++) {
@@ -2759,7 +2759,7 @@
                 innerBowl.index.needsUpdate = true;
             }
             
-            const rimGeometry = new THREE.RingGeometry(2.5, 3, 16);
+            const rimGeometry = new THREE.RingGeometry(2.5, 3, 10);
             rimGeometry.rotateX(-Math.PI/2);
             
             if (rimGeometry.index) {
