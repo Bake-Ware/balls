@@ -2368,15 +2368,6 @@
             mesh.updateMatrixWorld(true);
             piece.group.updateMatrixWorld(true);
             
-            // Debug logging for rotated walls
-            if (['wall-45', 'wall-90'].includes(piece.type)) {
-                console.log(`Updating physics for ${piece.type}:`);
-                console.log('Mesh rotation:', mesh.rotation);
-                console.log('Mesh position:', mesh.position);
-                console.log('Group position:', piece.group.position);
-                console.log('Mesh world matrix:', mesh.matrixWorld);
-            }
-            
             // Get the actual rendered geometry with all transformations applied
             const geometry = mesh.geometry.clone();
             geometry.applyMatrix4(mesh.matrixWorld);
@@ -2388,12 +2379,6 @@
             // Extract vertices and indices from the transformed geometry
             const vertices = Array.from(geometry.attributes.position.array);
             const indices = geometry.index ? Array.from(geometry.index.array) : [];
-            
-            // Debug logging for rotated walls
-            if (['wall-45', 'wall-90'].includes(piece.type)) {
-                console.log('First few vertices after transform:', vertices.slice(0, 15));
-                console.log('Vertices count:', vertices.length / 3);
-            }
             
             // If no indices, create them for triangulated geometry
             if (indices.length === 0) {
@@ -2479,7 +2464,7 @@
                 angleX = 0,                  // Rotation angle around X axis (pitch)
                 angleY = Math.PI/2,          // Rotation angle around Y axis (yaw) 
                 angleZ = 0,                  // Rotation angle around Z axis (roll)
-                width = 8,                   // Cross-section width
+                width = 10,                   // Cross-section width
                 height = 1.5,                // Cross-section height  
                 radiusX = 16,                // Arc radius in X axis
                 radiusY = 16,                // Arc radius in Y axis
@@ -2488,7 +2473,9 @@
                 clockwise = false,           // Arc direction
                 isPipe = false,              // Whether to create pipe geometry
                 pipeRadius = 1.5,            // Outer radius for pipe
-                pipeInnerRadius = 1.0        // Inner radius for pipe
+                pipeInnerRadius = 1.0,       // Inner radius for pipe
+                isHalfPipe = false,          // Whether to create half-pipe (half circle cross-section)
+                pipeArc = Math.PI * 2        // Arc of pipe cross-section (for partial pipes)
             } = options;
             
             // Calculate segments if not provided (use the largest angle)
@@ -2535,16 +2522,42 @@
                 const outerShape = new THREE.Shape();
                 const innerShape = new THREE.Path();
                 
-                // Outer circle
-                outerShape.absarc(0, 0, pipeRadius, 0, Math.PI * 2, false);
-                // Inner circle (hole)
-                innerShape.absarc(0, 0, pipeInnerRadius, 0, Math.PI * 2, true);
-                outerShape.holes.push(innerShape);
+                if (isHalfPipe) {
+                    // Half-pipe: U-shaped hollow cross-section opening upward
+                    // Outer U-shape (bottom half circle)
+                    outerShape.absarc(0, 0, pipeRadius, Math.PI, 0, false);
+                    // Close with flat tops on walls
+                    outerShape.lineTo(pipeInnerRadius, 0);
+                    // Inner U-shape (hole)
+                    innerShape.absarc(0, 0, pipeInnerRadius, 0, Math.PI, true);
+                    outerShape.holes.push(innerShape);
+                    // Complete the closure
+                    outerShape.lineTo(-pipeInnerRadius, 0);
+                    outerShape.closePath();
+                } else if (pipeArc < Math.PI * 2 - 0.1) {
+                    // Partial pipe: custom arc (less than full circle) - keep ends open
+                    const startAngle = 0;
+                    const endAngle = pipeArc;
+                    
+                    // Create outer arc only
+                    outerShape.absarc(0, 0, pipeRadius, startAngle, endAngle, false);
+                    
+                    // Create inner arc as a hole (no connecting lines to keep ends open)
+                    innerShape.absarc(0, 0, pipeInnerRadius, startAngle, endAngle, false);
+                    outerShape.holes.push(innerShape);
+                } else {
+                    // Full pipe: complete circle
+                    outerShape.absarc(0, 0, pipeRadius, 0, Math.PI * 2, false);
+                    // Inner circle (hole)
+                    innerShape.absarc(0, 0, pipeInnerRadius, 0, Math.PI * 2, true);
+                    outerShape.holes.push(innerShape);
+                }
                 
                 geometry = new THREE.ExtrudeGeometry(outerShape, { 
                     extrudePath: path3D, 
                     steps: arcSegments, 
-                    bevelEnabled: false 
+                    bevelEnabled: false,
+                    caps: !isHalfPipe  // No end caps for half-pipes
                 });
             } else {
                 // Create the cross-section shape (width = horizontal, height = vertical)
@@ -2759,7 +2772,7 @@
                 innerBowl.index.needsUpdate = true;
             }
             
-            const rimGeometry = new THREE.RingGeometry(2.5, 3, 10);
+            const rimGeometry = new THREE.RingGeometry(2.5, 3, 20);
             rimGeometry.rotateX(-Math.PI/2);
             
             if (rimGeometry.index) {
@@ -2776,8 +2789,8 @@
         }
 
         function createHalfSphereGeometry() {
-            const halfSphereGeometry = new THREE.SphereGeometry(2, 16, 8, 0, Math.PI * 2, 0, Math.PI/2);
-            const bottomFaceGeometry = new THREE.CircleGeometry(2, 16);
+            const halfSphereGeometry = new THREE.SphereGeometry(3, 20, 10, 0, Math.PI * 2, 0, Math.PI/2);
+            const bottomFaceGeometry = new THREE.CircleGeometry(3, 20);
             bottomFaceGeometry.rotateX(-Math.PI/2);
             
             if (bottomFaceGeometry.index) {
@@ -2794,16 +2807,16 @@
         }
 
         function getPieceConfig(type) {
-            const w = 8, l = 10, h = 1.5, t = 0.5;
+            const w = 10, l = 10, h = 1.5, t = 0.5;
             switch(type) {
                 case "straight":
-                    return { geometry: new THREE.BoxGeometry(w + 4, h, l)};
+                    return { geometry: new THREE.BoxGeometry(w, h, l)};
                 case "triangle":
                     const triangleShape = new THREE.Shape();
-                    triangleShape.moveTo(0, (w + 4)/2);
-                    triangleShape.lineTo(-(w + 4)/2, -(w + 4)/2);
-                    triangleShape.lineTo((w + 4)/2, -(w + 4)/2);
-                    triangleShape.lineTo(0, (w + 4)/2);
+                    triangleShape.moveTo(0, (w)/2);
+                    triangleShape.lineTo(-(w)/2, -(w)/2);
+                    triangleShape.lineTo((w)/2, -(w)/2);
+                    triangleShape.lineTo(0, (w)/2);
                     return { 
                         geometry: new THREE.ExtrudeGeometry(triangleShape, {steps: 1, depth: h, bevelEnabled: false}),
                         rotation: { x: -Math.PI/2, y: 0, z: 0 }
@@ -2825,33 +2838,30 @@
                     curveShape.lineTo(-w/2, -h/2);
                     return { geometry: new THREE.ExtrudeGeometry(curveShape, { extrudePath: curvePath, steps: 30, bevelEnabled: false }) };
                 case "wall":
-                    return { geometry: new THREE.BoxGeometry(w + 4, 6, 1)};
+                    return { geometry: new THREE.BoxGeometry(10, 5, 1)};
                 case "wall-45":
                     return { 
                         geometry: createArcGeometry({ 
                             angleY: Math.PI/4, 
-                            width: w, 
+                            width: w/2, 
                             height: t 
                         }),
-                        rotation: { x: Math.PI/2, y: 0, z: 0 }
                     };
                 case "wall-90":
                     return { 
                         geometry: createArcGeometry({ 
                             angleY: Math.PI/2, 
-                            width: w, 
+                            width: w/2, 
                             height: t 
                         }),
-                        rotation: { x: Math.PI/2, y: 0, z: 0 }
                     };
                 case "wall-180":
                     return { 
                         geometry: createArcGeometry({ 
                             angleY: Math.PI, 
-                            width: w, 
+                            width: w/2, 
                             height: t 
                         }),
-                        rotation: { x: Math.PI/2, y: 0, z: 0 }
                     };
                 case "curve-45":
                     return { geometry: createArcGeometry({ 
@@ -2872,11 +2882,11 @@
                         height: w * 1.25 
                     }) };
                 case "ball":
-                    return { geometry: new THREE.SphereGeometry(2, 16, 16), pinned: true };
+                    return { geometry: new THREE.SphereGeometry(3, 20, 20), pinned: true };
                 case "pyramid":
                     return { geometry: new THREE.ConeGeometry(3, 6, 4) };
                 case "cylinder":
-                    return { geometry: new THREE.CylinderGeometry(2, 2, 6, 16) };
+                    return { geometry: new THREE.CylinderGeometry(3, 3, 10, 20) };
                 case "pipe":
                     return { geometry: createPipeGeometry() };
                 case "pipe-elbow-45":
@@ -2900,22 +2910,68 @@
                         segments: 16, clockwise: false,
                         isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
                     }) };
+                case "pipe-helix-90":
+                    return { geometry: createArcGeometry({
+                        angleX: Math.PI/2, angleY: Math.PI/2, angleZ: 0,
+                        radiusX: 2, radiusY: 2, radiusZ: 2,
+                        segments: 16, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
+                case "pipe-helix-180":
+                    return { geometry: createArcGeometry({
+                        angleX: Math.PI/2, angleY: Math.PI, angleZ: 0,
+                        radiusX: 2, radiusY: 2, radiusZ: 2,
+                        segments: 16, clockwise: false,
+                        isPipe: true, pipeRadius: 1.5, pipeInnerRadius: 1.0
+                    }) };
+                case "half-pipe":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: 0, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 20, clockwise: false,
+                        isPipe: true, pipeRadius: 2.0, pipeInnerRadius: 1.8,
+                        isHalfPipe: true
+                    }) };
+                case "half-pipe-45":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI/4, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 12, clockwise: false,
+                        isPipe: true, pipeRadius: 2.0, pipeInnerRadius: 1.8,
+                        isHalfPipe: true
+                    }) };
+                case "half-pipe-90":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI/2, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 16, clockwise: false,
+                        isPipe: true, pipeRadius: 2.0, pipeInnerRadius: 1.8,
+                        isHalfPipe: true
+                    }) };
+                case "half-pipe-180":
+                    return { geometry: createArcGeometry({
+                        angleX: 0, angleY: Math.PI, angleZ: 0,
+                        radiusX: 4, radiusY: 4, radiusZ: 4,
+                        segments: 20, clockwise: false,
+                        isPipe: true, pipeRadius: 2.0, pipeInnerRadius: 1.8,
+                        isHalfPipe: true
+                    }) };
                 case "arch":
                     // Use the better curve-180 geometry (improved version)
                     return { geometry: createArcGeometry({
                         angleX: 0, angleY: Math.PI, angleZ: 0,
-                        radiusX: 6, radiusY: 6, radiusZ: 6,
-                        segments: 16, clockwise: false
+                        radiusX: 5, radiusY: 5, radiusZ: 5,
+                        segments: 20, clockwise: false
                     }) };
                 case "cube":
-                    return { geometry: new THREE.BoxGeometry(4, 4, 4) };
+                    return { geometry: new THREE.BoxGeometry(5, 5, 5) };
                 case "prism":
-                    return { geometry: new THREE.CylinderGeometry(3, 3, 6, 6) };
+                    return { geometry: new THREE.CylinderGeometry(5, 5, 6, 6) };
                     
                 // Physics Affectors - Invisible/transparent zones that affect marble physics
                 case "water":
                     return { 
-                        geometry: new THREE.BoxGeometry(8, 4, 8),
+                        geometry: new THREE.BoxGeometry(10, 5, 10),
                         isAffector: true,
                         affectorType: 'water'
                     };
@@ -2933,19 +2989,19 @@
                     };
                 case "accelerator":
                     return { 
-                        geometry: new THREE.BoxGeometry(10, 2, 4),
+                        geometry: new THREE.BoxGeometry(10, 1, 5),
                         isAffector: true,
                         affectorType: 'accelerator'
                     };
                 case "brakes":
                     return { 
-                        geometry: new THREE.BoxGeometry(6, 2, 6),
+                        geometry: new THREE.BoxGeometry(10, 1, 5),
                         isAffector: true,
                         affectorType: 'brakes'
                     };
                 case "ice":
                     return { 
-                        geometry: new THREE.BoxGeometry(8, 1, 8),
+                        geometry: new THREE.BoxGeometry(10, 1, 10),
                         isAffector: true,
                         affectorType: 'ice'
                     };
@@ -2953,7 +3009,7 @@
                 // Light objects
                 case "spot-light":
                     return { 
-                        geometry: new THREE.ConeGeometry(1, 2, 8),
+                        geometry: new THREE.ConeGeometry(1, 3, 10),
                         isLight: true,
                         lightType: 'spot'
                     };
@@ -2990,7 +3046,7 @@
                     };
                 case "ball-set":
                     return { 
-                        geometry: new THREE.SphereGeometry(0.4, 16, 16),
+                        geometry: new THREE.SphereGeometry(0.5, 20, 20),
                         isBallSet: true,
                         isPlacementBall: true
                     };
@@ -3010,9 +3066,9 @@
                         rotation: { x: 0, y: 0, z: 0 }
                     };
                 case "torus":
-                    return { geometry: new THREE.TorusGeometry(2, 0.8, 8, 16)};
+                    return { geometry: new THREE.TorusGeometry(2, 0.8, 10, 20)};
                 case "cone":
-                    return { geometry: new THREE.ConeGeometry(2, 4, 16)};
+                    return { geometry: new THREE.ConeGeometry(2, 5, 20)};
             }
             return null;
         }
@@ -3808,6 +3864,8 @@
                 case "ramp": return [w, 4, l];
                 case "pipe": return [3, 3, l];
                 case "pipe-elbow-45": case "pipe-elbow-90": case "pipe-elbow-180": return [8, 8, 8];
+                case "pipe-helix-90": case "pipe-helix-180": return [4, 4, 4];
+                case "half-pipe": case "half-pipe-45": case "half-pipe-90": case "half-pipe-180": return [8, 3, 8];
                 case "arch": return [16, 16, 16];
                 case "ball": return [3, 3, 3];
                 case "bowl": return [6, 3, 6];
@@ -4690,6 +4748,10 @@
             document.getElementById('custom-curve-create').addEventListener('click', createCustomCurve);
             document.getElementById('custom-curve-cancel').addEventListener('click', hideCustomCurveDialog);
             
+            // Pipe builder dialog event listeners
+            document.getElementById('pipe-builder-create').addEventListener('click', createPipeFromBuilder);
+            document.getElementById('pipe-builder-cancel').addEventListener('click', hidePipeBuilderDialog);
+            
             // Select all button (old main menu version - functionality could be added to toolbar)
             const selectAllBtn = document.getElementById('select-all-btn');
             if (selectAllBtn) {
@@ -5054,6 +5116,132 @@
         
         function hideCustomCurveDialog() {
             document.getElementById('custom-curve-dialog').style.display = 'none';
+        }
+
+        function showPipeBuilderDialog() {
+            document.getElementById('pipe-builder-dialog').style.display = 'block';
+            document.getElementById('pipe-thickness').focus();
+            initializePipeBuilder();
+        }
+        
+        function hidePipeBuilderDialog() {
+            document.getElementById('pipe-builder-dialog').style.display = 'none';
+            clearPipePreview();
+        }
+
+        let pipePreviewMesh = null;
+
+        function initializePipeBuilder() {
+            // Set up real-time preview
+            const sliders = ['pipe-thickness', 'pipe-arc', 'pipe-bend-lr', 'pipe-bend-ud', 'pipe-length', 'pipe-radius'];
+            
+            sliders.forEach(id => {
+                const slider = document.getElementById(id);
+                const valueSpan = document.getElementById(id + '-value');
+                
+                slider.addEventListener('input', () => {
+                    valueSpan.textContent = slider.value;
+                    updatePipePreview();
+                });
+            });
+            
+            // Initial preview
+            updatePipePreview();
+        }
+
+        function updatePipePreview() {
+            clearPipePreview();
+            
+            // Get current values
+            const thickness = parseFloat(document.getElementById('pipe-thickness').value);
+            const arc = parseFloat(document.getElementById('pipe-arc').value) * Math.PI / 180; // Convert to radians
+            const bendLR = parseFloat(document.getElementById('pipe-bend-lr').value) * Math.PI / 180;
+            const bendUD = parseFloat(document.getElementById('pipe-bend-ud').value) * Math.PI / 180;
+            const length = parseFloat(document.getElementById('pipe-length').value);
+            const radius = parseFloat(document.getElementById('pipe-radius').value);
+            
+            // Create pipe geometry
+            const geometry = createCustomPipeGeometry({
+                thickness: thickness,
+                arc: arc,
+                bendLR: bendLR,
+                bendUD: bendUD,
+                length: length,
+                radius: radius
+            });
+            
+            // Create preview material (semi-transparent)
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0x607D8B,
+                transparent: true,
+                opacity: 0.7,
+                wireframe: false
+            });
+            
+            pipePreviewMesh = new THREE.Mesh(geometry, material);
+            pipePreviewMesh.position.set(0, 5, 0); // Position above ground
+            scene.add(pipePreviewMesh);
+        }
+
+        function clearPipePreview() {
+            if (pipePreviewMesh) {
+                scene.remove(pipePreviewMesh);
+                pipePreviewMesh.geometry.dispose();
+                pipePreviewMesh.material.dispose();
+                pipePreviewMesh = null;
+            }
+        }
+
+        function createCustomPipeGeometry(params) {
+            const { thickness, arc, bendLR, bendUD, length, radius } = params;
+            
+            // Use createArcGeometry but with custom parameters
+            return createArcGeometry({
+                angleX: bendUD,
+                angleY: bendLR, 
+                angleZ: 0,
+                radiusX: length,
+                radiusY: length,
+                radiusZ: length,
+                segments: Math.max(16, Math.floor(Math.abs(bendLR + bendUD) * 32 / Math.PI)),
+                clockwise: false,
+                isPipe: true,
+                pipeRadius: radius,
+                pipeInnerRadius: radius - thickness,
+                pipeArc: arc // New parameter for partial pipes
+            });
+        }
+
+        function createPipeFromBuilder() {
+            const thickness = parseFloat(document.getElementById('pipe-thickness').value);
+            const arc = parseFloat(document.getElementById('pipe-arc').value);
+            const bendLR = parseFloat(document.getElementById('pipe-bend-lr').value);
+            const bendUD = parseFloat(document.getElementById('pipe-bend-ud').value);
+            const length = parseFloat(document.getElementById('pipe-length').value);
+            const radius = parseFloat(document.getElementById('pipe-radius').value);
+            
+            try {
+                // Create the final pipe geometry
+                const geometry = createCustomPipeGeometry({
+                    thickness: thickness,
+                    arc: arc * Math.PI / 180,
+                    bendLR: bendLR * Math.PI / 180,
+                    bendUD: bendUD * Math.PI / 180,
+                    length: length,
+                    radius: radius
+                });
+                
+                // Add to scene as custom piece
+                addPiece('custom', null, { geometry });
+                captureStateInternal('Add custom pipe');
+                
+                showMessage('Custom pipe created successfully!', 'success');
+                hidePipeBuilderDialog();
+                
+            } catch (error) {
+                console.error('Error creating custom pipe:', error);
+                showMessage('Error creating custom pipe: ' + error.message, 'error');
+            }
         }
         
         function createCustomCurve() {
@@ -6480,6 +6668,12 @@
                         'pipe-elbow-45': { icon: '↗️', name: 'Pipe Elbow 45°' },
                         'pipe-elbow-90': { icon: '↪️', name: 'Pipe Elbow 90°' },
                         'pipe-elbow-180': { icon: '🔄', name: 'Pipe Elbow 180°' },
+                        'pipe-helix-90': { icon: '🌪️', name: 'Pipe Helix 90°' },
+                        'pipe-helix-180': { icon: '🌀', name: 'Pipe Helix 180°' },
+                        'half-pipe': { icon: '🛼', name: 'Half Pipe Straight' },
+                        'half-pipe-45': { icon: '🏂', name: 'Half Pipe 45°' },
+                        'half-pipe-90': { icon: '🛹', name: 'Half Pipe 90°' },
+                        'half-pipe-180': { icon: '🌊', name: 'Half Pipe 180°' },
                         'arch': { icon: '🌈', name: 'Arch' }
                     }
                 },
@@ -6535,7 +6729,8 @@
                     icon: '📦',
                     pieces: {
                         'custom': { icon: '📦', name: 'Custom (.obj)...' },
-                        'custom-curve': { icon: '🌊', name: 'Custom Curve...' }
+                        'custom-curve': { icon: '🌊', name: 'Custom Curve...' },
+                        'pipe-builder': { icon: '🚇', name: 'Pipe Builder...' }
                     }
                 }
             };
@@ -6611,6 +6806,9 @@
             } else if (pieceType === 'custom-curve') {
                 // Show custom curve dialog
                 showCustomCurveDialog();
+            } else if (pieceType === 'pipe-builder') {
+                // Show pipe builder dialog
+                showPipeBuilderDialog();
             } else {
                 // Add piece directly
                 addPiece(pieceType);
@@ -10372,6 +10570,54 @@
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button id="custom-curve-create" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">🌊 Create Curve</button>
             <button id="custom-curve-cancel" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer;">❌ Cancel</button>
+        </div>
+    </div>
+
+    <!-- Pipe Builder Dialog -->
+    <div id="pipe-builder-dialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2a2a2a; border: 2px solid #444; border-radius: 8px; padding: 20px; z-index: 10001; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="color: #ffd700; margin-top: 0;">🚇 Pipe Builder</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Thickness: <span id="pipe-thickness-value" style="color: #ffd700;">0.5</span></label>
+                <input type="range" id="pipe-thickness" min="0.1" max="2" step="0.1" value="0.5" style="width: 100%;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Pipe Arc (degrees): <span id="pipe-arc-value" style="color: #ffd700;">180</span></label>
+                <input type="range" id="pipe-arc" min="45" max="360" step="15" value="180" style="width: 100%;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Bend Left/Right: <span id="pipe-bend-lr-value" style="color: #ffd700;">0</span></label>
+                <input type="range" id="pipe-bend-lr" min="-180" max="180" step="15" value="0" style="width: 100%;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Bend Up/Down: <span id="pipe-bend-ud-value" style="color: #ffd700;">0</span></label>
+                <input type="range" id="pipe-bend-ud" min="-180" max="180" step="15" value="0" style="width: 100%;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Length: <span id="pipe-length-value" style="color: #ffd700;">10</span></label>
+                <input type="range" id="pipe-length" min="2" max="20" step="1" value="10" style="width: 100%;">
+            </div>
+            
+            <div>
+                <label style="display: block; color: #ccc; margin-bottom: 5px;">Radius: <span id="pipe-radius-value" style="color: #ffd700;">1.5</span></label>
+                <input type="range" id="pipe-radius" min="0.5" max="3" step="0.1" value="1.5" style="width: 100%;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <small style="color: #888;">
+                Adjust settings above to customize your pipe. Changes are previewed in real-time.
+            </small>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="pipe-builder-create" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">🚇 Create Pipe</button>
+            <button id="pipe-builder-cancel" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer;">❌ Cancel</button>
         </div>
     </div>
 
