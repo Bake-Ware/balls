@@ -569,6 +569,7 @@
         <!-- Additional Tools -->
         <button id="edit-material-btn-toolbar" title="Object Editor" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🧊</button>
         <button id="face-paint-btn-toolbar" title="Face Paint" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🖌️</button>
+        <button id="spline-editor-btn-toolbar" title="Spline Editor" style="background: #495057; border: 1px solid #495057; color: white; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">🪢</button>
 
         <!-- Separator -->
         <div style="width: 1px; height: 30px; background: #555; margin: 0 8px;"></div>
@@ -3069,6 +3070,15 @@
                     return { geometry: new THREE.TorusGeometry(2, 0.8, 10, 20)};
                 case "cone":
                     return { geometry: new THREE.ConeGeometry(2, 5, 20)};
+                case "spline-track":
+                    // Default geometry for spline tracks - will be replaced with actual spline geometry
+                    return { geometry: new THREE.TubeGeometry(
+                        new THREE.CatmullRomCurve3([
+                            new THREE.Vector3(0, 0, -5),
+                            new THREE.Vector3(0, 0, 5)
+                        ]), 
+                        16, 1.5, 8, false
+                    )};
             }
             return null;
         }
@@ -4268,6 +4278,7 @@
             document.getElementById('remove-piece-btn-toolbar').addEventListener('click', removeSelectedPiece);
             document.getElementById('edit-material-btn-toolbar').addEventListener('click', openMaterialEditor);
             document.getElementById('face-paint-btn-toolbar').addEventListener('click', toggleFacePaintMode);
+            document.getElementById('spline-editor-btn-toolbar').addEventListener('click', toggleSplineEditor);
             document.getElementById('skybox-btn-toolbar').addEventListener('click', openSkyboxSelector);
             document.getElementById('global-settings-btn-toolbar').addEventListener('click', openGlobalSettings);
             document.getElementById('ball-roster-btn-toolbar').addEventListener('click', openBallRoster);
@@ -4289,10 +4300,37 @@
             
             // Sidebar collapse functionality
             document.getElementById('collapse-sidebar-btn').addEventListener('click', toggleSidebar);
+            document.getElementById('collapse-right-sidebar-btn').addEventListener('click', toggleRightSidebar);
             
             // Sidebar tab functionality
             document.getElementById('object-tree-tab').addEventListener('click', () => switchSidebarTab('objects'));
             document.getElementById('add-pieces-tab').addEventListener('click', () => switchSidebarTab('pieces'));
+            
+            // Right sidebar spline controls
+            document.getElementById('spline-cross-section-type-main').addEventListener('change', handleSplineCrossSectionChange);
+            document.getElementById('spline-curve-type-main').addEventListener('change', updateMainViewportSplinePreview);
+            document.getElementById('spline-segments-main').addEventListener('input', (e) => {
+                document.getElementById('spline-segments-value-main').textContent = e.target.value;
+                updateMainViewportSplinePreview();
+            });
+            document.getElementById('spline-tension-main').addEventListener('input', (e) => {
+                document.getElementById('spline-tension-value-main').textContent = e.target.value;
+                updateMainViewportSplinePreview();
+            });
+            document.getElementById('spline-radius-main').addEventListener('input', (e) => {
+                document.getElementById('spline-radius-value-main').textContent = e.target.value;
+                updateMainViewportSplinePreview();
+            });
+            document.getElementById('spline-width-main').addEventListener('input', (e) => {
+                document.getElementById('spline-width-value-main').textContent = e.target.value;
+                updateMainViewportSplinePreview();
+            });
+            document.getElementById('spline-height-main').addEventListener('input', (e) => {
+                document.getElementById('spline-height-value-main').textContent = e.target.value;
+                updateMainViewportSplinePreview();
+            });
+            document.getElementById('spline-clear-points-main').addEventListener('click', clearMainViewportSpline);
+            document.getElementById('spline-create-track-main').addEventListener('click', createMainViewportSplineTrack);
             
             // Setup material and paint event listeners
             setupMaterialAndPaintEventListeners();
@@ -4381,6 +4419,546 @@
             transformControls.visible = transformControls.enabled;
             if (!transformControls.enabled) transformControls.detach();
             updateHiddenObjectVisibility();
+        }
+
+        // Spline Editor Variables
+        let isSplineMode = false;
+        let mainViewportSplinePoints = [];
+        let splineControlPointMeshes = [];
+        let splinePreviewMesh = null;
+        let splineHandleHelpers = [];
+        let isDraggingSplinePoint = false;
+        let draggedSplinePointIndex = -1;
+        let dragPlane = null;
+        
+        function toggleSplineEditor() {
+            const rightSidebar = document.getElementById('right-sidebar');
+            const btn = document.getElementById('spline-editor-btn-toolbar');
+            
+            isSplineMode = !isSplineMode;
+            
+            if (isSplineMode) {
+                // Show right sidebar
+                rightSidebar.style.transform = 'translateX(0)';
+                btn.style.background = '#28a745';
+                btn.title = 'Exit Spline Mode';
+                
+                // Disable other modes
+                if (facePaintMode) {
+                    toggleFacePaintMode();
+                }
+                if (isBendMode) {
+                    toggleBendMode();
+                }
+                if (isEdgeSnapMode) {
+                    toggleEdgeSnapMode();
+                }
+                
+                // Set up main viewport spline editing
+                setupMainViewportSplineMode();
+                
+            } else {
+                // Hide right sidebar
+                rightSidebar.style.transform = 'translateX(320px)';
+                btn.style.background = '#495057';
+                btn.title = 'Spline Editor';
+                
+                // Clean up spline mode
+                exitMainViewportSplineMode();
+            }
+        }
+        
+        function toggleRightSidebar() {
+            const rightSidebar = document.getElementById('right-sidebar');
+            const collapseBtn = document.getElementById('collapse-right-sidebar-btn');
+            
+            const isCollapsed = rightSidebar.style.transform === 'translateX(320px)';
+            
+            if (isCollapsed) {
+                // Expand sidebar
+                rightSidebar.style.transform = 'translateX(0)';
+                collapseBtn.innerHTML = '▶';
+                collapseBtn.title = 'Collapse Sidebar';
+            } else {
+                // Collapse sidebar
+                rightSidebar.style.transform = 'translateX(320px)';
+                collapseBtn.innerHTML = '◀';
+                collapseBtn.title = 'Expand Sidebar';
+            }
+        }
+        
+        function setupMainViewportSplineMode() {
+            // Clear any existing spline data
+            clearMainViewportSpline();
+            
+            // Add event listeners for main viewport spline interaction
+            const canvas = renderer.domElement;
+            canvas.addEventListener('click', handleMainSplineClick);
+            canvas.addEventListener('mousedown', handleMainSplineMouseDown);
+            canvas.addEventListener('mousemove', handleMainSplineMouseMove);
+            canvas.addEventListener('mouseup', handleMainSplineMouseUp);
+            canvas.addEventListener('contextmenu', handleMainSplineRightClick);
+            
+            // Update UI
+            updateSplineControlsList();
+            showMessage('Spline Mode: Click in the 3D viewport to add control points, drag to move them', 'info');
+        }
+        
+        function exitMainViewportSplineMode() {
+            // Remove event listeners
+            const canvas = renderer.domElement;
+            canvas.removeEventListener('click', handleMainSplineClick);
+            canvas.removeEventListener('mousedown', handleMainSplineMouseDown);
+            canvas.removeEventListener('mousemove', handleMainSplineMouseMove);
+            canvas.removeEventListener('mouseup', handleMainSplineMouseUp);
+            canvas.removeEventListener('contextmenu', handleMainSplineRightClick);
+            
+            // Clear spline visualization
+            clearMainViewportSpline();
+            
+            // Reset cursor
+            document.body.style.cursor = 'default';
+            
+            showMessage('Exited spline mode', 'info');
+        }
+        
+        function handleMainSplineClick(event) {
+            if (!isSplineMode || isRaceMode || facePaintMode || isDraggingSplinePoint) return;
+            
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            
+            raycaster.setFromCamera({ x, y }, camera);
+            const handleIntersects = raycaster.intersectObjects(splineControlPointMeshes);
+            
+            if (handleIntersects.length > 0) {
+                // Just clicked on a handle, don't add new point
+                return;
+            }
+            
+            // Add new control point at ground plane
+            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const ray = raycaster.ray;
+            const intersectionPoint = new THREE.Vector3();
+            
+            if (ray.intersectPlane(groundPlane, intersectionPoint)) {
+                addMainViewportSplinePoint(intersectionPoint);
+            }
+        }
+        
+        function handleMainSplineMouseDown(event) {
+            if (!isSplineMode || isRaceMode || facePaintMode) return;
+            if (event.button !== 0) return; // Only left mouse button
+            
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            
+            raycaster.setFromCamera({ x, y }, camera);
+            const handleIntersects = raycaster.intersectObjects(splineControlPointMeshes);
+            
+            if (handleIntersects.length > 0) {
+                // Start dragging the control point
+                const intersectedMesh = handleIntersects[0].object;
+                draggedSplinePointIndex = intersectedMesh.userData.controlPointIndex;
+                isDraggingSplinePoint = true;
+                
+                // Create a drag plane perpendicular to camera
+                const cameraDirection = new THREE.Vector3();
+                camera.getWorldDirection(cameraDirection);
+                const pointPosition = mainViewportSplinePoints[draggedSplinePointIndex];
+                dragPlane = new THREE.Plane(cameraDirection, -cameraDirection.dot(pointPosition));
+                
+                // Disable orbit controls during drag
+                controls.enabled = false;
+                document.body.style.cursor = 'grabbing';
+                
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }
+        
+        function handleMainSplineMouseUp(event) {
+            if (isDraggingSplinePoint) {
+                isDraggingSplinePoint = false;
+                draggedSplinePointIndex = -1;
+                dragPlane = null;
+                
+                // Re-enable orbit controls
+                controls.enabled = true;
+                document.body.style.cursor = 'default';
+                
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }
+        
+        function handleMainSplineRightClick(event) {
+            if (!isSplineMode) return;
+            
+            event.preventDefault();
+            
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            
+            raycaster.setFromCamera({ x, y }, camera);
+            const handleIntersects = raycaster.intersectObjects(splineControlPointMeshes);
+            
+            if (handleIntersects.length > 0) {
+                // Right-clicked on a control point - remove it
+                const intersectedMesh = handleIntersects[0].object;
+                const pointIndex = intersectedMesh.userData.controlPointIndex;
+                removeMainSplinePoint(pointIndex);
+            }
+        }
+        
+        function handleMainSplineMouseMove(event) {
+            if (!isSplineMode) return;
+            
+            const viewportRect = document.getElementById('main-viewport').getBoundingClientRect();
+            const x = ((event.clientX - viewportRect.left) / viewportRect.width) * 2 - 1;
+            const y = -((event.clientY - viewportRect.top) / viewportRect.height) * 2 + 1;
+            
+            if (isDraggingSplinePoint && draggedSplinePointIndex >= 0 && dragPlane) {
+                // Handle dragging
+                raycaster.setFromCamera({ x, y }, camera);
+                const intersectionPoint = new THREE.Vector3();
+                
+                if (raycaster.ray.intersectPlane(dragPlane, intersectionPoint)) {
+                    // Update point position
+                    mainViewportSplinePoints[draggedSplinePointIndex].copy(intersectionPoint);
+                    
+                    // Update visual handle position
+                    const handleMesh = splineControlPointMeshes[draggedSplinePointIndex];
+                    const helperMesh = splineHandleHelpers[draggedSplinePointIndex];
+                    
+                    handleMesh.position.copy(intersectionPoint);
+                    helperMesh.position.copy(intersectionPoint);
+                    
+                    // Update spline preview in real-time
+                    updateMainViewportSplinePreview();
+                    updateSplineControlsList();
+                }
+            } else {
+                // Handle hover effects when not dragging
+                raycaster.setFromCamera({ x, y }, camera);
+                const intersects = raycaster.intersectObjects(splineControlPointMeshes);
+                
+                // Update cursor and handle hover effects
+                if (intersects.length > 0) {
+                    document.body.style.cursor = 'grab';
+                    
+                    // Highlight hovered handle
+                    splineControlPointMeshes.forEach((mesh, index) => {
+                        if (mesh === intersects[0].object) {
+                            mesh.material.color.setHex(0xffaa00); // Orange highlight
+                            mesh.scale.setScalar(1.2);
+                        } else {
+                            mesh.material.color.setHex(0xffd700); // Gold default
+                            mesh.scale.setScalar(1.0);
+                        }
+                    });
+                } else {
+                    document.body.style.cursor = 'crosshair';
+                    
+                    // Reset all handle colors and scales
+                    splineControlPointMeshes.forEach(mesh => {
+                        mesh.material.color.setHex(0xffd700); // Gold default
+                        mesh.scale.setScalar(1.0);
+                    });
+                }
+            }
+        }
+        
+        function addMainViewportSplinePoint(position) {
+            // Add to points array
+            mainViewportSplinePoints.push(position.clone());
+            
+            // Create 3D handle mesh
+            const handleGeometry = new THREE.SphereGeometry(0.3, 12, 8);
+            const handleMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffd700,
+                transparent: true,
+                opacity: 0.8
+            });
+            const handleMesh = new THREE.Mesh(handleGeometry, handleMaterial);
+            handleMesh.position.copy(position);
+            handleMesh.userData.controlPointIndex = mainViewportSplinePoints.length - 1;
+            
+            // Add wireframe outline
+            const wireframeGeometry = new THREE.SphereGeometry(0.32, 12, 8);
+            const wireframeMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.5
+            });
+            const wireframeMesh = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
+            wireframeMesh.position.copy(position);
+            
+            scene.add(handleMesh);
+            scene.add(wireframeMesh);
+            splineControlPointMeshes.push(handleMesh);
+            splineHandleHelpers.push(wireframeMesh);
+            
+            // Update spline preview
+            updateMainViewportSplinePreview();
+            updateSplineControlsList();
+        }
+        
+        function updateMainViewportSplinePreview() {
+            // Remove existing preview
+            if (splinePreviewMesh) {
+                scene.remove(splinePreviewMesh);
+                splinePreviewMesh.geometry.dispose();
+                splinePreviewMesh.material.dispose();
+                splinePreviewMesh = null;
+            }
+            
+            if (mainViewportSplinePoints.length < 2) return;
+            
+            try {
+                // Create spline curve
+                const curveType = document.getElementById('spline-curve-type-main').value;
+                let curve;
+                
+                if (curveType === 'catmullrom') {
+                    curve = new THREE.CatmullRomCurve3(mainViewportSplinePoints);
+                    curve.tension = parseFloat(document.getElementById('spline-tension-main').value);
+                } else if (curveType === 'bezier' && mainViewportSplinePoints.length >= 4) {
+                    curve = new THREE.CubicBezierCurve3(
+                        mainViewportSplinePoints[0],
+                        mainViewportSplinePoints[1],
+                        mainViewportSplinePoints[2],
+                        mainViewportSplinePoints[3]
+                    );
+                } else {
+                    curve = new THREE.CatmullRomCurve3(mainViewportSplinePoints);
+                }
+                
+                // Create preview geometry
+                const segments = parseInt(document.getElementById('spline-segments-main').value);
+                const tubeGeometry = new THREE.TubeGeometry(curve, segments, 0.1, 8, false);
+                
+                // Create preview material
+                const previewMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x00ff00,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.7
+                });
+                
+                splinePreviewMesh = new THREE.Mesh(tubeGeometry, previewMaterial);
+                scene.add(splinePreviewMesh);
+                
+            } catch (error) {
+                console.warn('Error creating spline preview:', error);
+            }
+        }
+        
+        function clearMainViewportSpline() {
+            // Remove control point meshes and helpers
+            splineControlPointMeshes.forEach(mesh => {
+                scene.remove(mesh);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
+            splineHandleHelpers.forEach(helper => {
+                scene.remove(helper);
+                helper.geometry.dispose();
+                helper.material.dispose();
+            });
+            
+            // Remove preview
+            if (splinePreviewMesh) {
+                scene.remove(splinePreviewMesh);
+                splinePreviewMesh.geometry.dispose();
+                splinePreviewMesh.material.dispose();
+                splinePreviewMesh = null;
+            }
+            
+            // Clear arrays
+            mainViewportSplinePoints = [];
+            splineControlPointMeshes = [];
+            splineHandleHelpers = [];
+            
+            // Update UI
+            updateSplineControlsList();
+        }
+        
+        function updateSplineControlsList() {
+            const list = document.getElementById('spline-control-points-list-main');
+            list.innerHTML = '';
+            
+            if (mainViewportSplinePoints.length === 0) {
+                list.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No control points yet.<br>Click in the 3D viewport to add points.</div>';
+                return;
+            }
+            
+            mainViewportSplinePoints.forEach((point, index) => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin-bottom: 2px; background: #444; border-radius: 3px;';
+                item.innerHTML = `
+                    <span>Point ${index + 1}: (${point.x.toFixed(1)}, ${point.y.toFixed(1)}, ${point.z.toFixed(1)})</span>
+                    <button onclick="removeMainSplinePoint(${index})" style="background: #dc3545; border: none; color: white; padding: 2px 6px; border-radius: 2px; cursor: pointer; font-size: 10px;">×</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function removeMainSplinePoint(index) {
+            if (index >= 0 && index < mainViewportSplinePoints.length) {
+                // Remove from arrays
+                mainViewportSplinePoints.splice(index, 1);
+                
+                // Remove meshes
+                const mesh = splineControlPointMeshes[index];
+                const helper = splineHandleHelpers[index];
+                
+                scene.remove(mesh);
+                scene.remove(helper);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+                helper.geometry.dispose();
+                helper.material.dispose();
+                
+                splineControlPointMeshes.splice(index, 1);
+                splineHandleHelpers.splice(index, 1);
+                
+                // Update indices
+                splineControlPointMeshes.forEach((m, i) => {
+                    m.userData.controlPointIndex = i;
+                });
+                
+                // Update preview and UI
+                updateMainViewportSplinePreview();
+                updateSplineControlsList();
+            }
+        }
+        
+        function createMainViewportSplineTrack() {
+            if (mainViewportSplinePoints.length < 2) {
+                showMessage('Please add at least 2 control points to create a spline', 'error');
+                return;
+            }
+            
+            try {
+                // Create the final spline geometry using the same logic as preview
+                const curveType = document.getElementById('spline-curve-type-main').value;
+                let curve;
+                
+                if (curveType === 'catmullrom') {
+                    curve = new THREE.CatmullRomCurve3(mainViewportSplinePoints);
+                    curve.tension = parseFloat(document.getElementById('spline-tension-main').value);
+                } else if (curveType === 'bezier' && mainViewportSplinePoints.length >= 4) {
+                    curve = new THREE.CubicBezierCurve3(
+                        mainViewportSplinePoints[0],
+                        mainViewportSplinePoints[1],
+                        mainViewportSplinePoints[2],
+                        mainViewportSplinePoints[3]
+                    );
+                } else {
+                    curve = new THREE.CatmullRomCurve3(mainViewportSplinePoints);
+                }
+                
+                const segments = parseInt(document.getElementById('spline-segments-main').value);
+                const crossSectionType = document.getElementById('spline-cross-section-type-main').value;
+                
+                // Create cross-section geometry based on type
+                const crossSectionGeometry = createSplineCrossSectionGeometry(crossSectionType);
+                const tubeGeometry = new THREE.ExtrudeGeometry(crossSectionGeometry, {
+                    extrudePath: curve,
+                    steps: segments,
+                    bevelEnabled: false
+                });
+                
+                // Create and add the track piece
+                const track = addPiece('spline-track', { position: new THREE.Vector3(0, 0, 0) });
+                
+                // Replace geometry
+                const mesh = track.group.children[0];
+                mesh.geometry.dispose();
+                mesh.geometry = tubeGeometry;
+                
+                // Update physics
+                updatePhysicsForPiece(track);
+                updateObjectTree();
+                captureStateInternal('Add spline track');
+                
+                // Clear the current spline
+                clearMainViewportSpline();
+                
+                showMessage('Spline track created successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error creating spline track:', error);
+                showMessage('Error creating spline track: ' + error.message, 'error');
+            }
+        }
+        
+        function createSplineCrossSectionGeometry(type) {
+            const shape = new THREE.Shape();
+            
+            switch (type) {
+                case 'circle':
+                    const radius = parseFloat(document.getElementById('spline-radius-main').value);
+                    for (let i = 0; i <= 32; i++) {
+                        const angle = (i / 32) * Math.PI * 2;
+                        const x = Math.cos(angle) * radius;
+                        const y = Math.sin(angle) * radius;
+                        if (i === 0) shape.moveTo(x, y);
+                        else shape.lineTo(x, y);
+                    }
+                    break;
+                    
+                case 'rectangle':
+                    const width = parseFloat(document.getElementById('spline-width-main').value);
+                    const height = parseFloat(document.getElementById('spline-height-main').value);
+                    shape.moveTo(-width/2, -height/2);
+                    shape.lineTo(width/2, -height/2);
+                    shape.lineTo(width/2, height/2);
+                    shape.lineTo(-width/2, height/2);
+                    shape.lineTo(-width/2, -height/2);
+                    break;
+                    
+                default:
+                    // Default to circle
+                    const defaultRadius = 1.5;
+                    for (let i = 0; i <= 32; i++) {
+                        const angle = (i / 32) * Math.PI * 2;
+                        const x = Math.cos(angle) * defaultRadius;
+                        const y = Math.sin(angle) * defaultRadius;
+                        if (i === 0) shape.moveTo(x, y);
+                        else shape.lineTo(x, y);
+                    }
+            }
+            
+            return shape;
+        }
+        
+        function handleSplineCrossSectionChange() {
+            const type = document.getElementById('spline-cross-section-type-main').value;
+            
+            // Hide all settings
+            document.getElementById('spline-circle-settings-main').style.display = 'none';
+            document.getElementById('spline-rectangle-settings-main').style.display = 'none';
+            document.getElementById('spline-other-shape-settings-main').style.display = 'none';
+            document.getElementById('spline-pipe-settings-main').style.display = 'none';
+            
+            // Show relevant settings
+            if (['circle', 'pipe'].includes(type)) {
+                document.getElementById('spline-circle-settings-main').style.display = 'block';
+                document.getElementById('spline-pipe-settings-main').style.display = type === 'pipe' ? 'block' : 'none';
+            } else if (type === 'rectangle') {
+                document.getElementById('spline-rectangle-settings-main').style.display = 'block';
+            } else {
+                document.getElementById('spline-other-shape-settings-main').style.display = 'block';
+            }
+            
+            // Update preview
+            updateMainViewportSplinePreview();
         }
 
         function duplicateSelectedPiece() {
@@ -5419,6 +5997,777 @@
                 console.error('Error creating custom curve:', error);
                 showMessage('Error creating custom curve: ' + error.message, 'error');
             }
+        }
+        
+        // === SPLINE EXTRUSION SYSTEM ===
+        
+        let splineEditorScene = null;
+        let splineEditorCamera = null;
+        let splineEditorRenderer = null;
+        let splineEditorCanvas = null;
+        let splineControlPoints = [];
+        let splinePreviewMesh = null;
+        let splineControlPointMeshes = [];
+        let splineOrbitControls = null;
+        let isSplineEditorActive = false;
+        let isDraggingControlPoint = false;
+        let selectedControlPointIndex = -1;
+        
+        function showSplineExtrusionDialog() {
+            document.getElementById('spline-extrusion-dialog').style.display = 'block';
+            initializeSplineEditor();
+        }
+        
+        function hideSplineExtrusionDialog() {
+            document.getElementById('spline-extrusion-dialog').style.display = 'none';
+            cleanupSplineEditor();
+        }
+        
+        function initializeSplineEditor() {
+            const canvas = document.getElementById('spline-editor-canvas');
+            const container = canvas.parentElement;
+            
+            // Set up Three.js scene for spline editor
+            splineEditorScene = new THREE.Scene();
+            splineEditorScene.background = new THREE.Color(0x1a1a1a);
+            
+            // Camera
+            splineEditorCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            splineEditorCamera.position.set(10, 10, 10);
+            splineEditorCamera.lookAt(0, 0, 0);
+            
+            // Renderer
+            splineEditorRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            splineEditorRenderer.setSize(container.clientWidth, container.clientHeight);
+            splineEditorRenderer.setPixelRatio(window.devicePixelRatio);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            splineEditorScene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 5, 5);
+            splineEditorScene.add(directionalLight);
+            
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+            splineEditorScene.add(gridHelper);
+            
+            // Axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            splineEditorScene.add(axesHelper);
+            
+            // Orbit controls
+            splineOrbitControls = new OrbitControls(splineEditorCamera, canvas);
+            splineOrbitControls.enableDamping = true;
+            splineOrbitControls.dampingFactor = 0.05;
+            
+            // Event listeners
+            setupSplineEditorEventListeners();
+            setupSplineControlEventListeners();
+            
+            // Initialize control points array
+            splineControlPoints = [];
+            updateControlPointsList();
+            
+            isSplineEditorActive = true;
+            
+            // Start render loop
+            requestAnimationFrame(animateSplineEditor);
+        }
+        
+        function cleanupSplineEditor() {
+            isSplineEditorActive = false;
+            
+            if (splineOrbitControls) {
+                splineOrbitControls.dispose();
+                splineOrbitControls = null;
+            }
+            
+            if (splineEditorRenderer) {
+                splineEditorRenderer.dispose();
+                splineEditorRenderer = null;
+            }
+            
+            splineControlPoints = [];
+            splineControlPointMeshes = [];
+            splinePreviewMesh = null;
+            splineEditorScene = null;
+            splineEditorCamera = null;
+        }
+        
+        function animateSplineEditor() {
+            if (!isSplineEditorActive || !splineEditorRenderer) return;
+            
+            if (splineOrbitControls) {
+                splineOrbitControls.update();
+            }
+            
+            splineEditorRenderer.render(splineEditorScene, splineEditorCamera);
+            requestAnimationFrame(animateSplineEditor);
+        }
+        
+        function setupSplineEditorEventListeners() {
+            const canvas = document.getElementById('spline-editor-canvas');
+            
+            // Mouse events for placing and dragging control points
+            canvas.addEventListener('click', handleSplineCanvasClick);
+            canvas.addEventListener('mousedown', handleSplineMouseDown);
+            canvas.addEventListener('mousemove', handleSplineMouseMove);
+            canvas.addEventListener('mouseup', handleSplineMouseUp);
+            canvas.addEventListener('contextmenu', handleSplineRightClick);
+            
+            // Resize handling
+            window.addEventListener('resize', handleSplineEditorResize);
+        }
+        
+        function setupSplineControlEventListeners() {
+            // Cross-section type change
+            document.getElementById('spline-cross-section-type').addEventListener('change', handleCrossSectionTypeChange);
+            
+            // All sliders for real-time updates
+            const sliders = [
+                'spline-radius', 'spline-thickness', 'spline-width', 'spline-height',
+                'spline-segments', 'spline-tension', 'spline-shape-size'
+            ];
+            
+            sliders.forEach(id => {
+                const slider = document.getElementById(id);
+                const valueSpan = document.getElementById(id + '-value');
+                
+                slider.addEventListener('input', () => {
+                    valueSpan.textContent = slider.value;
+                    updateSplinePreview();
+                });
+            });
+            
+            // Curve type change
+            document.getElementById('spline-curve-type').addEventListener('change', updateSplinePreview);
+            
+            // Button handlers
+            document.getElementById('spline-clear-points').addEventListener('click', clearAllControlPoints);
+            document.getElementById('spline-reset-view').addEventListener('click', resetSplineEditorView);
+            document.getElementById('spline-extrusion-create').addEventListener('click', createSplineExtrusion);
+            document.getElementById('spline-extrusion-cancel').addEventListener('click', hideSplineExtrusionDialog);
+        }
+        
+        function handleCrossSectionTypeChange() {
+            const type = document.getElementById('spline-cross-section-type').value;
+            
+            // Hide all settings panels first
+            document.getElementById('spline-circle-settings').style.display = 'none';
+            document.getElementById('spline-rectangle-settings').style.display = 'none';
+            document.getElementById('spline-custom-shape-settings').style.display = 'none';
+            document.getElementById('spline-other-shape-settings').style.display = 'none';
+            
+            // Show appropriate settings panels
+            if (type === 'circle' || type === 'pipe' || type === 'half-circle' || type === 'oval') {
+                document.getElementById('spline-circle-settings').style.display = 'block';
+                document.getElementById('spline-pipe-settings').style.display = type === 'pipe' ? 'block' : 'none';
+            } else if (type === 'rectangle' || type === 'diamond') {
+                document.getElementById('spline-rectangle-settings').style.display = 'block';
+            } else if (type === 'draw-custom') {
+                document.getElementById('spline-custom-shape-settings').style.display = 'block';
+                initializeShapeDesigner();
+            } else {
+                // Triangle, hexagon, star - use size parameter
+                document.getElementById('spline-other-shape-settings').style.display = 'block';
+            }
+            
+            updateSplinePreview();
+        }
+        
+        function handleSplineCanvasClick(event) {
+            if (isDraggingControlPoint) return;
+            
+            event.preventDefault();
+            const rect = event.target.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera({ x, y }, splineEditorCamera);
+            
+            // Check if clicking on existing control point
+            const intersects = raycaster.intersectObjects(splineControlPointMeshes);
+            if (intersects.length > 0) {
+                return; // Let mousedown handler deal with control point selection
+            }
+            
+            // Create new control point at ground level
+            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const intersectionPoint = new THREE.Vector3();
+            
+            if (raycaster.ray.intersectPlane(groundPlane, intersectionPoint)) {
+                addControlPoint(intersectionPoint);
+            }
+        }
+        
+        function addControlPoint(position) {
+            splineControlPoints.push(position.clone());
+            
+            // Create visual representation
+            const geometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0xffd700,
+                emissive: 0x333300
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(position);
+            mesh.userData.controlPointIndex = splineControlPoints.length - 1;
+            
+            splineControlPointMeshes.push(mesh);
+            splineEditorScene.add(mesh);
+            
+            updateControlPointsList();
+            updateSplinePreview();
+        }
+        
+        function updateControlPointsList() {
+            const list = document.getElementById('spline-control-points-list');
+            
+            if (splineControlPoints.length === 0) {
+                list.innerHTML = `
+                    <div style="color: #888; text-align: center; padding: 20px;">
+                        No control points yet.<br>Click in the 3D viewport to add points.
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            splineControlPoints.forEach((point, index) => {
+                html += `
+                    <div style="padding: 4px 8px; border-bottom: 1px solid #444; color: #ccc;">
+                        <strong>Point ${index + 1}:</strong> 
+                        (${point.x.toFixed(1)}, ${point.y.toFixed(1)}, ${point.z.toFixed(1)})
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+        
+        function updateSplinePreview() {
+            if (splineControlPoints.length < 2) {
+                clearSplinePreview();
+                return;
+            }
+            
+            clearSplinePreview();
+            
+            try {
+                // Create spline curve
+                const curveType = document.getElementById('spline-curve-type').value;
+                let curve;
+                
+                if (curveType === 'catmullrom') {
+                    curve = new THREE.CatmullRomCurve3(splineControlPoints);
+                    curve.tension = parseFloat(document.getElementById('spline-tension').value);
+                } else if (curveType === 'bezier' && splineControlPoints.length >= 4) {
+                    // Use first 4 points for cubic bezier
+                    curve = new THREE.CubicBezierCurve3(
+                        splineControlPoints[0],
+                        splineControlPoints[1],
+                        splineControlPoints[2],
+                        splineControlPoints[3]
+                    );
+                } else {
+                    // Linear curve
+                    curve = new THREE.CatmullRomCurve3(splineControlPoints);
+                    curve.curveType = 'centripetal';
+                    curve.tension = 0;
+                }
+                
+                // Create cross-section shape
+                const shape = createCrossSectionShape();
+                
+                // Create extruded geometry
+                const segments = parseInt(document.getElementById('spline-segments').value);
+                const geometry = new THREE.ExtrudeGeometry(shape, {
+                    extrudePath: curve,
+                    steps: segments,
+                    bevelEnabled: false
+                });
+                
+                // Create preview material
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x607D8B,
+                    transparent: true,
+                    opacity: 0.8,
+                    wireframe: false
+                });
+                
+                splinePreviewMesh = new THREE.Mesh(geometry, material);
+                splineEditorScene.add(splinePreviewMesh);
+                
+            } catch (error) {
+                console.warn('Error creating spline preview:', error);
+            }
+        }
+        
+        function createCrossSectionShape() {
+            const type = document.getElementById('spline-cross-section-type').value;
+            const shape = new THREE.Shape();
+            
+            switch (type) {
+                case 'circle':
+                    const radius = parseFloat(document.getElementById('spline-radius').value);
+                    shape.absarc(0, 0, radius, 0, Math.PI * 2, false);
+                    break;
+                    
+                case 'rectangle':
+                    const width = parseFloat(document.getElementById('spline-width').value);
+                    const height = parseFloat(document.getElementById('spline-height').value);
+                    shape.moveTo(-width/2, -height/2);
+                    shape.lineTo(-width/2, height/2);
+                    shape.lineTo(width/2, height/2);
+                    shape.lineTo(width/2, -height/2);
+                    shape.lineTo(-width/2, -height/2);
+                    break;
+                    
+                case 'pipe':
+                    const pipeRadius = parseFloat(document.getElementById('spline-radius').value);
+                    const thickness = parseFloat(document.getElementById('spline-thickness').value);
+                    const pipeInnerRadius = pipeRadius - thickness;
+                    
+                    // Outer circle
+                    shape.absarc(0, 0, pipeRadius, 0, Math.PI * 2, false);
+                    // Inner hole
+                    const holePath = new THREE.Path();
+                    holePath.absarc(0, 0, pipeInnerRadius, 0, Math.PI * 2, true);
+                    shape.holes.push(holePath);
+                    break;
+                    
+                case 'triangle':
+                    const triSize = parseFloat(document.getElementById('spline-shape-size').value);
+                    shape.moveTo(0, triSize);
+                    shape.lineTo(-triSize * 0.866, -triSize * 0.5);
+                    shape.lineTo(triSize * 0.866, -triSize * 0.5);
+                    shape.lineTo(0, triSize);
+                    break;
+                    
+                case 'hexagon':
+                    const hexSize = parseFloat(document.getElementById('spline-shape-size').value);
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2;
+                        const x = Math.cos(angle) * hexSize;
+                        const y = Math.sin(angle) * hexSize;
+                        if (i === 0) shape.moveTo(x, y);
+                        else shape.lineTo(x, y);
+                    }
+                    shape.closePath();
+                    break;
+                    
+                case 'star':
+                    const starSize = parseFloat(document.getElementById('spline-shape-size').value);
+                    const outerRadius = starSize;
+                    const starInnerRadius = starSize * 0.4;
+                    for (let i = 0; i < 10; i++) {
+                        const angle = (i / 10) * Math.PI * 2 - Math.PI / 2;
+                        const radius = i % 2 === 0 ? outerRadius : starInnerRadius;
+                        const x = Math.cos(angle) * radius;
+                        const y = Math.sin(angle) * radius;
+                        if (i === 0) shape.moveTo(x, y);
+                        else shape.lineTo(x, y);
+                    }
+                    shape.closePath();
+                    break;
+                    
+                case 'half-circle':
+                    const halfRadius = parseFloat(document.getElementById('spline-radius').value);
+                    shape.absarc(0, 0, halfRadius, 0, Math.PI, false);
+                    shape.lineTo(-halfRadius, 0);
+                    shape.closePath();
+                    break;
+                    
+                case 'oval':
+                    const ovalRadius = parseFloat(document.getElementById('spline-radius').value);
+                    const scaleX = 1.5; // Make it oval-shaped
+                    const segments = 32;
+                    for (let i = 0; i <= segments; i++) {
+                        const angle = (i / segments) * Math.PI * 2;
+                        const x = Math.cos(angle) * ovalRadius * scaleX;
+                        const y = Math.sin(angle) * ovalRadius;
+                        if (i === 0) shape.moveTo(x, y);
+                        else shape.lineTo(x, y);
+                    }
+                    break;
+                    
+                case 'diamond':
+                    const diamondWidth = parseFloat(document.getElementById('spline-width').value);
+                    const diamondHeight = parseFloat(document.getElementById('spline-height').value);
+                    shape.moveTo(0, diamondHeight/2);
+                    shape.lineTo(diamondWidth/2, 0);
+                    shape.lineTo(0, -diamondHeight/2);
+                    shape.lineTo(-diamondWidth/2, 0);
+                    shape.lineTo(0, diamondHeight/2);
+                    break;
+                    
+                case 'draw-custom':
+                    if (customShapePoints.length >= 3) {
+                        // Convert canvas points to shape coordinates
+                        const canvasCenter = { x: 140, y: 58 }; // Half of canvas size
+                        const scale = 0.05; // Scale factor for shape size
+                        
+                        customShapePoints.forEach((point, i) => {
+                            const x = (point.x - canvasCenter.x) * scale;
+                            const y = -(point.y - canvasCenter.y) * scale; // Flip Y
+                            if (i === 0) shape.moveTo(x, y);
+                            else shape.lineTo(x, y);
+                        });
+                        shape.closePath();
+                    } else {
+                        // Fallback to circle if no custom shape
+                        shape.absarc(0, 0, 1, 0, Math.PI * 2, false);
+                    }
+                    break;
+                    
+                default:
+                    // Default to small circle
+                    shape.absarc(0, 0, 1, 0, Math.PI * 2, false);
+            }
+            
+            return shape;
+        }
+        
+        function clearSplinePreview() {
+            if (splinePreviewMesh) {
+                splineEditorScene.remove(splinePreviewMesh);
+                splinePreviewMesh.geometry.dispose();
+                splinePreviewMesh.material.dispose();
+                splinePreviewMesh = null;
+            }
+        }
+        
+        function clearAllControlPoints() {
+            splineControlPoints = [];
+            
+            splineControlPointMeshes.forEach(mesh => {
+                splineEditorScene.remove(mesh);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
+            splineControlPointMeshes = [];
+            
+            clearSplinePreview();
+            updateControlPointsList();
+        }
+        
+        function resetSplineEditorView() {
+            if (splineEditorCamera) {
+                splineEditorCamera.position.set(10, 10, 10);
+                splineEditorCamera.lookAt(0, 0, 0);
+                if (splineOrbitControls) {
+                    splineOrbitControls.reset();
+                }
+            }
+        }
+        
+        function createSplineExtrusion() {
+            if (splineControlPoints.length < 2) {
+                showMessage('Please add at least 2 control points to create a spline', 'error');
+                return;
+            }
+            
+            try {
+                // Create the final spline geometry using the same logic as preview
+                const curveType = document.getElementById('spline-curve-type').value;
+                let curve;
+                
+                if (curveType === 'catmullrom') {
+                    curve = new THREE.CatmullRomCurve3(splineControlPoints);
+                    curve.tension = parseFloat(document.getElementById('spline-tension').value);
+                } else if (curveType === 'bezier' && splineControlPoints.length >= 4) {
+                    curve = new THREE.CubicBezierCurve3(
+                        splineControlPoints[0],
+                        splineControlPoints[1],
+                        splineControlPoints[2],
+                        splineControlPoints[3]
+                    );
+                } else {
+                    curve = new THREE.CatmullRomCurve3(splineControlPoints);
+                    curve.curveType = 'centripetal';
+                    curve.tension = 0;
+                }
+                
+                const shape = createCrossSectionShape();
+                const segments = parseInt(document.getElementById('spline-segments').value);
+                
+                const geometry = new THREE.ExtrudeGeometry(shape, {
+                    extrudePath: curve,
+                    steps: segments,
+                    bevelEnabled: false
+                });
+                
+                // Add to main scene as custom piece
+                addPiece('custom', null, { geometry });
+                captureStateInternal('Add spline extrusion');
+                
+                showMessage('Spline track created successfully!', 'success');
+                hideSplineExtrusionDialog();
+                
+            } catch (error) {
+                console.error('Error creating spline extrusion:', error);
+                showMessage('Error creating spline track: ' + error.message, 'error');
+            }
+        }
+        
+        // === ENHANCED MOUSE INTERACTION ===
+        
+        let customShapePoints = [];
+        let isDrawingCustomShape = false;
+        let shapeDesignerCanvas = null;
+        let shapeDesignerCtx = null;
+        
+        function handleSplineMouseDown(event) {
+            event.preventDefault();
+            
+            const rect = event.target.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera({ x, y }, splineEditorCamera);
+            
+            // Check if clicking on existing control point
+            const intersects = raycaster.intersectObjects(splineControlPointMeshes);
+            if (intersects.length > 0) {
+                const mesh = intersects[0].object;
+                selectedControlPointIndex = mesh.userData.controlPointIndex;
+                isDraggingControlPoint = true;
+                
+                // Highlight selected control point
+                splineControlPointMeshes.forEach((m, i) => {
+                    m.material.color.setHex(i === selectedControlPointIndex ? 0xff6b6b : 0xffd700);
+                    m.material.emissive.setHex(i === selectedControlPointIndex ? 0x660000 : 0x333300);
+                });
+                
+                // Disable orbit controls while dragging
+                if (splineOrbitControls) {
+                    splineOrbitControls.enabled = false;
+                }
+            } else {
+                selectedControlPointIndex = -1;
+                isDraggingControlPoint = false;
+                
+                // Reset all control point colors
+                splineControlPointMeshes.forEach(m => {
+                    m.material.color.setHex(0xffd700);
+                    m.material.emissive.setHex(0x333300);
+                });
+            }
+        }
+        
+        function handleSplineMouseMove(event) {
+            if (!isDraggingControlPoint || selectedControlPointIndex < 0) return;
+            
+            event.preventDefault();
+            
+            const rect = event.target.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera({ x, y }, splineEditorCamera);
+            
+            // Project onto ground plane
+            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const intersectionPoint = new THREE.Vector3();
+            
+            if (raycaster.ray.intersectPlane(groundPlane, intersectionPoint)) {
+                // Update control point position
+                splineControlPoints[selectedControlPointIndex].copy(intersectionPoint);
+                splineControlPointMeshes[selectedControlPointIndex].position.copy(intersectionPoint);
+                
+                // Update preview and UI
+                updateControlPointsList();
+                updateSplinePreview();
+            }
+        }
+        
+        function handleSplineMouseUp(event) {
+            if (isDraggingControlPoint) {
+                isDraggingControlPoint = false;
+                selectedControlPointIndex = -1;
+                
+                // Re-enable orbit controls
+                if (splineOrbitControls) {
+                    splineOrbitControls.enabled = true;
+                }
+                
+                // Reset all control point colors
+                splineControlPointMeshes.forEach(m => {
+                    m.material.color.setHex(0xffd700);
+                    m.material.emissive.setHex(0x333300);
+                });
+            }
+        }
+        
+        function handleSplineRightClick(event) {
+            event.preventDefault();
+            
+            const rect = event.target.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera({ x, y }, splineEditorCamera);
+            
+            // Check if right-clicking on existing control point
+            const intersects = raycaster.intersectObjects(splineControlPointMeshes);
+            if (intersects.length > 0) {
+                const mesh = intersects[0].object;
+                const indexToDelete = mesh.userData.controlPointIndex;
+                
+                // Remove from arrays
+                splineControlPoints.splice(indexToDelete, 1);
+                splineEditorScene.remove(mesh);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+                splineControlPointMeshes.splice(indexToDelete, 1);
+                
+                // Update indices for remaining control points
+                splineControlPointMeshes.forEach((m, i) => {
+                    m.userData.controlPointIndex = i;
+                });
+                
+                updateControlPointsList();
+                updateSplinePreview();
+                
+                // Show deletion feedback
+                showMessage(`Control point ${indexToDelete + 1} deleted`, 'info');
+            }
+        }
+        
+        // === CUSTOM SHAPE DESIGNER ===
+        
+        function initializeShapeDesigner() {
+            shapeDesignerCanvas = document.getElementById('shape-designer-canvas');
+            shapeDesignerCtx = shapeDesignerCanvas.getContext('2d');
+            
+            // Clear and setup canvas
+            clearCustomShape();
+            
+            // Event listeners for shape designer
+            shapeDesignerCanvas.addEventListener('click', handleShapeCanvasClick);
+            document.getElementById('shape-clear').addEventListener('click', clearCustomShape);
+            document.getElementById('shape-close').addEventListener('click', closeCustomShape);
+            document.getElementById('shape-undo').addEventListener('click', undoLastShapePoint);
+        }
+        
+        function handleShapeCanvasClick(event) {
+            const rect = shapeDesignerCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            // Add point to custom shape
+            customShapePoints.push({ x, y });
+            
+            drawCustomShape();
+            updateSplinePreview();
+        }
+        
+        function drawCustomShape() {
+            if (!shapeDesignerCtx) return;
+            
+            // Clear canvas
+            shapeDesignerCtx.clearRect(0, 0, shapeDesignerCanvas.width, shapeDesignerCanvas.height);
+            
+            // Draw background grid
+            shapeDesignerCtx.strokeStyle = '#333';
+            shapeDesignerCtx.lineWidth = 1;
+            const gridSize = 20;
+            for (let x = 0; x <= shapeDesignerCanvas.width; x += gridSize) {
+                shapeDesignerCtx.beginPath();
+                shapeDesignerCtx.moveTo(x, 0);
+                shapeDesignerCtx.lineTo(x, shapeDesignerCanvas.height);
+                shapeDesignerCtx.stroke();
+            }
+            for (let y = 0; y <= shapeDesignerCanvas.height; y += gridSize) {
+                shapeDesignerCtx.beginPath();
+                shapeDesignerCtx.moveTo(0, y);
+                shapeDesignerCtx.lineTo(shapeDesignerCanvas.width, y);
+                shapeDesignerCtx.stroke();
+            }
+            
+            // Draw center crosshair
+            const centerX = shapeDesignerCanvas.width / 2;
+            const centerY = shapeDesignerCanvas.height / 2;
+            shapeDesignerCtx.strokeStyle = '#666';
+            shapeDesignerCtx.lineWidth = 2;
+            shapeDesignerCtx.beginPath();
+            shapeDesignerCtx.moveTo(centerX - 10, centerY);
+            shapeDesignerCtx.lineTo(centerX + 10, centerY);
+            shapeDesignerCtx.moveTo(centerX, centerY - 10);
+            shapeDesignerCtx.lineTo(centerX, centerY + 10);
+            shapeDesignerCtx.stroke();
+            
+            if (customShapePoints.length === 0) return;
+            
+            // Draw the custom shape
+            shapeDesignerCtx.strokeStyle = '#ffd700';
+            shapeDesignerCtx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+            shapeDesignerCtx.lineWidth = 2;
+            
+            shapeDesignerCtx.beginPath();
+            customShapePoints.forEach((point, i) => {
+                if (i === 0) {
+                    shapeDesignerCtx.moveTo(point.x, point.y);
+                } else {
+                    shapeDesignerCtx.lineTo(point.x, point.y);
+                }
+            });
+            
+            // Close shape if we have enough points
+            if (customShapePoints.length >= 3) {
+                shapeDesignerCtx.closePath();
+                shapeDesignerCtx.fill();
+            }
+            shapeDesignerCtx.stroke();
+            
+            // Draw control points
+            shapeDesignerCtx.fillStyle = '#ff6b6b';
+            customShapePoints.forEach(point => {
+                shapeDesignerCtx.beginPath();
+                shapeDesignerCtx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+                shapeDesignerCtx.fill();
+            });
+        }
+        
+        function clearCustomShape() {
+            customShapePoints = [];
+            drawCustomShape();
+            updateSplinePreview();
+        }
+        
+        function closeCustomShape() {
+            if (customShapePoints.length >= 3) {
+                // Shape is automatically closed in the drawing
+                drawCustomShape();
+                updateSplinePreview();
+                showMessage(`Custom shape completed with ${customShapePoints.length} points`, 'success');
+            } else {
+                showMessage('Need at least 3 points to close shape', 'warning');
+            }
+        }
+        
+        function undoLastShapePoint() {
+            if (customShapePoints.length > 0) {
+                customShapePoints.pop();
+                drawCustomShape();
+                updateSplinePreview();
+            }
+        }
+        
+        function handleSplineEditorResize() {
+            if (!splineEditorRenderer || !splineEditorCamera) return;
+            
+            const canvas = document.getElementById('spline-editor-canvas');
+            const container = canvas.parentElement;
+            
+            splineEditorCamera.aspect = container.clientWidth / container.clientHeight;
+            splineEditorCamera.updateProjectionMatrix();
+            splineEditorRenderer.setSize(container.clientWidth, container.clientHeight);
         }
         
         function performSave() {
@@ -6730,7 +8079,8 @@
                     pieces: {
                         'custom': { icon: '📦', name: 'Custom (.obj)...' },
                         'custom-curve': { icon: '🌊', name: 'Custom Curve...' },
-                        'pipe-builder': { icon: '🚇', name: 'Pipe Builder...' }
+                        'pipe-builder': { icon: '🚇', name: 'Pipe Builder...' },
+                        'spline-extrusion': { icon: '🪢', name: 'Spline Extrusion...' }
                     }
                 }
             };
@@ -6809,6 +8159,9 @@
             } else if (pieceType === 'pipe-builder') {
                 // Show pipe builder dialog
                 showPipeBuilderDialog();
+            } else if (pieceType === 'spline-extrusion') {
+                // Show spline extrusion dialog
+                showSplineExtrusionDialog();
             } else {
                 // Add piece directly
                 addPiece(pieceType);
@@ -10621,6 +11974,127 @@
         </div>
     </div>
 
+    <!-- Spline Extrusion Dialog -->
+    <div id="spline-extrusion-dialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2a2a2a; border: 2px solid #444; border-radius: 8px; padding: 20px; z-index: 10001; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+        <h3 style="color: #ffd700; margin-top: 0;">🪢 Spline Extrusion Builder</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px; margin-bottom: 20px;">
+            <!-- Left Panel: 3D Viewport -->
+            <div style="background: #1a1a1a; border: 2px solid #444; border-radius: 6px; height: 400px; position: relative;">
+                <div style="position: absolute; top: 8px; left: 8px; color: #ffd700; font-weight: bold; z-index: 10;">3D Spline Editor</div>
+                <div style="position: absolute; top: 8px; right: 8px; color: #888; font-size: 11px; z-index: 10;">
+                    Click to add points • Drag to move • Right-click to delete
+                </div>
+                <canvas id="spline-editor-canvas" style="width: 100%; height: 100%; border-radius: 4px;"></canvas>
+            </div>
+            
+            <!-- Right Panel: Controls -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Cross-Section Shape -->
+                <div style="background: #333; padding: 12px; border-radius: 6px;">
+                    <h4 style="color: #ffd700; margin: 0 0 10px 0; font-size: 14px;">Cross-Section Shape</h4>
+                    <div style="margin-bottom: 10px;">
+                        <select id="spline-cross-section-type" style="width: 100%; padding: 6px; background: #444; border: 1px solid #666; color: white; border-radius: 4px;">
+                            <option value="circle">Circle</option>
+                            <option value="rectangle">Rectangle</option>
+                            <option value="pipe">Hollow Pipe</option>
+                            <option value="triangle">Triangle</option>
+                            <option value="hexagon">Hexagon</option>
+                            <option value="star">Star (5-point)</option>
+                            <option value="half-circle">Half Circle</option>
+                            <option value="oval">Oval</option>
+                            <option value="diamond">Diamond</option>
+                            <option value="draw-custom">🎨 Draw Custom Shape</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Circle/Pipe settings -->
+                    <div id="spline-circle-settings" style="display: block;">
+                        <label style="color: #ccc; font-size: 12px;">Radius: <span id="spline-radius-value">1.5</span></label>
+                        <input type="range" id="spline-radius" min="0.5" max="5" step="0.1" value="1.5" style="width: 100%; margin-bottom: 8px;">
+                        
+                        <div id="spline-pipe-settings" style="display: none;">
+                            <label style="color: #ccc; font-size: 12px;">Wall Thickness: <span id="spline-thickness-value">0.3</span></label>
+                            <input type="range" id="spline-thickness" min="0.1" max="1" step="0.05" value="0.3" style="width: 100%;">
+                        </div>
+                    </div>
+                    
+                    <!-- Rectangle settings -->
+                    <div id="spline-rectangle-settings" style="display: none;">
+                        <label style="color: #ccc; font-size: 12px;">Width: <span id="spline-width-value">3</span></label>
+                        <input type="range" id="spline-width" min="0.5" max="10" step="0.1" value="3" style="width: 100%; margin-bottom: 8px;">
+                        <label style="color: #ccc; font-size: 12px;">Height: <span id="spline-height-value">1.5</span></label>
+                        <input type="range" id="spline-height" min="0.5" max="5" step="0.1" value="1.5" style="width: 100%;">
+                    </div>
+                    
+                    <!-- Custom Shape Drawing -->
+                    <div id="spline-custom-shape-settings" style="display: none;">
+                        <div style="background: #1a1a1a; border: 2px solid #555; border-radius: 4px; height: 120px; position: relative; margin-bottom: 8px;">
+                            <div style="position: absolute; top: 4px; left: 6px; color: #ffd700; font-size: 10px; font-weight: bold;">Shape Designer</div>
+                            <div style="position: absolute; top: 4px; right: 6px; color: #888; font-size: 9px;">Click to draw</div>
+                            <canvas id="shape-designer-canvas" width="280" height="116" style="position: absolute; top: 2px; left: 2px; cursor: crosshair;"></canvas>
+                        </div>
+                        <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                            <button id="shape-clear" style="flex: 1; padding: 4px 6px; background: #dc3545; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 10px;">Clear</button>
+                            <button id="shape-close" style="flex: 1; padding: 4px 6px; background: #28a745; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 10px;">Close Shape</button>
+                            <button id="shape-undo" style="flex: 1; padding: 4px 6px; background: #6c757d; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 10px;">Undo</button>
+                        </div>
+                        <small style="color: #888; font-size: 10px;">Draw your custom cross-section shape. Click to add points, then close to complete.</small>
+                    </div>
+                    
+                    <!-- Other shape settings -->
+                    <div id="spline-other-shape-settings" style="display: none;">
+                        <label style="color: #ccc; font-size: 12px;">Size: <span id="spline-shape-size-value">2</span></label>
+                        <input type="range" id="spline-shape-size" min="0.5" max="8" step="0.1" value="2" style="width: 100%;">
+                    </div>
+                </div>
+                
+                <!-- Spline Settings -->
+                <div style="background: #333; padding: 12px; border-radius: 6px;">
+                    <h4 style="color: #ffd700; margin: 0 0 10px 0; font-size: 14px;">Spline Settings</h4>
+                    
+                    <label style="color: #ccc; font-size: 12px;">Curve Type:</label>
+                    <select id="spline-curve-type" style="width: 100%; padding: 6px; background: #444; border: 1px solid #666; color: white; border-radius: 4px; margin-bottom: 8px;">
+                        <option value="catmullrom">Catmull-Rom (Smooth)</option>
+                        <option value="bezier">Cubic Bezier</option>
+                        <option value="linear">Linear Segments</option>
+                    </select>
+                    
+                    <label style="color: #ccc; font-size: 12px;">Segments: <span id="spline-segments-value">32</span></label>
+                    <input type="range" id="spline-segments" min="8" max="128" step="4" value="32" style="width: 100%; margin-bottom: 8px;">
+                    
+                    <label style="color: #ccc; font-size: 12px;">Tension: <span id="spline-tension-value">0.5</span></label>
+                    <input type="range" id="spline-tension" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+                </div>
+                
+                <!-- Control Points -->
+                <div style="background: #333; padding: 12px; border-radius: 6px; flex: 1;">
+                    <h4 style="color: #ffd700; margin: 0 0 10px 0; font-size: 14px;">Control Points</h4>
+                    <div id="spline-control-points-list" style="max-height: 150px; overflow-y: auto; font-size: 11px;">
+                        <div style="color: #888; text-align: center; padding: 20px;">
+                            No control points yet.<br>Click in the 3D viewport to add points.
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; gap: 5px;">
+                        <button id="spline-clear-points" style="flex: 1; padding: 4px 8px; background: #dc3545; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 11px;">Clear All</button>
+                        <button id="spline-reset-view" style="flex: 1; padding: 4px 8px; background: #6c757d; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 11px;">Reset View</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <small style="color: #888;">
+                Create smooth curved tracks by placing control points in 3D space. The track will flow smoothly through all points.
+            </small>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="spline-extrusion-create" style="padding: 8px 16px; background: #28a745; border: none; color: white; border-radius: 4px; cursor: pointer;">🪢 Create Track</button>
+            <button id="spline-extrusion-cancel" style="padding: 8px 16px; background: #dc3545; border: none; color: white; border-radius: 4px; cursor: pointer;">❌ Cancel</button>
+        </div>
+    </div>
+
     <!-- Message Notification -->
     <!-- ViewCube Navigation -->
     <div id="viewcube">
@@ -10683,6 +12157,99 @@
 
     <!-- Main 3D Viewport -->
     <div id="main-viewport"></div>
+
+    <!-- Right Sidebar for Spline Tools -->
+    <div id="right-sidebar" style="position: fixed; top: 50px; right: 0; bottom: 0px; width: 320px; background: rgba(0, 0, 0, 0.9); color: white; padding: 15px; z-index: 140; overflow-y: auto; border-left: 1px solid #444; transition: transform 0.3s ease; transform: translateX(320px);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div class="ui-title">🪢 Spline Editor</div>
+            <button id="collapse-right-sidebar-btn" title="Collapse Sidebar" style="background: #495057; border: 1px solid #495057; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">▶</button>
+        </div>
+        
+        <!-- Spline Mode Toggle -->
+        <div style="margin-bottom: 15px;">
+            <button id="spline-mode-btn" style="width: 100%; padding: 12px; background: #28a745; border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">🪢 Enter Spline Mode</button>
+        </div>
+        
+        <!-- Cross-Section Shape -->
+        <div style="background: #333; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+            <h4 style="color: #ffd700; margin: 0 0 10px 0; font-size: 14px;">Cross-Section Shape</h4>
+            <div style="margin-bottom: 10px;">
+                <select id="spline-cross-section-type-main" style="width: 100%; padding: 6px; background: #444; border: 1px solid #666; color: white; border-radius: 4px;">
+                    <option value="circle">Circle</option>
+                    <option value="rectangle">Rectangle</option>
+                    <option value="pipe">Hollow Pipe</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="hexagon">Hexagon</option>
+                    <option value="star">Star (5-point)</option>
+                    <option value="half-circle">Half Circle</option>
+                    <option value="oval">Oval</option>
+                    <option value="diamond">Diamond</option>
+                </select>
+            </div>
+            
+            <!-- Circle/Pipe settings -->
+            <div id="spline-circle-settings-main" style="display: block;">
+                <label style="color: #ccc; font-size: 12px;">Radius: <span id="spline-radius-value-main">1.5</span></label>
+                <input type="range" id="spline-radius-main" min="0.5" max="5" step="0.1" value="1.5" style="width: 100%; margin-bottom: 8px;">
+                
+                <div id="spline-pipe-settings-main" style="display: none;">
+                    <label style="color: #ccc; font-size: 12px;">Wall Thickness: <span id="spline-thickness-value-main">0.3</span></label>
+                    <input type="range" id="spline-thickness-main" min="0.1" max="1" step="0.05" value="0.3" style="width: 100%;">
+                </div>
+            </div>
+            
+            <!-- Rectangle settings -->
+            <div id="spline-rectangle-settings-main" style="display: none;">
+                <label style="color: #ccc; font-size: 12px;">Width: <span id="spline-width-value-main">3</span></label>
+                <input type="range" id="spline-width-main" min="0.5" max="10" step="0.1" value="3" style="width: 100%; margin-bottom: 8px;">
+                <label style="color: #ccc; font-size: 12px;">Height: <span id="spline-height-value-main">1.5</span></label>
+                <input type="range" id="spline-height-main" min="0.5" max="5" step="0.1" value="1.5" style="width: 100%;">
+            </div>
+            
+            <!-- Other shape settings -->
+            <div id="spline-other-shape-settings-main" style="display: none;">
+                <label style="color: #ccc; font-size: 12px;">Size: <span id="spline-shape-size-value-main">2</span></label>
+                <input type="range" id="spline-shape-size-main" min="0.5" max="8" step="0.1" value="2" style="width: 100%;">
+            </div>
+        </div>
+        
+        <!-- Spline Settings -->
+        <div style="background: #333; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+            <h4 style="color: #ffd700; margin: 0 0 10px 0; font-size: 14px;">Spline Settings</h4>
+            
+            <label style="color: #ccc; font-size: 12px;">Curve Type:</label>
+            <select id="spline-curve-type-main" style="width: 100%; padding: 6px; background: #444; border: 1px solid #666; color: white; border-radius: 4px; margin-bottom: 8px;">
+                <option value="catmullrom">Catmull-Rom (Smooth)</option>
+                <option value="bezier">Cubic Bezier</option>
+                <option value="linear">Linear Segments</option>
+            </select>
+            
+            <label style="color: #ccc; font-size: 12px;">Segments: <span id="spline-segments-value-main">32</span></label>
+            <input type="range" id="spline-segments-main" min="8" max="128" step="4" value="32" style="width: 100%; margin-bottom: 8px;">
+            
+            <label style="color: #ccc; font-size: 12px;">Tension: <span id="spline-tension-value-main">0.5</span></label>
+            <input type="range" id="spline-tension-main" min="0" max="1" step="0.05" value="0.5" style="width: 100%;">
+        </div>
+        
+        <!-- Control Points -->
+        <div style="background: #333; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+            <h4 style="color: #ffd700; margin: 0 0 10px 0; font-size: 14px;">Control Points</h4>
+            <div id="spline-control-points-list-main" style="max-height: 200px; overflow-y: auto; font-size: 11px; margin-bottom: 10px;">
+                <div style="color: #888; text-align: center; padding: 20px;">
+                    No control points yet.<br>Click in the 3D viewport to add points.
+                </div>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button id="spline-clear-points-main" style="flex: 1; padding: 4px 8px; background: #dc3545; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 11px;">Clear All</button>
+                <button id="spline-reset-view-main" style="flex: 1; padding: 4px 8px; background: #6c757d; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 11px;">Reset View</button>
+            </div>
+        </div>
+        
+        <!-- Create Track Button -->
+        <div style="margin-bottom: 15px;">
+            <button id="spline-create-track-main" style="width: 100%; padding: 12px; background: #28a745; border: none; color: white; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">🪢 Create Spline Track</button>
+        </div>
+    </div>
 
     <!-- Bottom-right info panel -->
     <div id="selection-info-panel" style="position: fixed; bottom: 20px; right: 20px; background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 15px; border-radius: 8px; font-family: monospace; font-size: 11px; z-index: 120; border: 1px solid #444; min-width: 220px;">
