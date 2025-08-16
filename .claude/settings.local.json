@@ -14,7 +14,8 @@
       "mcp__serena__activate_project",
       "Bash(sed:*)",
       "mcp__serena__check_onboarding_performed",
-      "mcp__serena__replace_regex"
+      "mcp__serena__replace_regex",
+      "Bash(firefox:*)"
     ],
     "deny": []
   }
